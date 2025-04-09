@@ -63,8 +63,8 @@ export default function About() {
               custom={1.5}
             >
               <h3 className="text-xl font-bold font-montserrat text-primary mb-2">Meet Our Founder</h3>
-              <p className="text-gray-600 mb-4">I'm Brandon Rollins, the founder and lead engineer of Aero Solutions. As a professional pilot and software engineer, I bring a rare blend of real-world aviation experience and technical expertise to every project. I've logged thousands of hours in the cockpit and countless more coding innovative solutions, from flight management systems to enterprise platforms.</p>
-              <p className="text-gray-600">My passion is building software that solves real problems, and my commitment is to your satisfaction—our unique no-upfront-payment model proves it.</p>
+              <p className="text-gray-600 mb-4">I'm Brandon Rollins, the founder and lead engineer of Aero Solutions. As a professional pilot and self-taught software engineer, I bring a rare blend of real-world aviation experience and technical expertise to every project. I've logged thousands of hours in the cockpit and countless more coding innovative solutions, from flight management systems to enterprise platforms.</p>
+              <p className="text-gray-600">My journey of teaching myself programming while working as a pilot gave me a unique perspective on solving complex problems. My passion is building software that addresses real challenges, and my commitment is to your satisfaction—our unique no-upfront-payment model proves it.</p>
             </motion.div>
             
             <motion.p 

@@ -20,10 +20,12 @@ export async function generateCopilotResponse(userMessage: string): Promise<stri
 Key information about Aero Solutions:
 - Full-stack software development company focused on aviation industry solutions
 - Offers a range of platforms: AeroSync, AeroFlight, ExecSync, SkyForge Legend, Stitchlet, AeroOps
-- Unique payment model: clients only pay when they're satisfied with the results
-- Founded by Brandon Rollins, who combines pilot experience with software expertise
+- Unique payment model: clients only pay when they're 100% satisfied with the results
+- Founded by Brandon Rollins, a professional pilot and self-taught software engineer who combines aviation experience with technical expertise
+- Clients receive 100% ownership of their code and complete intellectual property rights upon project completion
 - Based in Miami, Florida
 
+Your purpose is to demonstrate the power of AI technology that Aero Solutions can integrate into client projects.
 Keep responses concise (maximum 3 sentences), helpful, and focused on aviation software topics.
 Avoid making up specific details that aren't in the context above.`
         },
@@ -32,7 +34,7 @@ Avoid making up specific details that aren't in the context above.`
           content: userMessage
         }
       ],
-      max_tokens: 150,
+      max_tokens: 250,
       temperature: 0.7,
     });
 
