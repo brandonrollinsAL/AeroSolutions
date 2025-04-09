@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
 import TheCountChatbot from "./TheCountChatbot";
 import { useLocation } from "wouter";
+import wolfOfWallStreetImage from "../assets/wolf-of-wall-street.jpg";
 
 interface ClientLandingPageProps {
   accessCode: string;
@@ -666,60 +667,49 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
 
       {/* NC DOT Investor Popup */}
       {showInvestorPopup && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowInvestorPopup(false)}>
-          <div className="bg-white rounded-xl overflow-hidden max-w-3xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setShowInvestorPopup(false)}>
+          <div className="bg-white rounded-xl overflow-hidden max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="relative">
               <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-800" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 85%)' }}></div>
-                <div className="absolute top-0 left-0 right-0 h-full flex flex-col items-center justify-center">
-                  {/* Falling Money Animation */}
-                  {Array.from({ length: 20 }).map((_, index) => (
-                    <div 
-                      key={index} 
-                      className="absolute text-3xl animate-fall"
-                      style={{
-                        left: `${(index % 10) * 10}%`,
-                        animationDuration: `${3 + (index % 3)}s`,
-                        animationDelay: `${(index * 0.2) % 2}s`,
-                        top: `-${index * 5}%`
-                      }}
-                    >
-                      💰
-                    </div>
-                  ))}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-blue-900" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 85%)' }}></div>
+                
+                {/* Wolf of Wall Street Image */}
+                <div className="absolute bottom-0 w-full flex justify-center">
                   <img 
-                    src="https://images.unsplash.com/photo-1575224300306-1b8da36134ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
-                    alt="Luxury Yacht"
-                    className="w-full h-60 object-cover opacity-60"
+                    src={wolfOfWallStreetImage} 
+                    alt="Business Success"
+                    className="w-full h-full object-cover opacity-85"
+                    style={{ objectPosition: 'center 35%' }}
                   />
                 </div>
+                
+                {/* Falling Money Animation - More money! */}
+                {Array.from({ length: 40 }).map((_, index) => (
+                  <div 
+                    key={index} 
+                    className="absolute text-3xl animate-fall"
+                    style={{
+                      left: `${(index % 20) * 5}%`,
+                      animationDuration: `${2 + (index % 5)}s`,
+                      animationDelay: `${(index * 0.1) % 3}s`,
+                      top: `-${index * 3}%`,
+                      zIndex: 30
+                    }}
+                  >
+                    {index % 2 === 0 ? '💵' : '💰'}
+                  </div>
+                ))}
               </div>
               
               <div className="relative p-10 pt-32 text-center">
-                <h3 className="text-3xl font-bold text-white mb-2">Congratulations!</h3>
-                <p className="text-xl text-white/90 mb-8">You've unlocked the special investor view!</p>
+                <h3 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Congratulations!</h3>
+                <p className="text-2xl text-white mb-20 drop-shadow-lg">The Money Keeps Coming!</p>
                 
-                <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 mb-6">
-                  <h4 className="text-xl font-bold text-gray-900 mb-3">Aero Solutions Investor Information</h4>
-                  <p className="text-gray-700 mb-2">
-                    Current Valuation: <span className="font-bold text-green-600">$14.7M</span>
-                  </p>
-                  <p className="text-gray-700 mb-2">
-                    Projected Annual Revenue (2025): <span className="font-bold text-green-600">$3.2M</span>
-                  </p>
-                  <p className="text-gray-700 mb-6">
-                    Investment Opportunity: <span className="font-bold text-green-600">Series A Funding Round Open</span>
-                  </p>
-                  <div className="flex justify-center">
-                    <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-full font-bold">
-                      Early Investor Position Secured
-                    </div>
-                  </div>
-                </div>
+                <div className="mt-56"></div> {/* Spacer to position content below the image */}
                 
                 <button 
                   onClick={() => setShowInvestorPopup(false)}
-                  className="bg-white text-primary font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-100 transition-colors"
+                  className="bg-white text-blue-800 font-bold py-2 px-8 rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
                 >
                   Close
                 </button>
