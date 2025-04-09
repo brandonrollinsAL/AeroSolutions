@@ -13,7 +13,7 @@ export default function Services() {
 
   const services = [
     {
-      icon: <FaLaptopCode className="text-4xl mb-4 text-accent" />,
+      icon: <FaLaptopCode className="text-4xl mb-4 text-black" />,
       title: "Full-Stack Development",
       description: "We handle everything—frontend, backend, UI/UX, deployment, and maintenance—so you can focus on your business.",
       features: [
@@ -24,7 +24,7 @@ export default function Services() {
       ]
     },
     {
-      icon: <FaCreditCard className="text-4xl mb-4 text-accent" />,
+      icon: <FaCreditCard className="text-4xl mb-4 text-black" />,
       title: "Unique Payment Model",
       description: "No upfront deposit. No monthly retainer. You pay only when your project is complete and meets your satisfaction. That's our commitment to quality.",
       features: [
@@ -35,7 +35,7 @@ export default function Services() {
       ]
     },
     {
-      icon: <FaHeadset className="text-4xl mb-4 text-accent" />,
+      icon: <FaHeadset className="text-4xl mb-4 text-black" />,
       title: "Post-Launch Support",
       description: "Option to keep us on for ongoing updates and scaling as your business grows and evolves.",
       features: [
@@ -79,7 +79,7 @@ export default function Services() {
               <ul className="space-y-2 text-gray-600">
                 {service.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center">
-                    <FaCheck className="text-accent mr-2" />
+                    <FaCheck className="text-luxury mr-2" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -96,7 +96,7 @@ export default function Services() {
           variants={fadeIn}
           custom={5}
         >
-          <a href="#contact" className="inline-block bg-accent hover:bg-accent/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg">
+          <a href="#contact" className="inline-block bg-black hover:bg-black/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg">
             Discuss Your Project
           </a>
         </motion.div>

@@ -12,9 +12,10 @@ export const COMPANY_INFO = {
 };
 
 export const COLORS = {
-  primary: "#1E3A8A",
-  secondary: "#FFFFFF",
-  accent: "#F97316",
-  highlight: "#C0C0C0",
-  darkblue: "#152a63"
+  primary: "#1E3A8A",    // Medium Blue - foundation of the palette
+  secondary: "#FFFFFF",  // White - complementary to the primary blue
+  accent: "#000000",     // Black - sleek, modern edge for accents
+  luxury: "#001F3F",     // Deep Navy - adds depth and sophistication
+  highlight: "#C0C0C0",  // Silver - metallic shimmer for highlights
+  darkblue: "#152a63"    // Kept for compatibility with existing code
 };

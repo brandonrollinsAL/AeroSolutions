@@ -74,7 +74,7 @@ export default function Hero() {
             >
               <a 
                 href="#contact" 
-                className="bg-accent hover:bg-accent/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="bg-black hover:bg-black/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
               >
                 Get Started
               </a>
@@ -110,19 +110,19 @@ export default function Hero() {
           custom={4}
         >
           <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-            <div className="text-accent text-3xl mb-2"><FaCode /></div>
+            <div className="text-highlight text-3xl mb-2"><FaCode /></div>
             <h3 className="font-semibold font-montserrat">Full-Stack Development</h3>
           </div>
           <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-            <div className="text-accent text-3xl mb-2"><FaPlane /></div>
+            <div className="text-highlight text-3xl mb-2"><FaPlane /></div>
             <h3 className="font-semibold font-montserrat">Aviation Expertise</h3>
           </div>
           <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-            <div className="text-accent text-3xl mb-2"><FaHandshake /></div>
+            <div className="text-highlight text-3xl mb-2"><FaHandshake /></div>
             <h3 className="font-semibold font-montserrat">Pay After Satisfaction</h3>
           </div>
           <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
-            <div className="text-accent text-3xl mb-2"><FaClock /></div>
+            <div className="text-highlight text-3xl mb-2"><FaClock /></div>
             <h3 className="font-semibold font-montserrat">Ongoing Support</h3>
           </div>
         </motion.div>

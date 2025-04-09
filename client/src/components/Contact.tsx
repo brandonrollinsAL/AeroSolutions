@@ -142,13 +142,13 @@ export default function Contact() {
               variants={fadeIn}
               custom={1.5}
             >
-              <a href="#" className="bg-[#0077B5] text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
+              <a href="#" className="bg-luxury text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
                 <FaLinkedinIn />
               </a>
-              <a href="#" className="bg-[#1DA1F2] text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
+              <a href="#" className="bg-luxury text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
                 <FaTwitter />
               </a>
-              <a href="#" className="bg-[#333333] text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
+              <a href="#" className="bg-black text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
                 <FaGithub />
               </a>
             </motion.div>
@@ -214,7 +214,7 @@ export default function Contact() {
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-lg disabled:opacity-70"
+                className="w-full bg-black hover:bg-black/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-lg disabled:opacity-70"
               >
                 {isSubmitting ? "Sending..." : "Send Message"}
               </button>

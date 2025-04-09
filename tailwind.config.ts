@@ -41,6 +41,8 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        luxury: "#001F3F", // Deep Navy - adds depth and sophistication
+        highlight: "#C0C0C0", // Silver - metallic shimmer for highlights
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

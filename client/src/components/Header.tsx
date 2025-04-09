@@ -62,14 +62,14 @@ export default function Header() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-gray-700 hover:text-accent hover:scale-110 transition-all duration-300 hover:underline decoration-accent font-medium"
+                  className="text-gray-700 hover:text-black hover:scale-110 transition-all duration-300 hover:underline decoration-luxury font-medium"
                 >
                   {link.name}
                 </a>
               ))}
               <button
                 onClick={toggleClientPreview}
-                className="text-primary hover:text-accent hover:scale-110 transition-all duration-300 font-semibold"
+                className="text-primary hover:text-luxury hover:scale-110 transition-all duration-300 font-semibold"
               >
                 Client Preview
               </button>
@@ -96,7 +96,7 @@ export default function Header() {
               <a
                 key={link.name}
                 href={link.href}
-                className="block text-gray-700 hover:text-accent py-2 font-medium"
+                className="block text-gray-700 hover:text-black py-2 font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.name}
@@ -107,7 +107,7 @@ export default function Header() {
                 setMobileMenuOpen(false);
                 toggleClientPreview();
               }}
-              className="block text-primary hover:text-accent py-2 font-semibold w-full text-left"
+              className="block text-primary hover:text-luxury py-2 font-semibold w-full text-left"
             >
               Client Preview
             </button>

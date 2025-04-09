@@ -55,7 +55,7 @@ export default function About() {
             </motion.p>
             
             <motion.div 
-              className="bg-gray-50 rounded-xl p-6 shadow-md mb-6 border-l-4 border-accent"
+              className="bg-gray-50 rounded-xl p-6 shadow-md mb-6 border-l-4 border-luxury"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
@@ -87,13 +87,13 @@ export default function About() {
               variants={fadeInUp}
               custom={2.5}
             >
-              <a href="#" className="text-primary hover:text-accent transition-colors duration-300">
+              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
                 <FaLinkedin className="text-2xl" />
               </a>
-              <a href="#" className="text-primary hover:text-accent transition-colors duration-300">
+              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
                 <FaTwitter className="text-2xl" />
               </a>
-              <a href="#" className="text-primary hover:text-accent transition-colors duration-300">
+              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
                 <FaGithub className="text-2xl" />
               </a>
             </motion.div>

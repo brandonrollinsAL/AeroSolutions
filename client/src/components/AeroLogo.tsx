@@ -86,13 +86,13 @@ export default function AeroLogo({ size = "md", animated = true }: AeroLogoProps
         {/* Simple airplane silhouette */}
         <path
           d="M30 40L56 40"
-          stroke="#1E3A8A"
+          stroke="#001F3F"
           strokeWidth="2"
           strokeLinecap="round"
         />
         <path
           d="M45 30L56 40L45 50"
-          stroke="#F97316"
+          stroke="#000000"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -100,7 +100,7 @@ export default function AeroLogo({ size = "md", animated = true }: AeroLogoProps
         />
         
         {/* Single accent dot */}
-        <circle cx="28" cy="40" r="2" fill="#F97316" />
+        <circle cx="28" cy="40" r="2" fill="#C0C0C0" />
       </svg>
     );
   }
@@ -133,14 +133,14 @@ export default function AeroLogo({ size = "md", animated = true }: AeroLogoProps
       <motion.g variants={planeVariants}>
         <motion.path
           d="M30 40L56 40"
-          stroke="#1E3A8A"
+          stroke="#001F3F"
           strokeWidth="2"
           strokeLinecap="round"
           variants={pathVariants}
         />
         <motion.path
           d="M45 30L56 40L45 50"
-          stroke="#F97316"
+          stroke="#000000"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -154,7 +154,7 @@ export default function AeroLogo({ size = "md", animated = true }: AeroLogoProps
         cx="28"
         cy="40"
         r="2"
-        fill="#F97316"
+        fill="#C0C0C0"
         variants={circleVariants}
       />
     </motion.svg>
