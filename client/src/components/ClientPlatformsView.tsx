@@ -562,7 +562,7 @@ export default function ClientPlatformsView({ isOpen, onClose, accessCode }: Cli
                         A successful entrepreneur from Wilmington, NC, Bernie founded Gulfstream Steel and Supply, demonstrating remarkable business acumen and leadership. His experience and guidance have been invaluable in shaping the strategic direction of Aero Solutions.
                       </p>
                       <p className="text-sm text-gray-500 italic">
-                        "Fuck Embry Riddle was expensive"
+                        Fuck Embry Riddle was expensive
                       </p>
                     </div>
                   </div>

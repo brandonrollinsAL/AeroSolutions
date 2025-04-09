@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
+import AeroLinkPlatformView from "./AeroLinkPlatformView";
 import TheCountChatbot from "./TheCountChatbot";
 import { useLocation } from "wouter";
 import wolfOfWallStreetImage from "../assets/wolf-of-wall-street.jpg";
@@ -28,6 +29,7 @@ interface ClientPlatform {
 export default function ClientLandingPage({ accessCode }: ClientLandingPageProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<ClientPlatform | null>(null);
   const [showInvestorPopup, setShowInvestorPopup] = useState(false);
+  const [showAeroLink, setShowAeroLink] = useState(false);
   const [, setLocation] = useLocation();
   
   const isSpecialCode = accessCode.toLowerCase() === "countofmontecristobitch";
@@ -548,7 +550,14 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   key={platform.id}
                   className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
                   whileHover={{ y: -5 }}
-                  onClick={() => setSelectedPlatform(platform)}
+                  onClick={() => {
+                    // Only show the AeroLink dedicated view for the AeroLink platform
+                    if (platform.id === "aerolink") {
+                      setShowAeroLink(true);
+                    } else {
+                      setSelectedPlatform(platform);
+                    }
+                  }}
                 >
                   <div className="bg-gray-50 border-b border-gray-200 p-4 flex items-center">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4 group-hover:bg-primary group-hover:text-white transition-all duration-300">
@@ -662,7 +671,7 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                         A successful entrepreneur from Wilmington, NC, Bernie founded Gulfstream Steel and Supply, demonstrating remarkable business acumen and leadership. His experience and guidance have been invaluable in shaping the strategic direction of Aero Solutions.
                       </p>
                       <p className="text-sm text-gray-500 italic">
-                        "I've watched Brandon develop these platforms with dedication and vision. The technical sophistication is impressive."
+                        Fuck Embry Riddle was expensive
                       </p>
                     </div>
                   </div>
@@ -840,6 +849,13 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
 
       {/* The Count Chatbot - Only for Special Code */}
       {isSpecialCode && <TheCountChatbot />}
+      
+      {/* AeroLink Platform View */}
+      <AeroLinkPlatformView
+        isOpen={showAeroLink}
+        onClose={() => setShowAeroLink(false)}
+        onBackToLanding={() => setShowAeroLink(false)}
+      />
     </div>
   );
 }
