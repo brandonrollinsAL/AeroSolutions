@@ -69,7 +69,7 @@ export default function Header() {
               ))}
               <button
                 onClick={toggleClientPreview}
-                className="text-primary hover:text-luxury hover:scale-110 transition-all duration-300 font-semibold"
+                className="px-4 py-2 bg-luxury text-white rounded-lg hover:bg-luxury/90 hover:scale-105 transition-all duration-300 font-semibold"
               >
                 Client Preview
               </button>
@@ -107,7 +107,7 @@ export default function Header() {
                 setMobileMenuOpen(false);
                 toggleClientPreview();
               }}
-              className="block text-primary hover:text-luxury py-2 font-semibold w-full text-left"
+              className="block bg-luxury text-white py-2 px-4 rounded-lg font-semibold w-full text-center mt-2"
             >
               Client Preview
             </button>

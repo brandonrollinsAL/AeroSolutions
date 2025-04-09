@@ -95,6 +95,13 @@ export class DatabaseStorage implements IStorage {
             projectId: 2,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             isActive: true
+          },
+          {
+            code: "momanddad",
+            clientName: "Rollins Family Demo",
+            projectId: 3,
+            expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+            isActive: true
           }
         ];
         

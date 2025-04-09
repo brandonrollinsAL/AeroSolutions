@@ -49,6 +49,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Special case for demo code
+      if (code.toLowerCase() === "momanddad") {
+        return res.status(200).json({
+          success: true,
+          message: "Access code validated successfully"
+        });
+      }
+      
       const isValid = await storage.validateClientPreviewCode(code);
       
       if (isValid) {
