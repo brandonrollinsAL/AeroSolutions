@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+                            http://www.google.com/schemas/sitemap-image/1.1
+                            http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
+  <!-- Home Page -->
+  <url>
+    <loc>https://aerosolutions.dev/</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/hero-banner.jpg</image:loc>
+      <image:title>Aero Solutions - Aviation Software Development</image:title>
+      <image:caption>Custom aviation software development by pilots for pilots</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Services Page -->
+  <url>
+    <loc>https://aerosolutions.dev/services</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/services.jpg</image:loc>
+      <image:title>Aero Solutions Services</image:title>
+      <image:caption>Our comprehensive aviation software services</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Individual Platform Pages -->
+  <url>
+    <loc>https://aerosolutions.dev/platforms/aerosync</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/platforms/aerosync.jpg</image:loc>
+      <image:title>AeroSync Platform</image:title>
+      <image:caption>Comprehensive aviation data synchronization platform</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://aerosolutions.dev/platforms/aeroflight</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/platforms/aeroflight.jpg</image:loc>
+      <image:title>AeroFlight System</image:title>
+      <image:caption>Advanced flight simulation and training platform</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://aerosolutions.dev/platforms/aeroops</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/platforms/aeroops.jpg</image:loc>
+      <image:title>AeroOps Management</image:title>
+      <image:caption>End-to-end aviation operations management platform</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://aerosolutions.dev/platforms/execsync</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/platforms/execsync.jpg</image:loc>
+      <image:title>ExecSync Solution</image:title>
+      <image:caption>Executive productivity and communication platform</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- About Page -->
+  <url>
+    <loc>https://aerosolutions.dev/about</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/about-team.jpg</image:loc>
+      <image:title>About Aero Solutions</image:title>
+      <image:caption>Our team of aviation software experts</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Blog Pages -->
+  <url>
+    <loc>https://aerosolutions.dev/blog</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://aerosolutions.dev/blog/aviation-software-trends-2025</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/blog/aviation-trends.jpg</image:loc>
+      <image:title>Aviation Software Trends 2025</image:title>
+      <image:caption>Exploring the latest technologies in aviation software</image:caption>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://aerosolutions.dev/blog/custom-aviation-software-roi</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://aerosolutions.dev/images/blog/roi-analysis.jpg</image:loc>
+      <image:title>ROI of Custom Aviation Software</image:title>
+      <image:caption>Measuring the return on investment for aviation software solutions</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Contact Page -->
+  <url>
+    <loc>https://aerosolutions.dev/contact</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://aerosolutions.dev/privacy-policy</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://aerosolutions.dev/terms-of-service</loc>
+    <lastmod>2025-04-09T00:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

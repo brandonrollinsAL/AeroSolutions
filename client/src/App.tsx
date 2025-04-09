@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Switch, Route, useLocation } from "wouter";
+import { Helmet } from "react-helmet";
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
 import ClientLandingPage from "@/components/ClientLandingPage";
@@ -8,6 +9,7 @@ import ClientLandingPage from "@/components/ClientLandingPage";
 export default function App() {
   const [, setLocation] = useLocation();
   const [accessCode, setAccessCode] = useState<string | null>(null);
+  const [currentPath, setCurrentPath] = useState<string>("");
 
   // Listen for messages from the ClientPreviewModal
   useEffect(() => {
@@ -27,14 +29,100 @@ export default function App() {
     };
   }, [setLocation]);
 
+  // Track current path for analytics and SEO purposes
+  useEffect(() => {
+    const updateCurrentPath = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    // Initial path
+    updateCurrentPath();
+
+    // Listen for route changes
+    window.addEventListener('popstate', updateCurrentPath);
+    
+    return () => {
+      window.removeEventListener('popstate', updateCurrentPath);
+    };
+  }, []);
+
+  // Add structured data for SPA navigation
+  useEffect(() => {
+    // Mark the page as ready for indexing after hydration
+    const readyForIndexing = () => {
+      if (document.querySelector('meta[name="fragment"]')) {
+        const metaFragment = document.querySelector('meta[name="fragment"]');
+        if (metaFragment) {
+          metaFragment.setAttribute('content', 'ready');
+        }
+      }
+    };
+
+    readyForIndexing();
+  }, [currentPath]);
+
   return (
     <>
+      {/* Global App Metadata - applied to all routes */}
+      <Helmet>
+        {/* Languages support */}
+        <html lang="en" />
+        <meta httpEquiv="Content-Language" content="en" />
+        
+        {/* Essential for SPAs and search engine crawling */}
+        <meta name="fragment" content="!" />
+        
+        {/* Mobile optimization */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+        <meta name="format-detection" content="telephone=no" />
+        
+        {/* Google verification - replace with actual code when available */}
+        <meta name="google-site-verification" content="verification_token" />
+        
+        {/* Apple specific */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta name="apple-mobile-web-app-title" content="Aero Solutions" />
+        
+        {/* Microsoft specific */}
+        <meta name="msapplication-TileColor" content="#1E3A8A" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="theme-color" content="#1E3A8A" />
+        
+        {/* Application manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        
+        {/* Links for SEO */}
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+      </Helmet>
+      
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/client-preview/:code">
-          {(params) => <ClientLandingPage accessCode={params.code || accessCode || ""} />}
+          {(params) => (
+            <>
+              <Helmet>
+                <title>Client Project Preview | Aero Solutions Aviation Software</title>
+                <meta name="description" content="Preview your custom aviation software project with our secure client access portal. Explore features, functionality, and detailed documentation." />
+                <meta name="robots" content="noindex, nofollow" />
+                <link rel="canonical" href={`https://aerosolutions.dev/client-preview/${params.code}`} />
+              </Helmet>
+              <ClientLandingPage accessCode={params.code || accessCode || ""} />
+            </>
+          )}
         </Route>
-        <Route component={NotFound} />
+        <Route>
+          {() => (
+            <>
+              <Helmet>
+                <title>Page Not Found | Aero Solutions</title>
+                <meta name="description" content="Sorry, the page you are looking for doesn't exist. Return to our homepage to explore aviation software development services." />
+                <meta name="robots" content="noindex, follow" />
+              </Helmet>
+              <NotFound />
+            </>
+          )}
+        </Route>
       </Switch>
       <Toaster />
     </>

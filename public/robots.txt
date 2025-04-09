@@ -1,0 +1,26 @@
+# Aero Solutions - Aviation Software Development
+# https://aerosolutions.dev
+
+User-agent: *
+Allow: /
+
+# Block access to admin areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /private/
+Disallow: /client-preview/
+
+# Allow Google Image
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /*.jpg$
+Allow: /*.png$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Block certain bots from specific areas
+User-agent: Baiduspider
+Disallow: /blog/drafts/
+
+# sitemap.xml
+Sitemap: https://aerosolutions.dev/sitemap.xml
