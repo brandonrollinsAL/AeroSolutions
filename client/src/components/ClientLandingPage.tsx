@@ -35,6 +35,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
   const [showInvestorPopup, setShowInvestorPopup] = useState(false);
   const [showAeroLink, setShowAeroLink] = useState(false);
   const [, setLocation] = useLocation();
+  const [openCountChatbot, setOpenCountChatbot] = useState(false);
+  const [countChatbotOption, setCountChatbotOption] = useState<string | null>(null);
   
   const isSpecialCode = accessCode.toLowerCase() === "countofmontecristobitch";
 
@@ -835,16 +837,44 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 mt-3">
-                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                      <button 
+                        onClick={() => {
+                          setCountChatbotOption("ruin-credit");
+                          setOpenCountChatbot(true);
+                          setShowInvestorPopup(false);
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
+                      >
                         <span className="mr-1 text-red-500">✓</span> Ruin his credit
                       </button>
-                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                      <button 
+                        onClick={() => {
+                          setCountChatbotOption("steal-identity");
+                          setOpenCountChatbot(true);
+                          setShowInvestorPopup(false);
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
+                      >
                         <span className="mr-1 text-blue-500">✓</span> Steal his identity
                       </button>
-                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                      <button 
+                        onClick={() => {
+                          setCountChatbotOption("call-wife");
+                          setOpenCountChatbot(true);
+                          setShowInvestorPopup(false);
+                        }}  
+                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
+                      >
                         <span className="mr-1 text-purple-500">✓</span> Call his wife
                       </button>
-                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                      <button 
+                        onClick={() => {
+                          setCountChatbotOption("sink-boat");
+                          setOpenCountChatbot(true);
+                          setShowInvestorPopup(false);
+                        }} 
+                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
+                      >
                         <span className="mr-1 text-blue-700">✓</span> Sink his boat
                       </button>
                     </div>
@@ -852,7 +882,10 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   
                   <div className="text-center">
                     <button 
-                      onClick={() => setShowInvestorPopup(false)}
+                      onClick={() => {
+                        setOpenCountChatbot(true);
+                        setShowInvestorPopup(false);
+                      }}
                       className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       Open Full Chat Interface
@@ -873,7 +906,7 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
       )}
 
       {/* The Count Chatbot - Only for Special Code */}
-      {isSpecialCode && <TheCountChatbot />}
+      {isSpecialCode && <TheCountChatbot isOpen={openCountChatbot} initialOption={countChatbotOption} />}
       
       {/* AeroLink Platform View */}
       <AeroLinkPlatformView

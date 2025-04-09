@@ -1,12 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaCommentAlt, FaTimes, FaSmile, FaCreditCard, FaUserSecret, FaPhone, FaShip } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function TheCountChatbot() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeOption, setActiveOption] = useState<string | null>(null);
+interface TheCountChatbotProps {
+  isOpen?: boolean;
+  initialOption?: string | null;
+}
+
+export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption }: TheCountChatbotProps = {}) {
+  const [isOpen, setIsOpen] = useState(externalIsOpen || false);
+  const [activeOption, setActiveOption] = useState<string | null>(initialOption || null);
   const [isTyping, setIsTyping] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
+
+  // Handle external props changes
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      setIsOpen(externalIsOpen);
+      
+      if (externalIsOpen) {
+        // When opening from external source
+        setIsTyping(true);
+        setTypingComplete(false);
+        
+        // If initialOption is provided, skip showing options and go straight to response
+        if (initialOption) {
+          setActiveOption(initialOption);
+        }
+        
+        // Simulate typing and then show content
+        setTimeout(() => {
+          setIsTyping(false);
+          setTypingComplete(true);
+        }, 1500);
+      }
+    }
+  }, [externalIsOpen, initialOption]);
 
   const toggleChatbot = () => {
     setIsOpen(!isOpen);

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FaLink, FaArrowLeft, FaTimes, FaCode, FaServer, FaShieldAlt, FaGlobe, FaChartLine } from "react-icons/fa";
+import { FaLink, FaArrowLeft, FaTimes, FaCode, FaServer, FaShieldAlt, FaGlobe, FaChartLine, 
+         FaPlane, FaCheckCircle, FaExclamationTriangle, FaSync, FaDatabase, FaCogs } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 interface AeroLinkPlatformViewProps {
@@ -10,6 +11,19 @@ interface AeroLinkPlatformViewProps {
 
 export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding }: AeroLinkPlatformViewProps) {
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [connectedSystems, setConnectedSystems] = useState<{name: string, status: string, type: string}[]>([
+    { name: "Flight Management System", status: "connected", type: "cockpit" },
+    { name: "Maintenance Tracking System", status: "connected", type: "maintenance" },
+    { name: "Crew Scheduling System", status: "connecting", type: "operations" },
+    { name: "Weather Data Provider", status: "connected", type: "external" },
+    { name: "Fuel Management System", status: "error", type: "operations" },
+  ]);
+  const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
+  const [dataStream, setDataStream] = useState<{timestamp: string, event: string, status: string}[]>([
+    { timestamp: "2024-04-09 15:32:45", event: "Data sync completed", status: "success" },
+    { timestamp: "2024-04-09 15:31:22", event: "New flight plan received", status: "info" },
+    { timestamp: "2024-04-09 15:30:18", event: "Weather alert detected", status: "warning" },
+  ]);
 
   if (!isOpen) return null;
 
@@ -19,7 +33,48 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
     { id: "technical", label: "Technical Details" },
     { id: "api", label: "API Reference" },
     { id: "use-cases", label: "Use Cases" },
+    { id: "live-demo", label: "Live Demo" },
   ];
+  
+  // Function to handle system connection toggling
+  const toggleSystemConnection = (systemName: string) => {
+    setConnectedSystems(prevSystems => 
+      prevSystems.map(system => 
+        system.name === systemName 
+          ? { ...system, status: system.status === "connected" ? "disconnected" : "connected" } 
+          : system
+      )
+    );
+    
+    // Add event to data stream
+    const newEvent = {
+      timestamp: new Date().toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      event: `${systemName} ${connectedSystems.find(s => s.name === systemName)?.status === "connected" ? "disconnected" : "connected"}`,
+      status: connectedSystems.find(s => s.name === systemName)?.status === "connected" ? "warning" : "success"
+    };
+    
+    setDataStream(prev => [newEvent, ...prev]);
+  };
+  
+  // Function to add a random event to the data stream
+  const addRandomEvent = () => {
+    const events = [
+      { event: "Flight plan update received", status: "info" },
+      { event: "Maintenance alert triggered", status: "warning" },
+      { event: "Weather data refreshed", status: "success" },
+      { event: "Cross-system validation completed", status: "success" },
+      { event: "Data transformation error", status: "error" },
+    ];
+    
+    const randomEvent = events[Math.floor(Math.random() * events.length)];
+    const newEvent = {
+      timestamp: new Date().toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      event: randomEvent.event,
+      status: randomEvent.status
+    };
+    
+    setDataStream(prev => [newEvent, ...prev]);
+  };
 
   const features = [
     {
@@ -587,6 +642,193 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
                       Schedule a Consultation
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Live Demo Tab */}
+            {activeTab === "live-demo" && (
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">Interactive Demo</h3>
+                
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-8">
+                  <p className="text-blue-800 mb-2">
+                    Experience AeroLink's system connectivity capabilities in this interactive demonstration. Connect aviation systems, monitor data flow, and see real-time integration in action.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                  {/* Systems Panel */}
+                  <div className="lg:col-span-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="bg-blue-700 text-white px-4 py-3">
+                      <h4 className="font-semibold flex items-center">
+                        <FaServer className="mr-2" /> Connected Systems
+                      </h4>
+                    </div>
+                    <div className="p-4">
+                      <div className="mb-4">
+                        <div className="text-sm text-gray-500 mb-2">Integration Hub Status</div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                          <span className="text-green-700 text-sm font-medium">Active</span>
+                          <span className="ml-auto text-xs text-gray-500">Processing 342 requests/sec</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 space-y-2">
+                        {connectedSystems.map((system, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium">{system.name}</span>
+                              {system.status === "connected" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  <FaCheckCircle className="mr-1" /> Connected
+                                </span>
+                              )}
+                              {system.status === "connecting" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  <FaSync className="mr-1 animate-spin" /> Connecting
+                                </span>
+                              )}
+                              {system.status === "error" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                  <FaExclamationTriangle className="mr-1" /> Error
+                                </span>
+                              )}
+                              {system.status === "disconnected" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                  Disconnected
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs text-gray-500">Type: {system.type}</div>
+                              <button 
+                                onClick={() => toggleSystemConnection(system.name)}
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  system.status === "connected" 
+                                    ? "bg-red-50 text-red-700 hover:bg-red-100" 
+                                    : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                }`}
+                              >
+                                {system.status === "connected" ? "Disconnect" : "Connect"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <button 
+                          className="w-full mt-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2 rounded-lg flex items-center justify-center transition-colors"
+                          onClick={addRandomEvent}
+                        >
+                          <FaSync className="mr-2" /> Simulate Data Exchange
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Data Stream Panel */}
+                  <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="bg-blue-700 text-white px-4 py-3 flex justify-between items-center">
+                      <h4 className="font-semibold flex items-center">
+                        <FaDatabase className="mr-2" /> Data Stream Monitor
+                      </h4>
+                      <div className="flex items-center text-xs bg-white/10 rounded-full px-3 py-1">
+                        <span className="animate-pulse inline-block w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                        Live Stream
+                      </div>
+                    </div>
+                    <div className="p-4 h-[430px] overflow-y-auto">
+                      {dataStream.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                          <FaSync className="text-4xl mb-3 text-gray-400" />
+                          <p>No data events to display</p>
+                          <p className="text-sm">Connect systems to begin monitoring data flow</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {dataStream.map((event, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className={`font-medium ${
+                                  event.status === "success" ? "text-green-700" :
+                                  event.status === "warning" ? "text-yellow-700" :
+                                  event.status === "error" ? "text-red-700" : "text-blue-700"
+                                }`}>{event.event}</span>
+                                <span className="text-xs text-gray-500">{event.timestamp}</span>
+                              </div>
+                              <div className="flex items-center text-xs">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded font-medium ${
+                                  event.status === "success" ? "bg-green-100 text-green-800" :
+                                  event.status === "warning" ? "bg-yellow-100 text-yellow-800" :
+                                  event.status === "error" ? "bg-red-100 text-red-800" : 
+                                  "bg-blue-100 text-blue-800"
+                                }`}>
+                                  {event.status.toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-6 mb-8">
+                  <h4 className="text-lg font-bold mb-4 flex items-center">
+                    <FaCogs className="text-blue-600 mr-2" /> System Integration Status
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">Data Sync Efficiency</span>
+                        <span className="text-sm font-medium text-green-600">98%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "98%" }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">System Latency</span>
+                        <span className="text-sm font-medium text-green-600">12ms</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "92%" }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">API Health</span>
+                        <span className="text-sm font-medium text-green-600">100%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "100%" }}></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">Memory Usage</span>
+                        <span className="text-sm font-medium text-yellow-600">76%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: "76%" }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white">
+                  <h4 className="text-lg font-bold mb-3">Ready to implement AeroLink in your organization?</h4>
+                  <p className="mb-4">This is just a preview of AeroLink's powerful integration capabilities. Contact us for a complete demonstration with your actual systems.</p>
+                  <button className="bg-white text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors">
+                    Schedule Full Demo
+                  </button>
                 </div>
               </div>
             )}
