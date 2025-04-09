@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes } from "react-icons/fa";
+import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
 import TheCountChatbot from "./TheCountChatbot";
@@ -33,6 +33,76 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
   const isSpecialCode = accessCode.toLowerCase() === "countofmontecristobitch";
 
   const platforms: ClientPlatform[] = [
+    {
+      id: "aerolink",
+      name: "AeroLink",
+      shortDescription: "Ultimate connectivity solution for aviation systems",
+      icon: <FaLink className="text-3xl" />,
+      description: "AeroLink is our flagship enterprise platform that revolutionizes how aviation systems communicate. It provides seamless integration between disparate aviation technologies, creating a unified digital ecosystem that enhances operational efficiency, data accuracy, and decision-making capabilities across the entire aviation industry.",
+      features: [
+        "Cross-platform integration with all major aviation software systems",
+        "Real-time data streaming with millisecond latency",
+        "Military-grade encryption for secure data transmission",
+        "AI-powered predictive maintenance alerts",
+        "Automatic compliance documentation for regulatory requirements",
+        "Unified dashboard for cross-system monitoring",
+        "Custom API development for legacy system integration",
+        "Digital twin modeling for system optimization"
+      ],
+      techStack: [
+        "Frontend: Next.js with TypeScript",
+        "Backend: Go microservices architecture",
+        "Database: Multi-model database with CockroachDB",
+        "Event Bus: Apache Pulsar",
+        "ML Infrastructure: TensorFlow with custom models",
+        "Edge Computing: Custom FPGA implementation",
+        "Security: Zero-trust architecture with HSM integration",
+        "Infrastructure: Multi-cloud with Kubernetes Federation"
+      ],
+      screenshots: [
+        { 
+          image: "https://images.unsplash.com/photo-1517586979036-b7d1e86b3345?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "AeroLink Command Center showing real-time system integration status" 
+        },
+        { 
+          image: "https://images.unsplash.com/photo-1581472723648-909f4851d4ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "AeroLink's global data visualization dashboard" 
+        },
+        { 
+          image: "https://images.unsplash.com/photo-1526659666037-6119ad61ee05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "Secure endpoint management console with threat detection" 
+        }
+      ],
+      useCases: [
+        "Global airlines connecting reservation, maintenance, and crew management systems",
+        "Airport authorities integrating gate management with airline systems",
+        "Aircraft manufacturers linking production, maintenance, and customer systems",
+        "Military aviation units securing communication between tactical and strategic systems",
+        "Aviation regulators automating compliance monitoring across industry participants"
+      ],
+      apiEndpoints: [
+        {
+          method: "GET",
+          endpoint: "/api/v1/systems/status",
+          description: "Retrieve real-time status of all connected systems"
+        },
+        {
+          method: "POST",
+          endpoint: "/api/v1/connections/establish",
+          description: "Establish new connection between specified systems"
+        },
+        {
+          method: "GET",
+          endpoint: "/api/v1/analytics/performance",
+          description: "Retrieve performance metrics for system integrations"
+        },
+        {
+          method: "POST",
+          endpoint: "/api/v1/compliance/verify",
+          description: "Verify and document regulatory compliance status"
+        }
+      ]
+    },
     {
       id: "aerosync",
       name: "AeroSync",
@@ -705,7 +775,56 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                 <h3 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Congratulations!</h3>
                 <p className="text-2xl text-white mb-20 drop-shadow-lg">The Money Keeps Coming!</p>
                 
-                <div className="mt-56"></div> {/* Spacer to position content below the image */}
+                <div className="mt-32"></div> {/* Reduced spacer for The Count container */}
+                
+                {/* The Count Chatbot Container */}
+                <div className="bg-black/80 backdrop-blur-md rounded-lg p-6 mb-8 w-full max-w-lg mx-auto">
+                  <h4 className="text-xl font-bold text-white mb-3 flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-3">
+                      C
+                    </div>
+                    The Count's Special Portal
+                  </h4>
+                  
+                  <div className="text-sm text-gray-300 mb-4">
+                    Use this secure communication portal to receive assistance from The Count
+                  </div>
+                  
+                  <div className="bg-gray-900 rounded-lg p-4 mb-3">
+                    <div className="flex mb-2 items-center">
+                      <div className="w-6 h-6 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-2 flex-shrink-0">
+                        C
+                      </div>
+                      <p className="text-white text-sm">
+                        Hi Bernie and Nicole! I've been expecting you. I'm here to help you put that cunt Tom Rollins out of business and into the homeless shelter.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                        <span className="mr-1 text-red-500">✓</span> Ruin his credit
+                      </button>
+                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                        <span className="mr-1 text-blue-500">✓</span> Steal his identity
+                      </button>
+                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                        <span className="mr-1 text-purple-500">✓</span> Call his wife
+                      </button>
+                      <button className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center">
+                        <span className="mr-1 text-blue-700">✓</span> Sink his boat
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <button 
+                      onClick={() => setShowInvestorPopup(false)}
+                      className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Open Full Chat Interface
+                    </button>
+                  </div>
+                </div>
                 
                 <button 
                   onClick={() => setShowInvestorPopup(false)}
