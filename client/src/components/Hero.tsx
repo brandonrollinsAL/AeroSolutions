@@ -26,7 +26,7 @@ export default function Hero() {
       <div 
         className="absolute inset-0 opacity-20" 
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80')", 
+          backgroundImage: "url('https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')", 
           backgroundSize: "cover", 
           backgroundPosition: "center"
         }}
@@ -94,8 +94,8 @@ export default function Hero() {
             animate="visible"
           >
             <img 
-              src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80" 
-              alt="Aviation technology interface" 
+              src="https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" 
+              alt="Aviation technology cockpit display" 
               className="rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] object-cover w-full" 
               loading="lazy"
             />
