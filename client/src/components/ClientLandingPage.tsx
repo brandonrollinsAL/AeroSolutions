@@ -6,6 +6,10 @@ import AeroLinkPlatformView from "./AeroLinkPlatformView";
 import TheCountChatbot from "./TheCountChatbot";
 import { useLocation } from "wouter";
 import wolfOfWallStreetImage from "../assets/wolf-of-wall-street.jpg";
+import familyImage1 from "../assets/family/D22397D6-2EF2-45C5-A107-D6BD5E7210F4.jpeg";
+import familyImage2 from "../assets/family/IMG_0165.jpeg";
+import nicoleImage from "../assets/family/a22i5967.jpeg";
+import bernieImage from "../assets/family/IMG_1431.jpeg";
 
 interface ClientLandingPageProps {
   accessCode: string;
@@ -323,44 +327,44 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
       description: "AeroFlight is a sophisticated flight simulation platform designed for pilot training and proficiency. It provides high-fidelity aircraft models, realistic weather simulation, and comprehensive performance analysis tools. The platform supports both desktop and full-motion simulator configurations, making it versatile for various training needs from individual pilots to large flight schools and airlines.",
       features: [
         "High-fidelity aircraft models with accurate flight dynamics",
-        "Real-time weather integration with global meteorological data",
-        "Customizable training scenarios with instructor controls",
+        "Real-world navigation data and procedures",
+        "Dynamic weather engine with global meteorological data",
+        "Customizable training scenarios for proficiency development",
         "Performance tracking and detailed analytics",
-        "Procedure and checklist validation",
-        "ATC simulation with voice recognition",
-        "VR support for immersive training experiences",
-        "Learning management system integration for training programs"
+        "Integration with actual aircraft avionics",
+        "Multi-crew interaction capabilities",
+        "VR support for immersive training experiences"
       ],
       techStack: [
-        "Simulation Engine: Custom C++ with CUDA acceleration",
-        "Frontend: Unity for visualization",
-        "Backend: C# with .NET Core",
-        "Database: SQL Server for user data and PostgreSQL for telemetry",
+        "Frontend: C++ with custom graphics engine",
         "Physics: Custom aerodynamics engine",
-        "Voice Processing: CMU Sphinx with aviation lexicon",
-        "APIs: REST with SignalR for real-time data",
-        "Infrastructure: Azure with GPU compute instances"
+        "Backend: Rust for high-performance computing",
+        "Database: Time-series database for telemetry data",
+        "Weather: Integration with global weather APIs",
+        "Navigation: Custom navaid database with AIRAC cycle updates",
+        "Hardware: Interface support for common flight controls",
+        "Audio: Spatial audio engine with accurate environmental modeling"
       ],
       screenshots: [
         { 
-          image: "https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
-          caption: "AeroFlight simulator cockpit view with weather system" 
+          image: "https://images.unsplash.com/photo-1521409818504-e246d5956192?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "AeroFlight cockpit view with realistic weather conditions" 
         },
         { 
-          image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
-          caption: "Instructor station showing student performance metrics" 
+          image: "https://images.unsplash.com/photo-1530745352768-266b00975f8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "Performance analysis dashboard showing flight metrics" 
         },
         { 
-          image: "https://images.unsplash.com/photo-1495063438029-7f6764d3844a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80", 
-          caption: "VR training scenario with emergency procedure practice" 
+          image: "https://images.unsplash.com/photo-1524741111534-9133a872029a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+          caption: "Training scenario builder with route planning" 
         }
       ],
       useCases: [
-        "Flight schools providing standardized training across multiple aircraft types",
-        "Airlines conducting recurrent training and emergency procedure practice",
-        "Individual pilots maintaining proficiency and preparing for checkrides",
-        "Aviation universities integrating simulation into their curriculum",
-        "Corporate flight departments conducting scenario-based training"
+        "Flight schools conducting standardized training programs",
+        "Airlines maintaining pilot currency and qualification",
+        "Individual pilots practicing procedures and emergency scenarios",
+        "Aviation universities teaching flight principles and procedures",
+        "Flight departments conducting recurrent training for corporate pilots"
       ],
       apiEndpoints: [
         {
@@ -369,56 +373,45 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
           description: "Retrieve available aircraft models with specifications"
         },
         {
+          method: "GET",
+          endpoint: "/api/v1/weather",
+          description: "Get current weather conditions for specific locations"
+        },
+        {
           method: "POST",
           endpoint: "/api/v1/scenarios/create",
-          description: "Create custom training scenarios with specific parameters"
+          description: "Create custom flight training scenarios"
         },
         {
           method: "GET",
-          endpoint: "/api/v1/performance/:sessionId",
-          description: "Retrieve detailed performance metrics from a training session"
-        },
-        {
-          method: "POST",
-          endpoint: "/api/v1/weather/load",
-          description: "Load real or custom weather conditions into the simulation"
+          endpoint: "/api/v1/telemetry/:flightId",
+          description: "Retrieve telemetry data for specific training flights"
         }
       ]
     }
   ];
 
   const handleBackToHome = () => {
-    setLocation('/');
+    setLocation("/");
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header Navigation */}
-      <header className={`${isSpecialCode ? 'bg-gradient-to-r from-blue-900 to-blue-800' : 'bg-luxury'} text-white`}>
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <button 
-              onClick={handleBackToHome} 
-              className="mr-4 p-2 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Back to home"
-            >
-              <FaArrowLeft />
-            </button>
-            <h1 className="text-xl font-bold font-montserrat">
-              {isSpecialCode ? 'Aero Solutions Family Preview' : 'Client Platform Preview'}
-            </h1>
-          </div>
-          <div className="flex items-center">
-            <span className="mr-3 text-sm bg-white/20 px-3 py-1 rounded-full">
-              {isSpecialCode ? 'Special Family Access' : `Access: ${accessCode}`}
-            </span>
-            <button
-              onClick={handleBackToHome}
-              className="text-white/80 hover:text-white p-2"
-              aria-label="Close preview"
-            >
-              <FaTimes />
-            </button>
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-primary text-white shadow-md">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <button onClick={handleBackToHome} className="mr-4 hover:text-gray-200">
+                <FaArrowLeft className="text-xl" />
+              </button>
+              <h1 className="text-xl font-bold">Client Platform Preview</h1>
+            </div>
+            <div className="text-sm">
+              <span className="bg-white/20 px-3 py-1 rounded-full">
+                Access Code: {accessCode.substring(0, 3)}*****
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -429,44 +422,53 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
           {/* Welcome Banner */}
           {isSpecialCode ? (
             <div className="bg-gradient-to-br from-blue-900 to-blue-700 text-white rounded-lg overflow-hidden mb-8 shadow-xl">
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mr-4">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Surprise! Welcome to Brandon's Aviation Software Platforms</h3>
-                    <p className="text-sm text-white/80">Something special I've been working on...</p>
-                  </div>
+              <div className="md:flex">
+                <div className="md:w-1/3 bg-blue-800 p-4 flex items-center justify-center">
+                  <img 
+                    src={familyImage1} 
+                    alt="Family" 
+                    className="rounded-lg object-cover h-64 w-full shadow-lg"
+                  />
                 </div>
-                
-                <p className="mb-4 text-lg">
-                  Hello Mom and Dad! I wanted to show you what I've been building - a suite of advanced aviation software platforms. Each one solves critical problems in the aviation industry and represents thousands of hours of development. I'm so excited to show you my work!
-                </p>
-                
-                <div className="bg-white/10 rounded-lg p-4 mb-4 border border-white/30">
-                  <div className="flex items-center text-yellow-300 mb-2">
-                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="font-semibold">About These Platforms</span>
+                <div className="md:w-2/3 p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mr-4">
+                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">Surprise! Welcome to Brandon's Aviation Software Platforms</h3>
+                      <p className="text-sm text-white/80">Something special I've been working on...</p>
+                    </div>
                   </div>
-                  <p className="text-white/90 mb-3">
-                    I've created these sophisticated software platforms specifically for the aviation industry. They handle everything from real-time data synchronization to flight management, executive services, and operations.
+                  
+                  <p className="mb-4 text-lg">
+                    Hello Mom and Dad! I wanted to show you what I've been building - a suite of advanced aviation software platforms. Each one solves critical problems in the aviation industry and represents thousands of hours of development. I'm so excited to show you my work!
                   </p>
-                  <ul className="space-y-1 ml-7 text-sm text-white/90 list-disc">
-                    <li>All platforms are designed with modern technology stacks</li>
-                    <li>They solve real problems for aviation businesses</li>
-                    <li>Each has been carefully crafted with attention to detail</li>
-                    <li>Together they form a comprehensive aviation technology ecosystem</li>
-                  </ul>
-                </div>
                 
-                <p className="text-white/90 italic">
-                  "After years of coding and development, I've built something I'm really proud of. Take your time exploring each platform - click on their cards below to see detailed information about what they do!"
-                </p>
+                  <div className="bg-white/10 rounded-lg p-4 mb-4 border border-white/30">
+                    <div className="flex items-center text-yellow-300 mb-2">
+                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">About These Platforms</span>
+                    </div>
+                    <p className="text-white/90 mb-3">
+                      I've created these sophisticated software platforms specifically for the aviation industry. They handle everything from real-time data synchronization to flight management, executive services, and operations.
+                    </p>
+                    <ul className="space-y-1 ml-7 text-sm text-white/90 list-disc">
+                      <li>All platforms are designed with modern technology stacks</li>
+                      <li>They solve real problems for aviation businesses</li>
+                      <li>Each has been carefully crafted with attention to detail</li>
+                      <li>Together they form a comprehensive aviation technology ecosystem</li>
+                    </ul>
+                  </div>
+                
+                  <p className="text-white/90 italic">
+                    "After years of coding and development, I've built something I'm really proud of. Take your time exploring each platform - click on their cards below to see detailed information about what they do!"
+                  </p>
+                </div>
               </div>
               
               <div className="bg-black/30 p-4 flex flex-wrap md:flex-nowrap items-center justify-between">
@@ -647,6 +649,12 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                       <p className="mt-3 text-gray-600">
                         Brandon has dedicated thousands of hours to developing the Aero Solutions platform suite, creating a comprehensive ecosystem of aviation software solutions from the ground up using modern technologies and best practices in software development.
                       </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Full-Stack Development</span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Aviation</span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Microservices</span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">Cloud Architecture</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -655,47 +663,65 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                 <div className="grid md:grid-cols-2 gap-6 mb-12">
                   {/* Bernie Rollins */}
                   <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-6">
-                      <div className="flex items-center mb-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 mr-4">
-                          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="currentColor" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold text-gray-900">Bernie Rollins</h4>
-                          <p className="text-sm text-gray-500">Advisor & Investor (The Count)</p>
-                        </div>
+                    <div className="md:flex">
+                      <div className="md:w-2/5">
+                        <img 
+                          src={bernieImage} 
+                          alt="Bernie Rollins" 
+                          className="h-full w-full object-cover"
+                        />
                       </div>
-                      <p className="text-gray-600 mb-3">
-                        A successful entrepreneur from Wilmington, NC, Bernie founded Gulfstream Steel and Supply, demonstrating remarkable business acumen and leadership. His experience and guidance have been invaluable in shaping the strategic direction of Aero Solutions.
-                      </p>
-                      <p className="text-sm text-gray-500 italic">
-                        Fuck Embry Riddle was expensive
-                      </p>
+                      <div className="md:w-3/5 p-6">
+                        <div className="flex items-center mb-4">
+                          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 mr-4">
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="currentColor" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-900">Bernie Rollins</h4>
+                            <p className="text-sm text-gray-500">Advisor & Investor (The Count)</p>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 mb-3">
+                          A successful entrepreneur from Wilmington, NC, Bernie founded Gulfstream Steel and Supply, demonstrating remarkable business acumen and leadership. His experience and guidance have been invaluable in shaping the strategic direction of Aero Solutions.
+                        </p>
+                        <p className="text-sm text-gray-500 italic">
+                          Fuck Embry Riddle was expensive
+                        </p>
+                      </div>
                     </div>
                   </div>
                   
                   {/* Nicole Rollins */}
                   <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-6">
-                      <div className="flex items-center mb-4">
-                        <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-700 mr-4">
-                          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="currentColor" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold text-gray-900">Nicole Rollins</h4>
-                          <p className="text-sm text-gray-500">Visionary Investor (The Duchess)</p>
-                        </div>
+                    <div className="md:flex">
+                      <div className="md:w-2/5">
+                        <img 
+                          src={nicoleImage} 
+                          alt="Nicole Rollins" 
+                          className="h-full w-full object-cover"
+                        />
                       </div>
-                      <p className="text-gray-600 mb-3">
-                        A mother of three, Nicole is the reason Brandon didn't get a "doo bah" degree, instead pursuing his passion for technology and aviation. Her unwavering support and encouragement have been essential to Brandon's journey in building Aero Solutions.
-                      </p>
-                      <p className="text-sm text-gray-500 italic">
-                        "Seeing how Brandon has combined his love for aviation and technology into these sophisticated platforms makes me incredibly proud."
-                      </p>
+                      <div className="md:w-3/5 p-6">
+                        <div className="flex items-center mb-4">
+                          <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-700 mr-4">
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="currentColor" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-900">Nicole Rollins</h4>
+                            <p className="text-sm text-gray-500">Visionary Investor (The Duchess)</p>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 mb-3">
+                          A mother of three, Nicole is the reason Brandon didn't get a "doo bah" degree, instead pursuing his passion for technology and aviation. Her unwavering support and encouragement have been essential to Brandon's journey in building Aero Solutions.
+                        </p>
+                        <p className="text-sm text-gray-500 italic">
+                          "Seeing how Brandon has combined his love for aviation and technology into these sophisticated platforms makes me incredibly proud."
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
