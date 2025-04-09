@@ -11,7 +11,7 @@ interface PlatformPreviewProps {
     features: string[];
     techStack: string[];
     screenshots: { image: string; caption: string }[];
-    useCases: string[];
+    useCases: string[] | { title: string; description: string }[];
     apiEndpoints?: { method: string; endpoint: string; description: string }[];
   };
 }
@@ -149,9 +149,16 @@ export default function PlatformPreview({ isOpen, onClose, platform }: PlatformP
                 
                 <h3 className="text-xl font-bold text-primary mb-4">Use Cases</h3>
                 <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                  {platform.useCases.map((useCase, index) => (
-                    <li key={index}>{useCase}</li>
-                  ))}
+                  {Array.isArray(platform.useCases) && platform.useCases.length > 0 && 
+                    platform.useCases.map((useCase, index) => (
+                      <li key={index}>
+                        {typeof useCase === 'string' 
+                          ? useCase 
+                          : `${useCase.title}: ${useCase.description}`
+                        }
+                      </li>
+                    ))
+                  }
                 </ul>
               </motion.div>
             )}

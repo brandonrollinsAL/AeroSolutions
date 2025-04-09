@@ -30,8 +30,8 @@ export default function ClientPreviewModal({ isOpen, onClose }: ClientPreviewMod
     setIsSubmitting(true);
     
     try {
-      // For demo purposes, directly validate "momanddad" as the access code
-      if (accessCode.toLowerCase() === "momanddad") {
+      // For demo purposes, directly validate specific access codes
+      if (accessCode.toLowerCase() === "momanddad" || accessCode.toLowerCase() === "countofmontecristobitch") {
         toast({
           title: "Success",
           description: "Access code validated. Loading platform previews...",
@@ -117,7 +117,7 @@ export default function ClientPreviewModal({ isOpen, onClose }: ClientPreviewMod
                     autoComplete="off"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    <span className="font-semibold">Hint:</span> Try entering "momanddad" for a demo
+                    <span className="font-semibold">Hint:</span> Try entering a special code you've been provided
                   </p>
                 </div>
                 
