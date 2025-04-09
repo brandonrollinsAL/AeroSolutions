@@ -425,11 +425,11 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
           {isSpecialCode ? (
             <div className="bg-gradient-to-br from-blue-900 to-blue-700 text-white rounded-lg overflow-hidden mb-8 shadow-xl">
               <div className="flex flex-col md:flex-row">
-                <div className="w-full md:h-[400px] bg-blue-800 flex items-center justify-center overflow-hidden">
+                <div className="w-full md:h-full bg-blue-800 flex items-center justify-center overflow-hidden">
                   <img 
                     src={familyImage2} 
                     alt="Family" 
-                    className="w-full h-full object-contain shadow-lg"
+                    className="w-full h-full object-cover shadow-lg"
                   />
                 </div>
                 <div className="w-full p-6">
@@ -890,6 +890,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   <div className="text-center">
                     <button 
                       onClick={() => {
+                        console.log("Opening Count Chatbot", {isSpecialCode});
+                        setCountChatbotOption(null); // Reset any previous option
                         setOpenCountChatbot(true);
                         setShowInvestorPopup(false);
                       }}
@@ -912,8 +914,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
         </div>
       )}
 
-      {/* The Count Chatbot - Only for Special Code */}
-      {isSpecialCode && <TheCountChatbot isOpen={openCountChatbot} initialOption={countChatbotOption} />}
+      {/* The Count Chatbot - Always rendered but only shown when needed */}
+      <TheCountChatbot isOpen={isSpecialCode && openCountChatbot} initialOption={countChatbotOption} />
       
       {/* AeroLink Platform View */}
       <AeroLinkPlatformView

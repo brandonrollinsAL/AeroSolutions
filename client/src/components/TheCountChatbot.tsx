@@ -15,16 +15,20 @@ export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption 
 
   // Handle external props changes
   useEffect(() => {
+    console.log("TheCountChatbot props changed:", { externalIsOpen, initialOption });
+    
     if (externalIsOpen !== undefined) {
       setIsOpen(externalIsOpen);
       
       if (externalIsOpen) {
         // When opening from external source
+        console.log("Opening chatbot from external source");
         setIsTyping(true);
         setTypingComplete(false);
         
         // If initialOption is provided, skip showing options and go straight to response
         if (initialOption) {
+          console.log("Setting active option:", initialOption);
           setActiveOption(initialOption);
         }
         
