@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { FaPlane, FaBars, FaTimes } from "react-icons/fa";
+import { FaBars, FaTimes } from "react-icons/fa";
 import ClientPreviewModal from "./ClientPreviewModal";
+import AeroLogo from "./AeroLogo";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,16 +46,15 @@ export default function Header() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <Link href="#home">
-              <a className="flex items-center space-x-2">
-                <span className="text-primary">
-                  <FaPlane className="text-2xl" />
-                </span>
-                <span className="text-xl font-bold font-montserrat text-primary">
-                  Aero Solutions
-                </span>
-              </a>
-            </Link>
+            <a 
+              href="#home" 
+              className="flex items-center space-x-2"
+            >
+              <AeroLogo size="md" animated={true} />
+              <span className="text-xl font-bold font-montserrat text-primary">
+                Aero Solutions
+              </span>
+            </a>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">

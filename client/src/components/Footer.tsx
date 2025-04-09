@@ -1,4 +1,5 @@
-import { FaPlane, FaEnvelope, FaPhoneAlt, FaLinkedinIn, FaTwitter, FaGithub, FaInstagram } from "react-icons/fa";
+import { FaEnvelope, FaPhoneAlt, FaLinkedinIn, FaTwitter, FaGithub, FaInstagram } from "react-icons/fa";
+import AeroLogo from "./AeroLogo";
 
 export default function Footer() {
   const quickLinks = [
@@ -25,9 +26,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
             <div className="flex items-center space-x-2 mb-6">
-              <span className="text-accent">
-                <FaPlane className="text-2xl" />
-              </span>
+              <AeroLogo size="md" animated={false} />
               <span className="text-xl font-bold font-montserrat">Aero Solutions</span>
             </div>
             <p className="text-gray-400 mb-6">Elevating your software to new heights with custom aviation and technology solutions.</p>
