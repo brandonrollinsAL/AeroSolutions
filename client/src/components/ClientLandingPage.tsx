@@ -422,15 +422,15 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
           {/* Welcome Banner */}
           {isSpecialCode ? (
             <div className="bg-gradient-to-br from-blue-900 to-blue-700 text-white rounded-lg overflow-hidden mb-8 shadow-xl">
-              <div className="md:flex">
-                <div className="md:w-1/3 bg-blue-800 p-4 flex items-center justify-center">
+              <div className="flex flex-col md:flex-row">
+                <div className="w-full md:h-[400px] bg-blue-800 flex items-center justify-center overflow-hidden">
                   <img 
-                    src={familyImage1} 
+                    src={familyImage2} 
                     alt="Family" 
-                    className="rounded-lg object-cover h-64 w-full shadow-lg"
+                    className="w-full h-full object-contain shadow-lg"
                   />
                 </div>
-                <div className="md:w-2/3 p-6">
+                <div className="w-full p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mr-4">
                       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -632,13 +632,12 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                 {/* Founder Section */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
                   <div className="md:flex">
-                    <div className="md:flex-shrink-0 md:w-64 bg-gradient-to-br from-blue-800 to-blue-900 flex items-center justify-center p-6">
-                      <div className="rounded-full bg-white/10 p-3">
-                        <svg className="w-32 h-32 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6H15V2H9V6H8V11.5C8 13.71 9.79 15.5 12 15.5ZM10 4H14V6H10V4Z" fill="currentColor" />
-                          <path d="M18 14L13.89 15.56C13.34 15.78 12.68 15.78 12.13 15.56L8 14C6.77 14 5.63 14.52 4.85 15.38C4.04 16.27 3.61 17.45 3.61 18.69L3.62 20H20.38L20.39 18.69C20.39 17.45 19.96 16.27 19.15 15.38C18.37 14.52 17.23 14 16 14H18Z" fill="currentColor" />
-                        </svg>
-                      </div>
+                    <div className="md:w-2/5 bg-gradient-to-br from-blue-800 to-blue-900">
+                      <img 
+                        src={familyImage1} 
+                        alt="Brandon Rollins - Professional Pilot & Developer" 
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     <div className="p-8 md:p-6 md:flex-1">
                       <div className="uppercase tracking-wide text-sm text-blue-700 font-semibold">Founder & Lead Developer</div>
