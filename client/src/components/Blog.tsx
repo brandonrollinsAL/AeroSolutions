@@ -8,7 +8,7 @@ export default function Blog() {
       id: 1,
       title: "Why Full-Stack Development is the Future of Aviation Software",
       excerpt: "Explore how integrated full-stack development is transforming the aviation industry with cohesive, end-to-end solutions...",
-      image: "https://images.unsplash.com/photo-1551136080-2a2e4e9a2e97?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "https://images.unsplash.com/photo-1493037821234-0c274eda13d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
       date: "June 15, 2023",
       author: "Brandon Rollins"
     },
@@ -16,7 +16,7 @@ export default function Blog() {
       id: 2,
       title: "How AI is Revolutionizing Aviation Operations and Safety",
       excerpt: "Discover the transformative impact of artificial intelligence on flight operations, maintenance predictions, and safety...",
-      image: "https://images.unsplash.com/photo-1599577180758-69c7de32b4ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80",
+      image: "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
       date: "May 28, 2023",
       author: "Brandon Rollins"
     },
@@ -24,7 +24,7 @@ export default function Blog() {
       id: 3,
       title: "The Case for No Upfront Payment in Software Development",
       excerpt: "Why our unique payment model benefits clients and drives higher quality outcomes in custom software projects...",
-      image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "https://images.unsplash.com/photo-1618761714954-0b8cd0026356?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
       date: "May 12, 2023",
       author: "Brandon Rollins"
     }
@@ -83,7 +83,7 @@ export default function Blog() {
                 </div>
                 <h3 className="text-xl font-bold font-montserrat text-primary mb-3">{post.title}</h3>
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                <a href="#" className="inline-flex items-center text-accent font-semibold hover:underline">
+                <a href="#" className="inline-flex items-center text-luxury font-semibold hover:underline">
                   Read more
                   <FaArrowRight className="ml-2" />
                 </a>
@@ -100,7 +100,7 @@ export default function Blog() {
           variants={fadeIn}
           custom={4}
         >
-          <a href="#" className="inline-block bg-gray-200 hover:bg-gray-300 text-primary font-semibold py-3 px-8 rounded-lg transition-all duration-300">
+          <a href="#" className="inline-block bg-black hover:bg-black/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300">
             View all articles
           </a>
         </motion.div>

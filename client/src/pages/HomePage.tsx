@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
+import Ownership from '@/components/Ownership';
 import Platforms from '@/components/Platforms';
 import About from '@/components/About';
 import Testimonials from '@/components/Testimonials';
@@ -26,6 +27,7 @@ export default function HomePage() {
       <main>
         <Hero />
         <Services />
+        <Ownership />
         <Platforms />
         <About />
         <Testimonials />
