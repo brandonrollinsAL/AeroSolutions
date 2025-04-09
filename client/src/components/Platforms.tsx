@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaArrowRight } from "react-icons/fa";
 import { Platform } from "@/lib/types";
+import PlatformDetailModal from "./PlatformDetailModal";
 
 export default function Platforms() {
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
+  
   const platforms: Platform[] = [
     {
       id: 1,
@@ -56,6 +60,10 @@ export default function Platforms() {
       transition: { delay: custom * 0.1, duration: 0.5 }
     })
   };
+  
+  const handleLearnMore = (platform: Platform) => {
+    setSelectedPlatform(platform);
+  };
 
   return (
     <section id="platforms" className="py-20 bg-gray-50">
@@ -101,10 +109,13 @@ export default function Platforms() {
                     </span>
                   ))}
                 </div>
-                <a href="#" className="inline-flex items-center text-luxury font-semibold hover:underline">
+                <button 
+                  onClick={() => handleLearnMore(platform)}
+                  className="inline-flex items-center text-luxury font-semibold hover:underline"
+                >
                   Learn more
                   <FaArrowRight className="ml-2" />
-                </a>
+                </button>
               </div>
             </motion.div>
           ))}
@@ -123,6 +134,13 @@ export default function Platforms() {
           </a>
         </motion.div>
       </div>
+      
+      {/* Platform Detail Modal */}
+      <PlatformDetailModal 
+        platform={selectedPlatform} 
+        isOpen={!!selectedPlatform} 
+        onClose={() => setSelectedPlatform(null)} 
+      />
     </section>
   );
 }

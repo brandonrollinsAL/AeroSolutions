@@ -9,8 +9,24 @@ interface ClientPlatformsViewProps {
   accessCode: string;
 }
 
+interface ClientPlatform {
+  id: string;
+  name: string;
+  shortDescription: string;
+  icon: JSX.Element;
+  description: string;
+  features: string[];
+  techStack: string[];
+  technicalSpecs?: string[];
+  integrations?: string[];
+  useCases: string[] | { title: string; description: string }[];
+  screenshots: { image: string; caption: string }[];
+  testimonial?: { quote: string; author: string; company: string };
+  apiEndpoints?: { method: string; endpoint: string; description: string }[];
+}
+
 // Platform data
-const platforms = [
+const platforms: ClientPlatform[] = [
   {
     id: "aerosync",
     name: "AeroSync",
@@ -319,15 +335,49 @@ export default function ClientPlatformsView({ isOpen, onClose, accessCode }: Cli
           {/* Content */}
           <div className="flex-grow overflow-y-auto p-6">
             <div className="max-w-4xl mx-auto">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
-                <h3 className="text-xl font-bold text-primary mb-2">Welcome to Your Platform Preview</h3>
-                <p className="text-gray-700 mb-4">
-                  This secure preview environment allows you to explore the capabilities of our aviation software platforms. 
-                  Select any platform below to view detailed information, features, and interactive demonstrations.
-                </p>
-                <p className="text-sm text-gray-500">
-                  This preview is confidential and provided exclusively for your evaluation. Please do not share access or content.
-                </p>
+              <div className="bg-luxury text-white rounded-lg overflow-hidden mb-8">
+                <div className="p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mr-4">
+                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold">Welcome to Your Secure Platform Preview</h3>
+                  </div>
+                  
+                  <p className="mb-4">
+                    Hello, <span className="font-semibold">Special Client</span>! This private environment gives you exclusive access to explore our aviation software platforms. Each platform is fully interactive and showcases the powerful features we've built specifically for aviation industry needs.
+                  </p>
+                  
+                  <div className="bg-white/10 rounded-lg p-4 mb-4">
+                    <div className="flex items-center text-highlight mb-2">
+                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">Your Access Details</span>
+                    </div>
+                    <ul className="space-y-1 ml-7 text-sm text-white/90">
+                      <li>• Access Code: <span className="font-mono bg-white/20 px-2 py-0.5 rounded">{accessCode}</span></li>
+                      <li>• Session Started: <span className="font-mono">{new Date().toLocaleString()}</span></li>
+                      <li>• Authorized Platforms: AeroSync, AeroFlight, ExecSync, AeroOps</li>
+                    </ul>
+                  </div>
+                  
+                  <p className="text-sm text-white/80">
+                    This preview is confidential and provided exclusively for your evaluation. Please do not share access or content with unauthorized parties.
+                  </p>
+                </div>
+                
+                <div className="bg-black/20 p-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-highlight mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span className="text-sm">Secure session active</span>
+                  </div>
+                  <a href="#contact" onClick={onClose} className="text-sm text-highlight hover:underline">Request Pricing Info</a>
+                </div>
               </div>
               
               <h3 className="text-xl font-bold text-primary mb-6">Available Platforms</h3>
@@ -336,24 +386,56 @@ export default function ClientPlatformsView({ isOpen, onClose, accessCode }: Cli
                 {platforms.map((platform) => (
                   <motion.div
                     key={platform.id}
-                    className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
                     whileHover={{ y: -5 }}
                     onClick={() => setSelectedPlatform(platform)}
                   >
                     <div className="bg-gray-50 border-b border-gray-200 p-4 flex items-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                         {platform.icon}
                       </div>
                       <h4 className="text-lg font-bold text-primary">{platform.name}</h4>
                     </div>
-                    <div className="p-4">
+                    <div className="p-5">
                       <p className="text-gray-700 mb-4">{platform.shortDescription}</p>
-                      <button 
-                        className="text-sm text-primary font-medium hover:underline"
-                        onClick={() => setSelectedPlatform(platform)}
-                      >
-                        View Platform Details →
-                      </button>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {platform.id === "aerosync" && (
+                          <>
+                            <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">Real-time Sync</span>
+                            <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">Data Integration</span>
+                          </>
+                        )}
+                        {platform.id === "aeroflight" && (
+                          <>
+                            <span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full">Flight Planning</span>
+                            <span className="bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">Performance Analytics</span>
+                          </>
+                        )}
+                        {platform.id === "execsync" && (
+                          <>
+                            <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full">Executive Aviation</span>
+                            <span className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">Premium Services</span>
+                          </>
+                        )}
+                        {platform.id === "aeroops" && (
+                          <>
+                            <span className="bg-teal-100 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full">Operations</span>
+                            <span className="bg-cyan-100 text-cyan-700 text-xs font-semibold px-3 py-1 rounded-full">Compliance</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <button 
+                          className="text-sm text-luxury font-medium hover:underline flex items-center group-hover:text-primary transition-colors"
+                          onClick={() => setSelectedPlatform(platform)}
+                        >
+                          View Platform Details
+                          <svg className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </button>
+                        <div className="text-xs text-gray-500">Client ID: {accessCode.substring(0, 3)}*****</div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
