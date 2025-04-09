@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
+import TheCountChatbot from "./TheCountChatbot";
 import { useLocation } from "wouter";
 
 interface ClientLandingPageProps {
@@ -727,6 +728,9 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
           </div>
         </div>
       )}
+
+      {/* The Count Chatbot - Only for Special Code */}
+      {isSpecialCode && <TheCountChatbot />}
     </div>
   );
 }

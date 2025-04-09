@@ -14,7 +14,7 @@ export default function ClientPreviewModal({ isOpen, onClose }: ClientPreviewMod
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isValidated, setIsValidated] = useState(false);
 
-  // Use effect to dispatch custom event when code is validated
+  // Use effect to redirect when code is validated
   useEffect(() => {
     if (isValidated && accessCode) {
       // Create and dispatch custom event with accessCode
@@ -22,6 +22,9 @@ export default function ClientPreviewModal({ isOpen, onClose }: ClientPreviewMod
         detail: { accessCode }
       });
       window.dispatchEvent(event);
+      
+      // Direct window location change for immediate redirect
+      window.location.href = `/client-preview/${accessCode}`;
       
       // Close the modal after dispatching the event
       onClose();
