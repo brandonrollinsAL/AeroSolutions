@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink } from "react-icons/fa";
+import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink, FaFire } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
 import AeroLinkPlatformView from "./AeroLinkPlatformView";
@@ -809,15 +809,22 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
               
               <div className="relative p-10 pt-32 text-center">
                 <h3 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Congratulations!</h3>
-                <p className="text-2xl text-white mb-20 drop-shadow-lg">The Money Keeps Coming!</p>
+                <p className="text-2xl text-white mb-6 drop-shadow-lg">The Money Keeps Coming!</p>
                 
-                <div className="mt-32"></div> {/* Reduced spacer for The Count container */}
+                {/* Added margin-bottom to ensure image is fully visible */}
+                <div className="mb-10">
+                  <img 
+                    src={wolfOfWallStreetImage} 
+                    alt="Success Celebration" 
+                    className="mx-auto rounded-lg shadow-xl max-w-sm w-full" 
+                  />
+                </div>
                 
-                {/* The Count Chatbot Container */}
+                {/* The Count Chatbot Container - Now positioned below the image */}
                 <div className="bg-black/80 backdrop-blur-md rounded-lg p-6 mb-8 w-full max-w-lg mx-auto">
                   <h4 className="text-xl font-bold text-white mb-3 flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-3">
-                      C
+                    <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-3">
+                      <FaFire className="text-red-600" />
                     </div>
                     The Count's Special Portal
                   </h4>
@@ -828,8 +835,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   
                   <div className="bg-gray-900 rounded-lg p-4 mb-3">
                     <div className="flex mb-2 items-center">
-                      <div className="w-6 h-6 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-2 flex-shrink-0">
-                        C
+                      <div className="w-6 h-6 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-2 flex-shrink-0">
+                        <FaFire className="text-red-600 text-xs" />
                       </div>
                       <p className="text-white text-sm">
                         Hi Bernie and Nicole! I've been expecting you. I'm here to help you put that cunt Tom Rollins out of business and into the homeless shelter.

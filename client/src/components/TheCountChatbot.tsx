@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaCommentAlt, FaTimes, FaSmile, FaCreditCard, FaUserSecret, FaPhone, FaShip } from "react-icons/fa";
+import { FaFire, FaTimes, FaSmile, FaCreditCard, FaUserSecret, FaPhone, FaShip } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface TheCountChatbotProps {
@@ -84,7 +84,7 @@ export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption 
           <FaTimes className="text-xl" />
         ) : (
           <div className="relative">
-            <FaCommentAlt className="text-xl" />
+            <FaFire className="text-xl text-yellow-500" />
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
               1
             </span>
@@ -106,8 +106,8 @@ export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption 
             {/* Header */}
             <div className="bg-black text-white p-4 flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-3">
-                  C
+                <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-3">
+                  <FaFire className="text-red-600" />
                 </div>
                 <div>
                   <h3 className="font-bold">The Count</h3>
@@ -123,8 +123,8 @@ export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption 
             <div className="flex-grow overflow-y-auto p-4 bg-gray-100">
               {/* Intro Message */}
               <div className="flex mb-4">
-                <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-2 flex-shrink-0">
-                  C
+                <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-2 flex-shrink-0">
+                  <FaFire className="text-red-600" />
                 </div>
                 <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
                   {isTyping ? (
@@ -192,8 +192,8 @@ export default function TheCountChatbot({ isOpen: externalIsOpen, initialOption 
               {/* Response */}
               {activeOption && (
                 <div className="flex mb-4">
-                  <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center font-bold mr-2 flex-shrink-0">
-                    C
+                  <div className="w-8 h-8 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-2 flex-shrink-0">
+                    <FaFire className="text-red-600" />
                   </div>
                   <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
                     <p className="text-gray-800">{getResponseText()}</p>
