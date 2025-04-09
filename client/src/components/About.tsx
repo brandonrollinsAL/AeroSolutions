@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { FaLinkedin, FaTwitter, FaGithub } from "react-icons/fa";
+import brandonImage from "../assets/brandon_profile.jpeg";
 
 export default function About() {
   const fadeInUp = {
@@ -23,7 +24,7 @@ export default function About() {
             custom={0}
           >
             <img 
-              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1780&q=80" 
+              src={brandonImage} 
               alt="Brandon Rollins - Founder of Aero Solutions" 
               className="rounded-xl shadow-xl w-full max-w-md mx-auto" 
               loading="lazy"
