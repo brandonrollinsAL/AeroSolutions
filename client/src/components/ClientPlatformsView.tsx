@@ -634,6 +634,11 @@ export default function ClientPlatformsView({ isOpen, onClose, accessCode }: Cli
                         alt="Business Success"
                         className="w-full h-full object-cover opacity-85"
                         style={{ objectPosition: 'center 35%' }}
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/images/aviation-tech.jpeg"; // Fallback image if Wolf of Wall Street image fails
+                        }}
                       />
                     </div>
                     
