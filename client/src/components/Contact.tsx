@@ -22,10 +22,19 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.message) {
+    // Enhanced validation
+    const errors = [];
+    if (!formData.name.trim()) errors.push("Name is required");
+    if (!formData.email.trim()) errors.push("Email is required");
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.push("Please enter a valid email address");
+    }
+    if (!formData.message.trim()) errors.push("Message is required");
+    
+    if (errors.length > 0) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: errors.join(". "),
         variant: "destructive"
       });
       return;
@@ -34,7 +43,12 @@ export default function Contact() {
     setIsSubmitting(true);
     
     try {
-      await apiRequest("POST", "/api/contact", formData);
+      const response = await apiRequest("POST", "/api/contact", formData);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to send message");
+      }
       
       toast({
         title: "Success",
@@ -49,9 +63,10 @@ export default function Contact() {
         message: ""
       });
     } catch (error) {
+      console.error("Contact form submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again later.",
+        description: error instanceof Error ? error.message : "Failed to send message. Please try again later.",
         variant: "destructive"
       });
     } finally {

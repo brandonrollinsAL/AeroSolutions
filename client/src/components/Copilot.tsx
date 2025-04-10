@@ -40,9 +40,10 @@ export default function Copilot() {
     
     if (!input.trim()) return;
     
+    const userInput = input.trim();
     const newUserMessage: Message = {
       id: Date.now(),
-      text: input,
+      text: userInput,
       sender: 'user'
     };
     
@@ -51,8 +52,18 @@ export default function Copilot() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest("POST", "/api/copilot", { message: input });
+      const response = await apiRequest("POST", "/api/copilot", { message: userInput });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to get a response from the AI");
+      }
+      
       const data = await response.json();
+      
+      if (!data.success || !data.response) {
+        throw new Error("Invalid response format from server");
+      }
       
       setTimeout(() => {
         const newBotMessage: Message = {
@@ -65,11 +76,23 @@ export default function Copilot() {
         setIsLoading(false);
       }, 500); // Small delay for natural conversation feel
     } catch (error) {
+      console.error("Copilot API error:", error);
+      
+      // Add fallback error message to the chat
+      const errorMessage: Message = {
+        id: Date.now(),
+        text: "I'm sorry, I encountered an error processing your request. Please try again or contact support if the issue persists.",
+        sender: 'bot'
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
         title: "Error",
-        description: "Failed to get a response. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to get a response. Please try again.",
         variant: "destructive"
       });
+      
       setIsLoading(false);
     }
   };
