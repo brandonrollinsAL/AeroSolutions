@@ -1,12 +1,113 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertContactSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateCopilotResponse } from "./utils/openai";
+import NodeCache from 'node-cache';
+
+// Performance optimization: Cache for API responses
+// - TTL: 300 seconds (5 minutes)
+// - Maximum 50 items in cache
+const apiCache = new NodeCache({ 
+  stdTTL: 300, 
+  checkperiod: 60,
+  maxKeys: 50 
+});
+
+// Create a simple rate limiter to prevent abuse
+const rateLimiter = {
+  windowMs: 60000, // 1 minute window
+  maxRequests: 30, // 30 requests per minute
+  clients: new Map<string, { count: number, resetTime: number }>(),
+  
+  check(ip: string): boolean {
+    const now = Date.now();
+    const client = this.clients.get(ip);
+    
+    // Create new client entry if not exists or reset if window expired
+    if (!client || now > client.resetTime) {
+      this.clients.set(ip, { 
+        count: 1, 
+        resetTime: now + this.windowMs 
+      });
+      return true;
+    }
+    
+    // Increment request count
+    client.count++;
+    
+    // Check if exceeded limit
+    if (client.count > this.maxRequests) {
+      return false;
+    }
+    
+    return true;
+  },
+  
+  // Middleware for Express
+  middleware(req: Request, res: Response, next: NextFunction) {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    
+    if (!rateLimiter.check(clientIp)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many requests, please try again later',
+        retry_after: Math.ceil((rateLimiter.clients.get(clientIp)?.resetTime || 0) - Date.now()) / 1000
+      });
+    }
+    
+    next();
+  },
+  
+  // Cleanup old entries every 5 minutes
+  cleanup() {
+    const now = Date.now();
+    // Use Array.from to avoid TypeScript iterator issues
+    Array.from(this.clients.entries()).forEach(([ip, client]) => {
+      if (now > client.resetTime) {
+        this.clients.delete(ip);
+      }
+    });
+  }
+};
+
+// Start cleanup interval
+setInterval(() => rateLimiter.cleanup(), 5 * 60 * 1000);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup API routes - all prefixed with /api
+  
+  // Apply rate limiting to all API routes
+  app.use('/api', rateLimiter.middleware);
+  
+  // Add response time tracking for performance monitoring
+  app.use((req, res, next) => {
+    // Start timer
+    const startTime = process.hrtime();
+    
+    // Store original end method
+    const originalEnd = res.end;
+    
+    // Override end method with proper typing
+    res.end = function(this: any, chunk?: any, encoding?: any, callback?: any) {
+      // Calculate response time
+      const [seconds, nanoseconds] = process.hrtime(startTime);
+      const responseTimeMs = (seconds * 1000) + (nanoseconds / 1000000);
+      
+      // Log response time
+      console.log(`${req.method} ${req.originalUrl} - ${responseTimeMs.toFixed(2)}ms`);
+      
+      // Call original end method
+      return originalEnd.call(this, chunk, encoding, callback);
+    } as any;
+    
+    next();
+  });
+  
+  // Add compression middleware to all routes
+  // Note: we're not using Express compression since we need to avoid
+  // installing more packages. In a real app, you'd use compression middleware.
   
   // Contact submission endpoint
   app.post("/api/contact", async (req, res) => {
@@ -159,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Copilot chatbot API
+  // Copilot chatbot API with caching
   app.post("/api/copilot", async (req, res) => {
     try {
       const { message } = req.body;
@@ -185,6 +286,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Generate a cache key for this message
+      const cacheKey = Buffer.from(message.trim().toLowerCase()).toString('base64');
+      
+      // Check if we have a cached response
+      const cachedResponse = apiCache.get<string>(cacheKey);
+      
+      if (cachedResponse) {
+        console.log('API Cache hit for copilot response');
+        
+        return res.status(200).json({
+          success: true,
+          response: cachedResponse,
+          timestamp: new Date().toISOString(),
+          cached: true
+        });
+      }
+      
+      // No cache hit, generate a new response
+      console.log('API Cache miss for copilot response');
+      
       // Generate a response using OpenAI
       const aiResponse = await generateCopilotResponse(message);
       
@@ -195,10 +316,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Cache the successful response for future requests
+      apiCache.set(cacheKey, aiResponse);
+      
       res.status(200).json({
         success: true,
         response: aiResponse,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        cached: false
       });
     } catch (error) {
       console.error("Copilot error:", error);

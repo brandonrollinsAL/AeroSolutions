@@ -139,7 +139,7 @@ export default function Hero() {
                 loading="eager"
                 width="1024"
                 height="640"
-                fetchPriority="high"
+
                 onLoad={(e) => {
                   // Hide the placeholder when the main image loads
                   const target = e.target as HTMLImageElement;

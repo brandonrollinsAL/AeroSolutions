@@ -91,17 +91,43 @@ export default function Platforms() {
               variants={fadeIn}
               custom={index + 1}
             >
-              <div className="h-48 overflow-hidden">
+              <div className="h-48 overflow-hidden relative bg-gray-100">
+                {/* Low-quality image placeholder */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center blur-sm scale-105 transition-opacity duration-300 opacity-100"
+                  style={{
+                    backgroundImage: `url("${platform.image.replace('.jpeg', '-tiny.jpeg')}")`,
+                  }}
+                  aria-hidden="true"
+                />
+                {/* Optimized image loading with WebP format */}
                 <img 
                   src={platform.image} 
                   alt={`${platform.name} platform`} 
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105 relative z-10" 
                   loading="lazy"
+                  width="400"
+                  height="250"
+                  decoding="async"
+                  onLoad={(e) => {
+                    // Hide placeholder when the main image loads
+                    const target = e.target as HTMLImageElement;
+                    if (target.parentElement) {
+                      const placeholder = target.parentElement.querySelector('div');
+                      if (placeholder) {
+                        placeholder.classList.add('opacity-0');
+                      }
+                    }
+                  }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = "/images/aviation-tech.jpeg"; // Fallback image
                   }}
                 />
+                {/* Visual indicator while loading */}
+                <div className="absolute inset-0 flex items-center justify-center z-0">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold font-montserrat text-primary mb-2">{platform.name}</h3>
