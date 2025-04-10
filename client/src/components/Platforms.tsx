@@ -12,7 +12,7 @@ export default function Platforms() {
       id: 1,
       name: "AeroSync",
       description: "Streamline aviation logistics with real-time syncing across all your operations.",
-      image: "https://images.unsplash.com/photo-1606768666853-403c90a981ad?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80",
+      image: "/images/aviation-cockpit.jpeg",
       tags: ["Real-time", "Logistics", "Aviation"]
     },
     {

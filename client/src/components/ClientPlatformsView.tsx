@@ -56,15 +56,15 @@ const platforms: ClientPlatform[] = [
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1551373884-8a0750f6c71f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AeroSync Dashboard showing real-time synchronization status" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1577400808258-62d255afacea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Integration configuration panel with multiple aviation systems" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1605292356963-b8a9595a1c84?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Conflict resolution interface with data comparison view" 
       }
     ],
@@ -126,15 +126,15 @@ const platforms: ClientPlatform[] = [
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AeroOps control center with real-time flight tracking" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1540339832862-474599807836?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Crew scheduling interface with qualification overlays" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Flight optimization panel showing fuel efficiency metrics" 
       }
     ],
@@ -196,15 +196,15 @@ const platforms: ClientPlatform[] = [
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "ExecSync dashboard showing prioritized tasks and communications" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "Meeting scheduler with AI-suggested time slots" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1552581234-26160f608093?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Secure document sharing interface with tracking capabilities" 
       }
     ],
@@ -266,15 +266,15 @@ const platforms: ClientPlatform[] = [
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AeroFlight simulator cockpit view with weather system" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Instructor station showing student performance metrics" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1495063438029-7f6764d3844a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "VR training scenario with emergency procedure practice" 
       }
     ],
