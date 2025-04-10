@@ -116,7 +116,12 @@ export default function PlatformPreview({ isOpen, onClose, platform }: PlatformP
                       <img 
                         src={platform.screenshots[currentImageIndex].image} 
                         alt={platform.screenshots[currentImageIndex].caption} 
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/images/aviation-tech.jpeg"; // Fallback image
+                        }}
                       />
                       
                       {platform.screenshots.length > 1 && (

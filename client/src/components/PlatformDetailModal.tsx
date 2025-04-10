@@ -660,6 +660,11 @@ export default function PlatformDetailModal({ platform, isOpen, onClose }: Platf
                             src={details.screenshots[currentImageIndex].image} 
                             alt={details.screenshots[currentImageIndex].caption} 
                             className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/images/aviation-tech.jpeg"; // Fallback image
+                            }}
                           />
                         </div>
                         
