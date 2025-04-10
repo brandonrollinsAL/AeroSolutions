@@ -72,6 +72,10 @@ export default function Testimonials() {
                   alt={testimonial.name} 
                   className="w-12 h-12 rounded-full object-cover mr-4" 
                   loading="lazy"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/avatar-placeholder.jpeg"; // Fallback image
+                  }}
                 />
                 <div>
                   <h4 className="font-bold text-primary">{testimonial.name}</h4>

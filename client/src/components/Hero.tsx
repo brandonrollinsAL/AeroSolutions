@@ -109,6 +109,10 @@ export default function Hero() {
               loading="lazy"
               width="1843"
               height="2457"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/images/aviation-tech.jpeg"; // Fallback image
+              }}
             />
           </motion.div>
         </div>
