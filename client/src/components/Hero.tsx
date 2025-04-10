@@ -24,70 +24,87 @@ export default function Hero() {
   return (
     <section 
       id="home" 
-      className="pt-28 pb-20 bg-gradient-to-br from-primary via-primary/95 to-primary/80 relative overflow-hidden"
+      className="pt-32 pb-24 bg-gradient-to-br from-luxury via-primary to-luxury/90 relative overflow-hidden"
       aria-label="Aero Solutions Introduction"
     >
-      {/* Background Image with aviation-specific content */}
+      {/* Background Pattern */}
       <div 
-        className="absolute inset-0 opacity-20" 
+        className="absolute inset-0 opacity-10" 
         style={{
           backgroundImage: "url('/images/aviation-cockpit.jpeg')", 
           backgroundSize: "cover", 
-          backgroundPosition: "center"
+          backgroundPosition: "center",
+          filter: "contrast(1.2) brightness(0.8)"
         }}
         aria-hidden="true"
       />
       
+      {/* Subtle overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-luxury/30 z-0"></div>
+      
+      {/* Gold accent line at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-highlight via-bronze to-highlight"></div>
+      
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
           <div className="text-white">
-            <motion.h1 
-              className="text-4xl lg:text-5xl font-bold font-montserrat leading-tight text-white"
+            <motion.div 
+              className="inline-block mb-4 px-3 py-1 bg-highlight/10 border border-highlight/20 rounded-full"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
               custom={0}
             >
-              Aviation Software Development by Pilots for Pilots
-            </motion.h1>
+              <span className="text-highlight text-sm font-medium tracking-wider uppercase">Premium Aviation Solutions</span>
+            </motion.div>
             
-            <motion.p 
-              className="mt-6 text-xl text-gray-100"
+            <motion.h1 
+              className="text-5xl lg:text-6xl font-bold font-serif leading-tight text-white tracking-tight"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
               custom={1}
             >
-              Custom aviation platforms that transform flight operations—AeroSync, AeroFlight, AeroOps, and ExecSync.
-            </motion.p>
+              Aviation Software <span className="text-highlight">Development</span> by Pilots for Pilots
+            </motion.h1>
             
             <motion.p 
-              className="mt-4 text-gray-200"
+              className="mt-8 text-xl text-platinum leading-relaxed"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
               custom={2}
             >
-              <span className="font-semibold">Aero Solutions</span> delivers full-stack aviation software with our unique guarantee: no payment until you're 100% satisfied. Based in Miami and built by pilots who understand your operational challenges, our platforms integrate seamlessly with your existing systems.
+              Custom aviation platforms that transform flight operations—AeroSync, AeroFlight, AeroOps, and ExecSync.
             </motion.p>
             
-            <motion.div 
-              className="mt-8 flex flex-wrap gap-4"
+            <motion.p 
+              className="mt-5 text-lg text-gray-200 leading-relaxed"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
               custom={3}
             >
+              <span className="font-semibold">Aero Solutions</span> delivers full-stack aviation software with our unique guarantee: no payment until you're 100% satisfied. Based in Miami and built by pilots who understand your operational challenges, our platforms integrate seamlessly with your existing systems.
+            </motion.p>
+            
+            <motion.div 
+              className="mt-10 flex flex-wrap gap-5"
+              variants={fadeInUp}
+              initial="hidden"
+              animate="visible"
+              custom={4}
+            >
               <a 
                 href="#contact" 
-                className="bg-black hover:bg-black/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="bg-highlight hover:bg-highlight/90 text-luxury font-bold py-4 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_5px_15px_rgba(201,181,131,0.35)]"
                 aria-label="Get started with a custom aviation software solution"
               >
                 Get Started
               </a>
               <a 
                 href="#platforms" 
-                className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg border border-white/20 transition-all duration-300 hover:scale-105"
+                className="bg-transparent hover:bg-white/10 text-white font-semibold py-4 px-8 rounded-lg border border-highlight/30 transition-all duration-300 hover:scale-105 hover:border-highlight/60"
                 aria-label="Explore our aviation software platforms"
               >
                 Explore Platforms
@@ -118,31 +135,42 @@ export default function Hero() {
         </div>
         
         <motion.div 
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-white"
+          className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
-          custom={4}
+          custom={5}
         >
-          <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10" role="listitem">
-            <div className="text-highlight text-3xl mb-2 flex justify-center" aria-hidden="true"><FaLaptopCode /></div>
-            <h2 className="font-semibold font-montserrat text-white">Full-Stack Aviation Development</h2>
-            <p className="text-sm mt-2 text-gray-200">End-to-end custom solutions</p>
+          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+              <FaLaptopCode />
+            </div>
+            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Full-Stack Aviation Development</h2>
+            <p className="text-sm text-gray-200 leading-relaxed">End-to-end custom solutions built for aviation excellence</p>
           </div>
-          <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10" role="listitem">
-            <div className="text-highlight text-3xl mb-2 flex justify-center" aria-hidden="true"><FaPlane /></div>
-            <h2 className="font-semibold font-montserrat text-white">Built by Pilots</h2>
-            <p className="text-sm mt-2 text-gray-200">Real aviation experience</p>
+          
+          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+              <FaPlane />
+            </div>
+            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Built by Pilots</h2>
+            <p className="text-sm text-gray-200 leading-relaxed">Real aviation experience integrated into every feature</p>
           </div>
-          <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10" role="listitem">
-            <div className="text-highlight text-3xl mb-2 flex justify-center" aria-hidden="true"><FaHandshake /></div>
-            <h2 className="font-semibold font-montserrat text-white">No Payment Until Satisfied</h2>
-            <p className="text-sm mt-2 text-gray-200">Zero financial risk</p>
+          
+          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+              <FaHandshake />
+            </div>
+            <h2 className="font-bold font-serif text-xl text-platinum mb-2">No Payment Until Satisfied</h2>
+            <p className="text-sm text-gray-200 leading-relaxed">Zero financial risk with our satisfaction guarantee</p>
           </div>
-          <div className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10" role="listitem">
-            <div className="text-highlight text-3xl mb-2 flex justify-center" aria-hidden="true"><FaSync /></div>
-            <h2 className="font-semibold font-montserrat text-white">Four Integrated Platforms</h2>
-            <p className="text-sm mt-2 text-gray-200">Comprehensive aviation ecosystem</p>
+          
+          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+              <FaSync />
+            </div>
+            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Four Integrated Platforms</h2>
+            <p className="text-sm text-gray-200 leading-relaxed">Comprehensive aviation ecosystem for all your needs</p>
           </div>
           
           {/* Additional features in a hidden section for SEO content */}
