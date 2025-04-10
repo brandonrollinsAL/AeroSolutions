@@ -582,59 +582,86 @@ export default function PlatformDetailModal({ platform, isOpen, onClose }: Platf
     <AnimatePresence>
       {isOpen && (
         <motion.div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div 
-            className="bg-white rounded-xl overflow-hidden max-w-6xl w-full max-h-[90vh] my-8" 
+            className="bg-white rounded-xl overflow-hidden max-w-6xl w-full max-h-[90vh] my-8 shadow-[0_25px_50px_rgba(0,0,0,0.25)]" 
             onClick={(e) => e.stopPropagation()}
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
           >
-            {/* Header */}
-            <div className="bg-primary text-white p-6">
+            {/* Header with gradient background */}
+            <div className="bg-gradient-to-r from-luxury to-primary text-white p-8 relative">
+              {/* Decorative accent line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-highlight via-platinum to-highlight"></div>
+              
               <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold font-montserrat">{platform.name}</h2>
+                <div>
+                  <div className="inline-block px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full mb-3 border border-highlight/30">
+                    <span className="text-highlight text-sm font-medium tracking-wider">Premium Aviation Platform</span>
+                  </div>
+                  <h2 className="text-4xl font-bold font-serif tracking-tight">{platform.name}</h2>
+                </div>
                 <button 
                   onClick={onClose}
-                  className="text-white/80 hover:text-white"
+                  className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors duration-300"
+                  aria-label="Close modal"
                 >
                   <FaTimes className="text-xl" />
                 </button>
               </div>
-              <p className="text-white/90 mt-2 max-w-3xl">{platform.description}</p>
+              <p className="text-platinum mt-3 max-w-3xl text-lg leading-relaxed">{platform.description}</p>
             </div>
             
-            {/* Tabs */}
-            <div className="bg-gray-100 p-4 flex flex-wrap gap-2">
-              <button 
-                className={`px-4 py-2 rounded-lg font-medium ${activeTab === 'overview' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                onClick={() => setActiveTab('overview')}
-              >
-                Overview
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-lg font-medium ${activeTab === 'features' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                onClick={() => setActiveTab('features')}
-              >
-                Features & Benefits
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-lg font-medium ${activeTab === 'technical' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                onClick={() => setActiveTab('technical')}
-              >
-                Technical Specs
-              </button>
-              <button 
-                className={`px-4 py-2 rounded-lg font-medium ${activeTab === 'case-studies' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                onClick={() => setActiveTab('case-studies')}
-              >
-                Case Studies
-              </button>
+            {/* Luxurious tabs */}
+            <div className="bg-gray-50 border-b border-gray-200 px-8 pt-6 pb-4">
+              <div className="flex flex-wrap gap-4">
+                <button 
+                  className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 ${
+                    activeTab === 'overview' 
+                      ? 'bg-gradient-to-r from-luxury to-primary text-white shadow-md' 
+                      : 'bg-white text-darkGray hover:text-primary border border-gray-200 hover:border-highlight/30'
+                  }`}
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Overview
+                </button>
+                <button 
+                  className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 ${
+                    activeTab === 'features' 
+                      ? 'bg-gradient-to-r from-luxury to-primary text-white shadow-md' 
+                      : 'bg-white text-darkGray hover:text-primary border border-gray-200 hover:border-highlight/30'
+                  }`}
+                  onClick={() => setActiveTab('features')}
+                >
+                  Features & Benefits
+                </button>
+                <button 
+                  className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 ${
+                    activeTab === 'technical' 
+                      ? 'bg-gradient-to-r from-luxury to-primary text-white shadow-md' 
+                      : 'bg-white text-darkGray hover:text-primary border border-gray-200 hover:border-highlight/30'
+                  }`}
+                  onClick={() => setActiveTab('technical')}
+                >
+                  Technical Specs
+                </button>
+                <button 
+                  className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 ${
+                    activeTab === 'case-studies' 
+                      ? 'bg-gradient-to-r from-luxury to-primary text-white shadow-md' 
+                      : 'bg-white text-darkGray hover:text-primary border border-gray-200 hover:border-highlight/30'
+                  }`}
+                  onClick={() => setActiveTab('case-studies')}
+                >
+                  Case Studies
+                </button>
+              </div>
             </div>
             
             {/* Content */}
