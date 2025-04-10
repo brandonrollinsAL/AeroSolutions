@@ -84,155 +84,192 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="py-20 bg-gray-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <motion.h2 
-              className="text-3xl font-bold font-montserrat text-primary mb-6"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeIn}
-              custom={0}
-            >
-              Get In Touch
-            </motion.h2>
-            
-            <motion.p 
-              className="text-gray-600 mb-6"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeIn}
-              custom={0.5}
-            >
-              Ready to elevate your aviation software? Contact us today to discuss your project needs and discover how our unique approach can benefit your business.
-            </motion.p>
-            
-            <motion.div 
-              className="space-y-4 mb-8"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeIn}
-              custom={1}
-            >
-              <div className="flex items-start">
-                <div className="bg-primary text-white p-3 rounded-lg mr-4">
-                  <FaMapMarkerAlt />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-primary">Address</h4>
-                  <p className="text-gray-600">1150 NW 72nd AVE Tower 1 STE 455 #17102, Miami, FL 33126, USA</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="bg-primary text-white p-3 rounded-lg mr-4">
-                  <FaEnvelope />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-primary">Email</h4>
-                  <p className="text-gray-600">info@aerosolutions.com</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="bg-primary text-white p-3 rounded-lg mr-4">
-                  <FaPhoneAlt />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-primary">Phone</h4>
-                  <p className="text-gray-600">+1-305-555-1234</p>
-                </div>
-              </div>
-            </motion.div>
-            
-            <motion.div 
-              className="flex space-x-4"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeIn}
-              custom={1.5}
-            >
-              <a href="#" className="bg-luxury text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
-                <FaLinkedinIn />
-              </a>
-              <a href="#" className="bg-luxury text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
-                <FaTwitter />
-              </a>
-              <a href="#" className="bg-black text-white p-3 rounded-full hover:opacity-90 transition-opacity duration-300">
-                <FaGithub />
-              </a>
-            </motion.div>
+    <section id="contact" className="py-24 bg-gradient-to-b from-white to-gray-50 relative">
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-highlight to-transparent opacity-70"></div>
+      <div className="absolute hidden md:block top-20 right-10 w-24 h-24 bg-highlight/5 rounded-full blur-3xl"></div>
+      <div className="absolute hidden md:block bottom-20 left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div 
+          className="text-center mb-16"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={fadeIn}
+          custom={0}
+        >
+          <div className="inline-block px-4 py-1 bg-highlight/10 border border-highlight/20 rounded-full mb-4">
+            <span className="text-accent text-sm font-medium tracking-wider uppercase">Contact Us</span>
           </div>
-          
+          <h2 className="text-4xl md:text-5xl font-bold font-serif text-primary mb-6 tracking-tight">Let's Discuss Your Project</h2>
+          <p className="text-xl text-darkGray max-w-3xl mx-auto leading-relaxed">
+            Ready to elevate your aviation operations? Let's collaborate on creating the perfect software solution for your unique challenges.
+          </p>
+        </motion.div>
+        
+        <div className="grid lg:grid-cols-5 gap-12 items-stretch">
           <motion.div
+            className="lg:col-span-2 flex flex-col justify-between"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={fadeIn}
-            custom={2}
+            custom={1}
           >
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8">
+            <div>
+              <motion.div 
+                className="space-y-6 mb-10"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={fadeIn}
+                custom={1.2}
+              >
+                <div className="flex items-start">
+                  <div className="bg-gradient-to-br from-luxury to-primary text-white p-4 rounded-xl shadow-md mr-5 flex items-center justify-center w-14 h-14">
+                    <FaMapMarkerAlt className="text-xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg text-primary mb-1">Address</h4>
+                    <p className="text-darkGray">1150 NW 72nd AVE Tower 1 STE 455 #17102, Miami, FL 33126, USA</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <div className="bg-gradient-to-br from-luxury to-primary text-white p-4 rounded-xl shadow-md mr-5 flex items-center justify-center w-14 h-14">
+                    <FaEnvelope className="text-xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg text-primary mb-1">Email</h4>
+                    <p className="text-darkGray">info@aerosolutions.com</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <div className="bg-gradient-to-br from-luxury to-primary text-white p-4 rounded-xl shadow-md mr-5 flex items-center justify-center w-14 h-14">
+                    <FaPhoneAlt className="text-xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg text-primary mb-1">Phone</h4>
+                    <p className="text-darkGray">+1-305-555-1234</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+            
+            <motion.div 
+              className="mt-auto"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeIn}
+              custom={1.8}
+            >
+              <p className="text-darkGray mb-4 font-medium">Connect With Us</p>
+              <div className="flex space-x-3">
+                <a 
+                  href="#" 
+                  className="bg-luxury hover:bg-highlight text-white w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300 shadow-sm hover:shadow-md"
+                  aria-label="LinkedIn"
+                >
+                  <FaLinkedinIn />
+                </a>
+                <a 
+                  href="#" 
+                  className="bg-luxury hover:bg-highlight text-white w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300 shadow-sm hover:shadow-md"
+                  aria-label="Twitter"
+                >
+                  <FaTwitter />
+                </a>
+                <a 
+                  href="#" 
+                  className="bg-luxury hover:bg-highlight text-white w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300 shadow-sm hover:shadow-md"
+                  aria-label="GitHub"
+                >
+                  <FaGithub />
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div
+            className="lg:col-span-3"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeIn}
+            custom={1.5}
+          >
+            <form 
+              onSubmit={handleSubmit} 
+              className="bg-white rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.05)] p-8 md:p-10 border border-gray-100 relative overflow-hidden"
+            >
+              {/* Decorative accent */}
+              <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-highlight via-primary to-luxury"></div>
+              
+              <h3 className="text-2xl font-bold font-serif text-primary mb-6">Send Us a Message</h3>
+              
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <label htmlFor="name" className="block text-sm font-medium text-darkGray mb-2">Full Name</label>
                   <input 
                     type="text" 
                     id="name" 
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-highlight focus:border-highlight outline-none transition-all bg-gray-50/50" 
                     placeholder="Your name" 
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label htmlFor="email" className="block text-sm font-medium text-darkGray mb-2">Email Address</label>
                   <input 
                     type="email" 
                     id="email" 
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-highlight focus:border-highlight outline-none transition-all bg-gray-50/50" 
                     placeholder="your.email@example.com" 
                   />
                 </div>
               </div>
               
               <div className="mb-6">
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                <label htmlFor="company" className="block text-sm font-medium text-darkGray mb-2">Company Name</label>
                 <input 
                   type="text" 
                   id="company" 
                   value={formData.company}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-highlight focus:border-highlight outline-none transition-all bg-gray-50/50" 
                   placeholder="Your company name" 
                 />
               </div>
               
-              <div className="mb-6">
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+              <div className="mb-8">
+                <label htmlFor="message" className="block text-sm font-medium text-darkGray mb-2">Project Details</label>
                 <textarea 
                   id="message" 
                   rows={5} 
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
-                  placeholder="Tell us about your project..."
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-highlight focus:border-highlight outline-none transition-all bg-gray-50/50" 
+                  placeholder="Tell us about your aviation software needs..."
                 ></textarea>
               </div>
               
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="w-full bg-black hover:bg-black/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-lg disabled:opacity-70"
+                className="w-full bg-gradient-to-r from-luxury to-primary hover:from-primary hover:to-luxury text-white font-bold py-4 px-8 rounded-lg transition-all duration-300 hover:shadow-[0_10px_20px_rgba(15,35,101,0.2)] disabled:opacity-70 disabled:hover:shadow-none"
               >
                 {isSubmitting ? "Sending..." : "Send Message"}
               </button>
+              
+              <p className="text-xs text-center text-gray-500 mt-4">
+                By submitting this form, you agree to our privacy policy and terms of service.
+              </p>
             </form>
           </motion.div>
         </div>
