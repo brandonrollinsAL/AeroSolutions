@@ -83,15 +83,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1493037821234-0c274eda13d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AeroSync Dashboard showing real-time synchronization status" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1577400808258-62d255afacea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Integration configuration panel with multiple aviation systems" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1605292356963-b8a9595a1c84?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Conflict resolution interface with data comparison view" 
       }
     ],
@@ -170,15 +170,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AeroFlight's main dashboard showing active flights and status" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Flight planning interface with weather overlay" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1495063438029-7f6764d3844a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Crew management and scheduling calendar" 
       }
     ],

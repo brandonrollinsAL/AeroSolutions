@@ -19,35 +19,35 @@ export default function Platforms() {
       id: 2,
       name: "AeroFlight",
       description: "Comprehensive flight management system for private and commercial aviation.",
-      image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "/images/aviation-tech.jpeg",
       tags: ["Flight Management", "Scheduling", "Analytics"]
     },
     {
       id: 3,
       name: "ExecSync",
       description: "Executive aviation management solution for private jet operations and charter services.",
-      image: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "/images/aviation-controls.jpeg",
       tags: ["Executive", "Private Jets", "Management"]
     },
     {
       id: 4,
       name: "SkyForge Legend",
       description: "Aviation training and simulation platform for pilots and ground crew.",
-      image: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      image: "/images/aviation-cockpit.jpeg",
       tags: ["Training", "Simulation", "Education"]
     },
     {
       id: 5,
       name: "Stitchlet",
       description: "AI-powered data integration platform connecting disparate aviation systems.",
-      image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "/images/aviation-tech.jpeg",
       tags: ["Data Integration", "AI", "Automation"]
     },
     {
       id: 6,
       name: "AeroOps",
       description: "Comprehensive operations management system for airlines and aviation businesses.",
-      image: "https://images.unsplash.com/photo-1551373884-8a0750074df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "/images/aviation-controls.jpeg",
       tags: ["Operations", "Management", "Efficiency"]
     }
   ];
