@@ -118,19 +118,44 @@ export default function Hero() {
             initial="hidden"
             animate="visible"
           >
-            {/* Aviation-specific image */}
-            <img 
-              src="/images/aviation-controls.jpeg" 
-              alt="Advanced aviation flight controls and instruments" 
-              className="rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] object-cover w-full" 
-              loading="lazy"
-              width="1843"
-              height="2457"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/images/aviation-tech.jpeg"; // Fallback image
-              }}
-            />
+            {/* Aviation-specific image - optimized */}
+            <div className="relative overflow-hidden rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] h-[500px] w-full">
+              {/* Low quality image placeholder - loads immediately */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center blur-sm scale-105 transition-opacity duration-300"
+                style={{
+                  backgroundImage: "url('/images/aviation-controls-tiny.jpeg')",
+                  opacity: 1
+                }}
+                aria-hidden="true"
+              />
+              
+              {/* High quality image - loads with priority */}
+              <img 
+                src="/images/aviation-controls.jpeg" 
+                srcSet="/images/aviation-controls.webp, /images/aviation-controls.jpeg" 
+                alt="Advanced aviation flight controls and instruments" 
+                className="relative z-10 h-full w-full object-cover" 
+                loading="eager"
+                width="1024"
+                height="640"
+                fetchPriority="high"
+                onLoad={(e) => {
+                  // Hide the placeholder when the main image loads
+                  const target = e.target as HTMLImageElement;
+                  if (target.parentElement) {
+                    const placeholder = target.parentElement.querySelector('div');
+                    if (placeholder) {
+                      placeholder.style.opacity = '0';
+                    }
+                  }
+                }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/images/aviation-tech.jpeg"; // Fallback image
+                }}
+              />
+            </div>
           </motion.div>
         </div>
         
