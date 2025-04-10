@@ -1,0 +1,7 @@
+# Security Policy for Aero Solutions
+Contact: mailto:security@aerosolutions.dev
+Expires: 2026-04-09T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://aerosolutions.dev/.well-known/security.txt
+Policy: https://aerosolutions.dev/security-policy
+Hiring: https://aerosolutions.dev/careers
