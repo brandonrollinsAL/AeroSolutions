@@ -48,12 +48,35 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Global error handling middleware
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    // Log detailed error information
+    console.error(`Error processing ${req.method} ${req.path}:`, err);
+    
+    // Determine appropriate status code
     const status = err.status || err.statusCode || 500;
+    
+    // Create appropriate error message
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    // Create response object with appropriate level of detail
+    const errorResponse = {
+      success: false,
+      message,
+      // Include error details in development, but not in production
+      ...(process.env.NODE_ENV !== 'production' && { 
+        error: {
+          name: err.name,
+          stack: err.stack,
+          code: err.code
+        }
+      }),
+      path: req.path,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Send error response
+    res.status(status).json(errorResponse);
   });
 
   // importantly only setup vite in development and after
