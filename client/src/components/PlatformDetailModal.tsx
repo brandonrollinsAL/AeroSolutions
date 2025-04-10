@@ -257,15 +257,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "ExecSync client management dashboard" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "Charter quoting and booking interface" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1552581234-26160f608093?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Aircraft availability and scheduling calendar" 
       }
     ],
@@ -344,15 +344,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "AeroOps operations control center dashboard" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1540339832862-474599807836?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Maintenance planning and tracking interface" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "Crew scheduling and management panel" 
       }
     ],
@@ -431,15 +431,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1496873678051-04b15c4f00cf?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "SkyForge Legend cockpit simulation view" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1626285869675-cb4fb4db542a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Instructor station for monitoring student performance" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1575629393405-a3207954de82?ixlib=rb-4.0.3&auto=format&fit=crop&w=2076&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Learning management interface with progress tracking" 
       }
     ],
@@ -518,15 +518,15 @@ const enhancedPlatformDetails: Record<string, {
     ],
     screenshots: [
       { 
-        image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-tech.jpeg", 
         caption: "Stitchlet integration designer interface" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1589149098258-3e9102a73142?ixlib=rb-4.0.3&auto=format&fit=crop&w=2073&q=80", 
+        image: "/images/aviation-controls.jpeg", 
         caption: "Data flow monitoring dashboard" 
       },
       { 
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80", 
+        image: "/images/aviation-cockpit.jpeg", 
         caption: "AI-assisted mapping suggestion interface" 
       }
     ],
