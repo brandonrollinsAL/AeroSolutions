@@ -27,11 +27,11 @@ export default function Hero() {
       className="pt-28 pb-20 bg-gradient-to-br from-primary via-primary/95 to-primary/80 relative overflow-hidden"
       aria-label="Aero Solutions Introduction"
     >
-      {/* Background Image with WebP format for better performance */}
+      {/* Background Image with aviation-specific content */}
       <div 
         className="absolute inset-0 opacity-20" 
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80&fm=webp')", 
+          backgroundImage: "url('/images/aviation-cockpit.jpeg')", 
           backgroundSize: "cover", 
           backgroundPosition: "center"
         }}
@@ -101,19 +101,15 @@ export default function Hero() {
             initial="hidden"
             animate="visible"
           >
-            {/* Optimized image with WebP and proper dimensions */}
-            <picture>
-              <source srcSet="https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80&fm=webp" type="image/webp" />
-              <source srcSet="https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" type="image/jpeg" />
-              <img 
-                src="https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80" 
-                alt="Modern aviation cockpit display showing glass panel instruments" 
-                className="rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] object-cover w-full" 
-                loading="lazy"
-                width="1740"
-                height="950"
-              />
-            </picture>
+            {/* Aviation-specific image */}
+            <img 
+              src="/images/aviation-controls.jpeg" 
+              alt="Advanced aviation flight controls and instruments" 
+              className="rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] object-cover w-full" 
+              loading="lazy"
+              width="1843"
+              height="2457"
+            />
           </motion.div>
         </div>
         
