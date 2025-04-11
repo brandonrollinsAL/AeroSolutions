@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertContactSchema } from "@shared/schema";
@@ -7,7 +7,7 @@ import { generateCopilotResponse } from "./utils/openai";
 import NodeCache from 'node-cache';
 import { body, query, param, validationResult } from 'express-validator';
 import { generateToken, authorize } from './utils/auth';
-import { stripeService } from './utils/stripe';
+import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription, handleWebhookEvent } from './utils/stripe';
 import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
@@ -94,10 +94,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Stripe configuration endpoint (provides publishable key for client-side)
   app.get('/api/stripe/config', (req: Request, res: Response) => {
-    res.status(200).json({
-      success: true,
-      publishableKey: stripeService.getPublishableKey(),
-    });
+    try {
+      res.status(200).json({
+        success: true,
+        publishableKey: getPublishableKey(),
+      });
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to get Stripe configuration",
+        error: errorMessage
+      });
+    }
+  });
+  
+  // Stripe payment intent creation
+  app.post('/api/stripe/create-payment-intent', [
+    body('amount')
+      .notEmpty().withMessage('Amount is required')
+      .isNumeric().withMessage('Amount must be a number'),
+    body('currency')
+      .optional()
+      .isString().withMessage('Currency must be a string')
+      .isLength({ min: 3, max: 3 }).withMessage('Currency must be a 3-letter code'),
+    body('metadata')
+      .optional()
+      .isObject().withMessage('Metadata must be an object')
+  ], async (req: Request, res: Response) => {
+    try {
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid payment intent data",
+          errors: errors.array()
+        });
+      }
+      
+      const { amount, currency = 'usd', metadata } = req.body;
+      
+      // If user is authenticated, use their customer ID
+      let customerId: string | undefined;
+      if (req.isAuthenticated() && req.user) {
+        // Create or get Stripe customer ID
+        customerId = await createStripeCustomer(req.user);
+      }
+      
+      // Create payment intent
+      const paymentIntent = await createPaymentIntent(amount, currency, customerId, metadata);
+      
+      res.status(200).json({
+        success: true,
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to create payment intent",
+        error: errorMessage
+      });
+    }
+  });
+  
+  // Stripe create-subscription endpoint
+  app.post('/api/stripe/create-subscription', [
+    body('priceId')
+      .notEmpty().withMessage('Price ID is required')
+      .isString().withMessage('Price ID must be a string'),
+    body('metadata')
+      .optional()
+      .isObject().withMessage('Metadata must be an object')
+  ], async (req: Request, res: Response) => {
+    try {
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid subscription data",
+          errors: errors.array()
+        });
+      }
+      
+      // Check if user is authenticated
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required"
+        });
+      }
+      
+      const { priceId, metadata } = req.body;
+      
+      // Create or get Stripe customer ID
+      const customerId = await createStripeCustomer(req.user);
+      
+      // Create subscription
+      const subscription = await createSubscription(customerId, priceId, metadata);
+      
+      // Get client secret from payment intent
+      const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
+      
+      res.status(200).json({
+        success: true,
+        subscriptionId: subscription.id,
+        clientSecret,
+        status: subscription.status
+      });
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to create subscription",
+        error: errorMessage
+      });
+    }
+  });
+  
+  // Stripe webhook endpoint
+  app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), async (req: Request, res: Response) => {
+    try {
+      const signature = req.headers['stripe-signature'] as string;
+      
+      if (!signature) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing Stripe signature"
+        });
+      }
+      
+      // Convert raw body to string
+      const payload = req.body.toString();
+      
+      // Process the event
+      await handleWebhookEvent(JSON.parse(payload));
+      
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("Webhook error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(400).json({
+        success: false,
+        message: "Webhook error",
+        error: errorMessage
+      });
+    }
   });
   
   // Add response time tracking for performance monitoring
@@ -239,14 +391,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add brute force protection with exponential backoff (in a real app)
       // Rate limiting has already been applied at the /api level
       
-      // Special case for demo codes - with constant time comparison for security
-      const demoCode1 = "momanddad";
-      const demoCode2 = "countofmontecristobitch";
+      // Special case for demo codes - secure from environment variables
+      const demoCode1 = process.env.DEMO_CODE_1 || '';
+      const demoCode2 = process.env.DEMO_CODE_2 || '';
       
       // Use timing-safe comparison to prevent timing attacks
-      const isDemo1 = code.length === demoCode1.length && 
+      const isDemo1 = demoCode1 && code.length === demoCode1.length && 
         code.toLowerCase().split('').every((char: string, i: number) => char === demoCode1[i]);
-      const isDemo2 = code.length === demoCode2.length && 
+      const isDemo2 = demoCode2 && code.length === demoCode2.length && 
         code.toLowerCase().split('').every((char: string, i: number) => char === demoCode2[i]);
       
       if (isDemo1 || isDemo2) {

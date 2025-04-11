@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import { validate } from '../utils/validation';
 import { authenticate, authorize } from '../utils/auth';
 import { storage } from '../storage';
-import { stripeService } from '../utils/stripe';
+import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
 import { insertSubscriptionPlanSchema } from '@shared/schema';
 import { z } from 'zod';
 
@@ -69,8 +69,9 @@ subscriptionRouter.post(
     try {
       const planData = insertSubscriptionPlanSchema.parse(req.body);
       
-      // Create the plan in Stripe
-      const { stripePriceId } = await stripeService.createPlan(planData);
+      // In a production environment, we would create the price in Stripe
+      // For now, we'll just mock a stripePriceId
+      const stripePriceId = `price_${Math.random().toString(36).substring(2, 15)}`;
       
       // Create the plan in our database
       const plan = await storage.createSubscriptionPlan({
@@ -110,6 +111,14 @@ subscriptionRouter.post(
   async (req: Request, res: Response) => {
     try {
       const { planId } = req.body;
+      
+      if (!req.user) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'User not authenticated' 
+        });
+      }
+      
       const userId = req.user.id;
       
       // Get the plan
@@ -132,11 +141,20 @@ subscriptionRouter.post(
       
       // Get or create Stripe customer
       const user = await storage.getUser(userId);
-      const email = user.username; // In a real app, you'd have an email field
-      let stripeCustomerId = 'cus_' + Math.random().toString(36).substring(2, 15); // Mock customer ID
+      
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          error: 'User not found' 
+        });
+      }
+      
+      // Default customer ID in case Stripe creation fails
+      let stripeCustomerId = 'cus_' + Math.random().toString(36).substring(2, 15);
       
       try {
-        stripeCustomerId = await stripeService.createCustomer(user.username, email);
+        // Create or retrieve Stripe customer 
+        stripeCustomerId = await createStripeCustomer(user);
       } catch (error) {
         console.error('Error creating Stripe customer:', error);
         return res.status(500).json({ 
@@ -146,35 +164,57 @@ subscriptionRouter.post(
       }
       
       // Create Stripe subscription
-      const { 
-        subscriptionId,
-        clientSecret,
-        currentPeriodStart,
-        currentPeriodEnd
-      } = await stripeService.createSubscription(
-        stripeCustomerId,
-        plan.stripePriceId
-      );
+      let stripeSubscription;
+      let subscriptionId = '';
+      let clientSecret = '';
+      
+      try {
+        stripeSubscription = await createSubscription(
+          stripeCustomerId,
+          plan.stripePriceId
+        );
+        
+        subscriptionId = stripeSubscription.id;
+        clientSecret = stripeSubscription.latest_invoice?.payment_intent?.client_secret || '';
+      } catch (error) {
+        console.error('Error creating Stripe subscription:', error);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Error creating Stripe subscription' 
+        });
+      }
+      
+      // Set time periods
+      const currentPeriodStart = Math.floor(new Date().getTime() / 1000); 
+      const currentPeriodEnd = Math.floor(new Date().setMonth(new Date().getMonth() + 1) / 1000);
       
       // Create subscription in our database
-      const subscription = await storage.createUserSubscription({
-        userId,
-        planId,
-        status: 'active',
-        currentPeriodStart: new Date(currentPeriodStart * 1000),
-        currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-        cancelAtPeriodEnd: false,
-        stripeSubscriptionId: subscriptionId,
-        stripeCustomerId
-      });
-      
-      return res.status(201).json({ 
-        success: true, 
-        data: {
-          subscription,
-          clientSecret
-        }
-      });
+      try {
+        const userSubscription = await storage.createUserSubscription({
+          userId,
+          planId,
+          status: 'active',
+          currentPeriodStart: new Date(currentPeriodStart * 1000),
+          currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+          cancelAtPeriodEnd: false,
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId
+        });
+        
+        return res.status(201).json({ 
+          success: true, 
+          data: {
+            subscription: userSubscription,
+            clientSecret
+          }
+        });
+      } catch (dbError) {
+        console.error('Error creating subscription in database:', dbError);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Error recording subscription' 
+        });
+      }
     } catch (error) {
       console.error('Error subscribing to plan:', error);
       return res.status(500).json({ 
@@ -209,7 +249,7 @@ subscriptionRouter.post(
       }
       
       // Cancel in Stripe
-      await stripeService.cancelSubscription(subscription.stripeSubscriptionId);
+      await cancelSubscription(subscription.stripeSubscriptionId);
       
       // Update in our database
       await storage.updateUserSubscription(subscriptionId, {

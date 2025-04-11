@@ -2,16 +2,27 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, fore
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User schema (original)
+// User schema with Stripe integration
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  role: text("role").default("user").notNull(), // user, admin
+  stripeCustomerId: text("stripe_customer_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   password: true,
+  firstName: true,
+  lastName: true,
+  role: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

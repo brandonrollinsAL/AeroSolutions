@@ -47,8 +47,8 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
     resolver: zodResolver(accessCodeSchema),
   });
   
-  // Special code for the count of monte cristo example
-  const specialAccessCode = 'countofmontecristobitch';
+  // Special code comes from the backend, we'll just use a placeholder here
+  const specialAccessCode = 'demo-access';
   const [activeTab, setActiveTab] = useState('access');
   
   // Handle form submission
