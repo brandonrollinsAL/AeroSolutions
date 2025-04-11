@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Switch, Route, useLocation } from "wouter";
 import { Helmet } from "react-helmet";
+import { useTranslation } from 'react-i18next';
+
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
 import ClientLandingPage from "@/components/ClientLandingPage";
@@ -15,6 +17,7 @@ import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import MarketplaceCheckoutPage from "@/pages/MarketplaceCheckoutPage";
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [, setLocation] = useLocation();
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<string>("");
