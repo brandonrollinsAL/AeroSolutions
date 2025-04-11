@@ -7,6 +7,9 @@ import { generateCopilotResponse } from "./utils/openai";
 import NodeCache from 'node-cache';
 import { body, query, param, validationResult } from 'express-validator';
 import { generateToken, authorize } from './utils/auth';
+import subscriptionRouter from './routes/subscription';
+import marketplaceRouter from './routes/marketplace';
+import advertisementRouter from './routes/advertisement';
 
 // Performance optimization: Cache for API responses
 // - TTL: 300 seconds (5 minutes)
@@ -82,6 +85,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Apply rate limiting to all API routes
   app.use('/api', rateLimiter.middleware);
+  
+  // Mount revenue-generation routes
+  app.use('/api/subscriptions', subscriptionRouter);
+  app.use('/api/marketplace', marketplaceRouter);
+  app.use('/api/ads', advertisementRouter);
   
   // Add response time tracking for performance monitoring
   app.use((req, res, next) => {
