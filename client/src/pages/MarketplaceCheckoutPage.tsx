@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import MainLayout from '@/layouts/MainLayout';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
@@ -14,10 +14,23 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import PaymentForm from '@/components/PaymentForm';
 
-// Initialize Stripe with public key from server
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '', {
-  locale: 'en',
-});
+// Create a mutable reference for Stripe promise
+let stripePromise: Promise<Stripe | null> | null = null;
+
+// Function to load Stripe with publishable key from the server
+const getStripePromise = async () => {
+  if (!stripePromise) {
+    // Fetch the publishable key from the server
+    const response = await fetch('/api/stripe/config');
+    const { publishableKey } = await response.json();
+    
+    // Initialize Stripe with the fetched key
+    stripePromise = loadStripe(publishableKey, {
+      locale: 'en',
+    });
+  }
+  return stripePromise;
+};
 
 const MarketplaceCheckoutPage: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -27,6 +40,7 @@ const MarketplaceCheckoutPage: React.FC = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [stripeInstance, setStripeInstance] = useState<Stripe | null>(null);
 
   // Fetch item details
   const { data: itemData, isLoading, error } = useQuery({
@@ -49,6 +63,21 @@ const MarketplaceCheckoutPage: React.FC = () => {
       setLocation('/login?redirect=/marketplace');
     }
   }, [setLocation]);
+  
+  // Initialize Stripe when component mounts
+  useEffect(() => {
+    const initializeStripe = async () => {
+      try {
+        const stripe = await getStripePromise();
+        setStripeInstance(stripe);
+      } catch (error) {
+        console.error('Error initializing Stripe:', error);
+        setErrorMessage('Failed to initialize payment system. Please try again later.');
+      }
+    };
+    
+    initializeStripe();
+  }, []);
 
   // Calculate total price
   const totalPrice = item ? parseFloat(item.price) * quantity : 0;
@@ -267,14 +296,19 @@ const MarketplaceCheckoutPage: React.FC = () => {
                   )}
                 </Button>
               </>
-            ) : (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
+            ) : clientSecret && stripeInstance ? (
+              <Elements stripe={stripeInstance} options={{ clientSecret }}>
                 <PaymentForm 
                   onSuccess={handlePaymentSuccess}
                   amount={totalPrice}
                   clientSecret={clientSecret}
                 />
               </Elements>
+            ) : (
+              <div className="flex items-center justify-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2">Initializing payment system...</span>
+              </div>
             )}
           </div>
         </div>
