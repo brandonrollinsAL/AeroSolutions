@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { FaCalendarAlt, FaUser, FaArrowRight } from "react-icons/fa";
+import { FaCalendarAlt, FaUser, FaArrowRight, FaTwitter, FaLinkedin, FaFacebookF } from "react-icons/fa";
 import { BlogPost } from "@/lib/types";
+import SocialFeed from "@/components/SocialFeed";
+import SocialShareButtons from "@/components/SocialShareButtons";
 
 export default function Blog() {
   const blogPosts: BlogPost[] = [
@@ -87,22 +89,56 @@ export default function Blog() {
                 </div>
                 <h3 className="text-xl font-bold font-montserrat text-primary mb-3">{post.title}</h3>
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                <a href="#" className="inline-flex items-center text-luxury font-semibold hover:underline">
-                  Read more
-                  <FaArrowRight className="ml-2" />
-                </a>
+                <div className="flex justify-between items-center">
+                  <a href="#" className="inline-flex items-center text-luxury font-semibold hover:underline">
+                    Read more
+                    <FaArrowRight className="ml-2" />
+                  </a>
+                  
+                  <SocialShareButtons 
+                    url={`https://aerosolutions.dev/blog/${post.id}`}
+                    title={post.title}
+                    description={post.excerpt}
+                    className="flex space-x-2"
+                  />
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
         
         <motion.div 
-          className="mt-12 text-center"
+          className="mt-16"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
           variants={fadeIn}
           custom={4}
+        >
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <SocialFeed
+              initialTab="twitter"
+              username="aerosolutions"
+              limit={3}
+              height={400}
+              className="shadow-lg hover:shadow-xl transition-all duration-300"
+            />
+            <SocialFeed
+              initialTab="linkedin"
+              username="aerosolutions"
+              height={400}
+              className="shadow-lg hover:shadow-xl transition-all duration-300"
+            />
+          </div>
+        </motion.div>
+        
+        <motion.div 
+          className="mt-8 text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={fadeIn}
+          custom={5}
         >
           <a href="#" className="inline-block bg-black hover:bg-black/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300">
             View all articles

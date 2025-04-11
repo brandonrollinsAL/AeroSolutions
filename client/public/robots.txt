@@ -1,19 +1,43 @@
-# robots.txt for Aero Solutions
+# robots.txt for Aero Solutions Website
 
+# Allow all crawlers
 User-agent: *
 Allow: /
-Disallow: /login
-Disallow: /signup
-Disallow: /account
-Disallow: /client-preview
-Disallow: /account/orders
-Disallow: /account/subscriptions
-Disallow: /subscriptions/checkout
-Disallow: /marketplace/purchase
 
-# Allow Google to index everything
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /client-preview/
+Disallow: /subscription-checkout/
+Disallow: /marketplace-checkout/
+Disallow: /api/
+
+# Specify the location of the sitemap
+Sitemap: https://aerosolutions.dev/sitemap.xml
+
+# Specific rules for major crawlers
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
-# Sitemap location
-Sitemap: https://aerosolutions.dev/sitemap.xml
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+# Block AI training crawlers from certain content
+User-agent: GPTBot
+Disallow: /blog/
+Disallow: /whitepapers/
+Disallow: /research/
+
+User-agent: ChatGPT-User
+Disallow: /blog/
+Disallow: /whitepapers/
+Disallow: /research/

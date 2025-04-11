@@ -1,8 +1,7 @@
-import React from 'react';
-import { Helmet } from 'react-helmet';
+import React, { useEffect } from 'react';
 
 interface StructuredDataProps {
-  type: 'Organization' | 'WebSite' | 'Article' | 'Product' | 'Service' | 'BreadcrumbList' | 'FAQPage';
+  type: string; // Allow any schema.org type
   data: any;
 }
 
@@ -42,31 +41,102 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
     }
   };
 
-  // Merge the appropriate base data with the provided data
-  let structuredData;
-  
-  switch (type) {
-    case 'Organization':
-      structuredData = { ...organizationData, ...data };
-      break;
-    case 'WebSite':
-      structuredData = { ...websiteData, ...data };
-      break;
-    default:
-      structuredData = {
-        "@context": "https://schema.org",
-        "@type": type,
-        ...data
-      };
-  }
+  useEffect(() => {
+    // Create the structured data based on the type
+    let structuredData: any;
+    
+    switch (type) {
+      case 'Organization':
+        structuredData = { ...organizationData, ...data };
+        break;
+      case 'WebSite':
+        structuredData = { ...websiteData, ...data };
+        break;
+      case 'ProfessionalService':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "ProfessionalService",
+          ...data
+        };
+        break;
+      case 'FAQPage':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          ...data
+        };
+        break;
+      case 'ItemList':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          ...data
+        };
+        break;
+      case 'BlogPosting':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          ...data
+        };
+        break;
+      case 'SoftwareApplication':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          ...data
+        };
+        break;
+      case 'Product':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          ...data
+        };
+        break;
+      case 'Service':
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": "Service",
+          ...data
+        };
+        break;
+      default:
+        structuredData = {
+          "@context": "https://schema.org",
+          "@type": type,
+          ...data
+        };
+    }
 
-  return (
-    <Helmet>
-      <script type="application/ld+json">
-        {JSON.stringify(structuredData)}
-      </script>
-    </Helmet>
-  );
+    // Create a unique ID for this structured data
+    const scriptId = `structured-data-${type}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Check if the script already exists
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+    
+    // If it doesn't exist, create it
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'application/ld+json';
+      document.head.appendChild(script);
+    }
+    
+    // Update the script content
+    script.textContent = JSON.stringify(structuredData);
+    
+    // Cleanup function to remove the script when the component is unmounted
+    return () => {
+      const scriptToRemove = document.getElementById(scriptId);
+      if (scriptToRemove) {
+        document.head.removeChild(scriptToRemove);
+      }
+    };
+  }, [type, data]);
+
+  // This component doesn't render anything visible
+  return null;
 };
 
 export default StructuredData;

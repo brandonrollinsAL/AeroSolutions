@@ -2,9 +2,47 @@ import React from 'react';
 import { Link } from 'wouter';
 import { Separator } from '@/components/ui/separator';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import SEOFooter from '@/components/SEOFooter';
+import StructuredData from '@/components/StructuredData';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  
+  // Organization structured data for footer
+  const organizationData = {
+    name: "Aero Solutions",
+    legalName: "Aero Solutions LLC",
+    url: "https://aerosolutions.dev",
+    logo: "https://aerosolutions.dev/logo.png",
+    foundingDate: "2018",
+    founders: [
+      {
+        "@type": "Person",
+        "name": "Brandon Rollins"
+      }
+    ],
+    address: {
+      "@type": "PostalAddress",
+      "streetAddress": "123 Aviation Way, Suite 450",
+      "addressLocality": "Charlotte",
+      "addressRegion": "NC",
+      "postalCode": "28202",
+      "addressCountry": "US"
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      "telephone": "+1-303-555-0122",
+      "contactType": "customer service",
+      "email": "info@aerosolutions.dev",
+      "availableLanguage": ["English"]
+    },
+    sameAs: [
+      "https://www.facebook.com/aerosolutions",
+      "https://www.twitter.com/aerosolutions",
+      "https://www.linkedin.com/company/aerosolutions",
+      "https://www.instagram.com/aerosolutions"
+    ]
+  };
   
   return (
     <footer className="bg-background border-t">
@@ -16,19 +54,19 @@ const Footer: React.FC = () => {
               Providing cutting-edge aviation technology solutions since 2018. Innovation in flight, excellence in service.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://facebook.com/aerosolutions" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <span className="sr-only">Facebook</span>
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://twitter.com/aerosolutions" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <span className="sr-only">Twitter</span>
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://linkedin.com/company/aerosolutions" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <span className="sr-only">LinkedIn</span>
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://instagram.com/aerosolutions" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <span className="sr-only">Instagram</span>
                 <Instagram className="h-5 w-5" />
               </a>
@@ -138,6 +176,12 @@ const Footer: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* SEO-enhanced legal section */}
+        <SEOFooter className="mt-8" />
+        
+        {/* Structured data for organization */}
+        <StructuredData type="Organization" data={organizationData} />
       </div>
     </footer>
   );
