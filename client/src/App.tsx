@@ -15,6 +15,8 @@ import SubscriptionsPage from "@/pages/SubscriptionsPage";
 import MarketplacePage from "@/pages/MarketplacePage";
 import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import MarketplaceCheckoutPage from "@/pages/MarketplaceCheckoutPage";
+import PremiumPage from "@/pages/PremiumPage";
+import HistoryPage from "@/pages/HistoryPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -149,6 +151,8 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/premium" component={PremiumPage} />
+        <Route path="/history" component={HistoryPage} />
         <Route path="/subscriptions" component={SubscriptionsPage} />
         <Route path="/subscriptions/checkout" component={SubscriptionCheckoutPage} />
         <Route path="/marketplace" component={MarketplacePage} />

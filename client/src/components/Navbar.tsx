@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,11 +17,13 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
+import { Menu, X, ChevronDown, User, LogOut, Star, History, Globe } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
+  const { t } = useTranslation();
   
   // Check if user is logged in
   const isLoggedIn = !!localStorage.getItem('token');
@@ -37,6 +40,8 @@ const Navbar: React.FC = () => {
     { path: '/platforms', label: 'Platforms' },
     { path: '/marketplace', label: 'Marketplace' },
     { path: '/subscriptions', label: 'Subscriptions' },
+    { path: '/premium', label: 'Premium' },
+    { path: '/history', label: 'Our History' },
     { path: '/contact', label: 'Contact' },
   ];
   
@@ -149,6 +154,32 @@ const Navbar: React.FC = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
+                <Link href="/premium">
+                  <NavigationMenuLink 
+                    className={`group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none ${
+                      location === '/premium' ? 'bg-accent text-accent-foreground' : ''
+                    }`}
+                  >
+                    <Star className="w-4 h-4 mr-1" />
+                    {t('nav_premium')}
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/history">
+                  <NavigationMenuLink 
+                    className={`group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none ${
+                      location === '/history' ? 'bg-accent text-accent-foreground' : ''
+                    }`}
+                  >
+                    <History className="w-4 h-4 mr-1" />
+                    {t('nav_history')}
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
                 <Link href="/contact">
                   <NavigationMenuLink 
                     className={`group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none ${
@@ -163,6 +194,8 @@ const Navbar: React.FC = () => {
           </NavigationMenu>
           
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -220,23 +253,33 @@ const Navbar: React.FC = () => {
               ))}
               
               <div className="pt-4 pb-3 border-t border-gray-200">
-                <div className="px-4 flex items-center">
-                  {isLoggedIn ? (
-                    <>
-                      <div className="ml-3">
-                        <div className="text-base font-medium">Account</div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col space-y-2 w-full">
-                      <Button asChild>
-                        <Link href="/login">Login</Link>
-                      </Button>
-                      <Button variant="outline" asChild>
-                        <Link href="/signup">Sign Up</Link>
-                      </Button>
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">{t('language')}</span>
                     </div>
-                  )}
+                    <LanguageSwitcher />
+                  </div>
+                  
+                  <div className="px-4 flex items-center">
+                    {isLoggedIn ? (
+                      <>
+                        <div className="ml-3">
+                          <div className="text-base font-medium">Account</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col space-y-2 w-full">
+                        <Button asChild>
+                          <Link href="/login">Login</Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                          <Link href="/signup">Sign Up</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {isLoggedIn && (
                   <div className="mt-3 space-y-1 px-2">
