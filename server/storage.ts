@@ -146,6 +146,178 @@ export class DatabaseStorage implements IStorage {
       console.error("Error initializing sample data:", error);
     }
   }
+  
+  // Subscription methods
+  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [subscriptionPlan] = await db.insert(subscriptionPlans).values(plan).returning();
+    return subscriptionPlan;
+  }
+  
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscriptionPlans).orderBy(asc(subscriptionPlans.price));
+  }
+  
+  async getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(asc(subscriptionPlans.price));
+  }
+  
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
+    return plan;
+  }
+  
+  async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
+    const [userSubscription] = await db.insert(userSubscriptions).values(subscription).returning();
+    return userSubscription;
+  }
+  
+  async getUserSubscriptions(userId: number): Promise<UserSubscription[]> {
+    return await db.select().from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, userId))
+      .orderBy(desc(userSubscriptions.createdAt));
+  }
+  
+  async getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined> {
+    const now = new Date();
+    const [subscription] = await db.select().from(userSubscriptions)
+      .where(
+        and(
+          eq(userSubscriptions.userId, userId),
+          eq(userSubscriptions.status, 'active'),
+          gt(userSubscriptions.currentPeriodEnd, now)
+        )
+      )
+      .orderBy(desc(userSubscriptions.createdAt));
+    return subscription;
+  }
+  
+  async updateUserSubscription(id: number, data: Partial<InsertUserSubscription>): Promise<UserSubscription> {
+    const [subscription] = await db.update(userSubscriptions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(userSubscriptions.id, id))
+      .returning();
+    return subscription;
+  }
+  
+  // Marketplace methods
+  async createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem> {
+    const [marketplaceItem] = await db.insert(marketplaceItems).values(item).returning();
+    return marketplaceItem;
+  }
+  
+  async getAllMarketplaceItems(): Promise<MarketplaceItem[]> {
+    return await db.select().from(marketplaceItems)
+      .orderBy(desc(marketplaceItems.createdAt));
+  }
+  
+  async getAvailableMarketplaceItems(): Promise<MarketplaceItem[]> {
+    return await db.select().from(marketplaceItems)
+      .where(eq(marketplaceItems.isAvailable, true))
+      .orderBy(desc(marketplaceItems.createdAt));
+  }
+  
+  async getMarketplaceItem(id: number): Promise<MarketplaceItem | undefined> {
+    const [item] = await db.select().from(marketplaceItems).where(eq(marketplaceItems.id, id));
+    return item;
+  }
+  
+  async updateMarketplaceItem(id: number, data: Partial<InsertMarketplaceItem>): Promise<MarketplaceItem> {
+    const [item] = await db.update(marketplaceItems)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(marketplaceItems.id, id))
+      .returning();
+    return item;
+  }
+  
+  async createMarketplaceOrder(order: InsertMarketplaceOrder): Promise<MarketplaceOrder> {
+    const [marketplaceOrder] = await db.insert(marketplaceOrders).values(order).returning();
+    return marketplaceOrder;
+  }
+  
+  async getUserMarketplaceOrders(userId: number): Promise<MarketplaceOrder[]> {
+    return await db.select().from(marketplaceOrders)
+      .where(eq(marketplaceOrders.buyerId, userId))
+      .orderBy(desc(marketplaceOrders.createdAt));
+  }
+  
+  async updateMarketplaceOrder(id: number, data: Partial<InsertMarketplaceOrder>): Promise<MarketplaceOrder> {
+    const [order] = await db.update(marketplaceOrders)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(marketplaceOrders.id, id))
+      .returning();
+    return order;
+  }
+  
+  // Advertisement methods
+  async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
+    const [advertisement] = await db.insert(advertisements).values(ad).returning();
+    return advertisement;
+  }
+  
+  async getAllAdvertisements(): Promise<Advertisement[]> {
+    return await db.select().from(advertisements)
+      .orderBy(desc(advertisements.createdAt));
+  }
+  
+  async getActiveAdvertisements(): Promise<Advertisement[]> {
+    const now = new Date();
+    return await db.select().from(advertisements)
+      .where(
+        and(
+          eq(advertisements.isActive, true),
+          lt(advertisements.startDate, now),
+          gt(advertisements.endDate, now)
+        )
+      )
+      .orderBy(desc(advertisements.createdAt));
+  }
+  
+  async getActiveAdvertisementsByType(type: string): Promise<Advertisement[]> {
+    const now = new Date();
+    return await db.select().from(advertisements)
+      .where(
+        and(
+          eq(advertisements.isActive, true),
+          eq(advertisements.type, type),
+          lt(advertisements.startDate, now),
+          gt(advertisements.endDate, now)
+        )
+      )
+      .orderBy(desc(advertisements.createdAt));
+  }
+  
+  async getAdvertisement(id: number): Promise<Advertisement | undefined> {
+    const [ad] = await db.select().from(advertisements).where(eq(advertisements.id, id));
+    return ad;
+  }
+  
+  async updateAdvertisement(id: number, data: Partial<InsertAdvertisement>): Promise<Advertisement> {
+    const [ad] = await db.update(advertisements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(advertisements.id, id))
+      .returning();
+    return ad;
+  }
+  
+  async incrementAdImpressions(id: number): Promise<void> {
+    await db.update(advertisements)
+      .set({ 
+        impressions: sql`${advertisements.impressions} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(advertisements.id, id));
+  }
+  
+  async incrementAdClicks(id: number): Promise<void> {
+    await db.update(advertisements)
+      .set({ 
+        clicks: sql`${advertisements.clicks} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(advertisements.id, id));
+  }
 }
 
 // Create a new instance of DatabaseStorage
