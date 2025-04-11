@@ -1,43 +1,78 @@
-# robots.txt for Aero Solutions Website
-
-# Allow all crawlers
 User-agent: *
 Allow: /
 
-# Disallow admin and private areas
-Disallow: /admin/
+# Main site routes
+Allow: /services
+Allow: /platforms
+Allow: /marketplace
+Allow: /subscriptions
+Allow: /premium
+Allow: /history
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms
+Allow: /security
+
+# Localized routes
+Allow: /?lng=en
+Allow: /?lng=es
+Allow: /?lng=fr
+Allow: /?lng=de
+Allow: /?lng=zh
+Allow: /?lng=ja
+Allow: /services?lng=en
+Allow: /services?lng=es
+Allow: /services?lng=fr
+Allow: /services?lng=de
+Allow: /services?lng=zh
+Allow: /services?lng=ja
+Allow: /platforms?lng=en
+Allow: /platforms?lng=es
+Allow: /platforms?lng=fr
+Allow: /platforms?lng=de
+Allow: /platforms?lng=zh
+Allow: /platforms?lng=ja
+Allow: /marketplace?lng=en
+Allow: /marketplace?lng=es
+Allow: /marketplace?lng=fr
+Allow: /marketplace?lng=de
+Allow: /marketplace?lng=zh
+Allow: /marketplace?lng=ja
+Allow: /subscriptions?lng=en
+Allow: /subscriptions?lng=es
+Allow: /subscriptions?lng=fr
+Allow: /subscriptions?lng=de
+Allow: /subscriptions?lng=zh
+Allow: /subscriptions?lng=ja
+Allow: /premium?lng=en
+Allow: /premium?lng=es
+Allow: /premium?lng=fr
+Allow: /premium?lng=de
+Allow: /premium?lng=zh
+Allow: /premium?lng=ja
+Allow: /history?lng=en
+Allow: /history?lng=es
+Allow: /history?lng=fr
+Allow: /history?lng=de
+Allow: /history?lng=zh
+Allow: /history?lng=ja
+Allow: /contact?lng=en
+Allow: /contact?lng=es
+Allow: /contact?lng=fr
+Allow: /contact?lng=de
+Allow: /contact?lng=zh
+Allow: /contact?lng=ja
+
+# Block client preview pages
 Disallow: /client-preview/
-Disallow: /subscription-checkout/
-Disallow: /marketplace-checkout/
-Disallow: /api/
+# Block checkout pages
+Disallow: /subscriptions/checkout
+Disallow: /marketplace/purchase
+# Block account and login pages
+Disallow: /login
+Disallow: /signup
+Disallow: /account
+Disallow: /account/
 
-# Specify the location of the sitemap
+# Allow access to the sitemap
 Sitemap: https://aerosolutions.dev/sitemap.xml
-
-# Specific rules for major crawlers
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 1
-
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 1
-
-User-agent: Slurp
-Allow: /
-Crawl-delay: 2
-
-User-agent: DuckDuckBot
-Allow: /
-Crawl-delay: 1
-
-# Block AI training crawlers from certain content
-User-agent: GPTBot
-Disallow: /blog/
-Disallow: /whitepapers/
-Disallow: /research/
-
-User-agent: ChatGPT-User
-Disallow: /blog/
-Disallow: /whitepapers/
-Disallow: /research/

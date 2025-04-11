@@ -11,6 +11,7 @@ import PrivacyPolicy from "@/components/PrivacyPolicy";
 import TermsOfService from "@/components/TermsOfService";
 import SecurityPolicy from "@/components/SecurityPolicy";
 import PrivacyConsentBanner from "@/components/PrivacyConsentBanner";
+import LanguageMetaTags from "@/components/LanguageMetaTags";
 import SubscriptionsPage from "@/pages/SubscriptionsPage";
 import MarketplacePage from "@/pages/MarketplacePage";
 import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
@@ -110,8 +111,24 @@ export default function App() {
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
       </Helmet>
       
+      {/* Add language meta tags for the current path */}
+      <LanguageMetaTags currentPath={currentPath} />
+      
       <Switch>
-        <Route path="/" component={HomePage} />
+        <Route path="/">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('seo_title')}</title>
+                <meta name="description" content={t('seo_description')} />
+                <meta name="robots" content="index, follow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <HomePage />
+            </>
+          )}
+        </Route>
         <Route path="/privacy-policy">
           {() => (
             <>
@@ -120,6 +137,8 @@ export default function App() {
                 <meta name="description" content="Learn about how Aero Solutions handles your data, our privacy practices, and your rights under GDPR and other privacy regulations." />
                 <meta name="robots" content="index, follow" />
                 <link rel="canonical" href="https://aerosolutions.dev/privacy-policy" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <PrivacyPolicy />
             </>
@@ -133,6 +152,8 @@ export default function App() {
                 <meta name="description" content="Review Aero Solutions' terms of service, usage policy, and legal agreement for our aviation software services and platforms." />
                 <meta name="robots" content="index, follow" />
                 <link rel="canonical" href="https://aerosolutions.dev/terms" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <TermsOfService />
             </>
@@ -146,17 +167,101 @@ export default function App() {
                 <meta name="description" content="Learn about Aero Solutions' industry-leading security practices, data protection measures, and compliance with security standards." />
                 <meta name="robots" content="index, follow" />
                 <link rel="canonical" href="https://aerosolutions.dev/security" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <SecurityPolicy />
             </>
           )}
         </Route>
-        <Route path="/premium" component={PremiumPage} />
-        <Route path="/history" component={HistoryPage} />
-        <Route path="/subscriptions" component={SubscriptionsPage} />
-        <Route path="/subscriptions/checkout" component={SubscriptionCheckoutPage} />
-        <Route path="/marketplace" component={MarketplacePage} />
-        <Route path="/marketplace/purchase" component={MarketplaceCheckoutPage} />
+        <Route path="/premium">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('premium_title')} | Aero Solutions</title>
+                <meta name="description" content={t('premium_desc')} />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/premium" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <PremiumPage />
+            </>
+          )}
+        </Route>
+        <Route path="/history">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('history_title')} | Aero Solutions</title>
+                <meta name="description" content={t('history_intro')} />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/history" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <HistoryPage />
+            </>
+          )}
+        </Route>
+        <Route path="/subscriptions">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('subscriptions')} | Aero Solutions</title>
+                <meta name="description" content="Discover premium subscription plans for aviation software solutions. Access advanced features, priority support, and specialized tools." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/subscriptions" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <SubscriptionsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/subscriptions/checkout">
+          {() => (
+            <>
+              <Helmet>
+                <title>Checkout | Aero Solutions</title>
+                <meta name="description" content="Complete your subscription purchase securely with Aero Solutions." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <SubscriptionCheckoutPage />
+            </>
+          )}
+        </Route>
+        <Route path="/marketplace">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('marketplace')} | Aero Solutions</title>
+                <meta name="description" content="Browse aviation software tools, extensions, and specialized solutions in our marketplace. Find the perfect tools for your aviation needs." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/marketplace" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MarketplacePage />
+            </>
+          )}
+        </Route>
+        <Route path="/marketplace/purchase">
+          {() => (
+            <>
+              <Helmet>
+                <title>Purchase | Aero Solutions Marketplace</title>
+                <meta name="description" content="Complete your marketplace purchase securely with Aero Solutions." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MarketplaceCheckoutPage />
+            </>
+          )}
+        </Route>
         <Route path="/client-preview/:code">
           {(params) => (
             <>
@@ -165,6 +270,8 @@ export default function App() {
                 <meta name="description" content="Preview your custom aviation software project with our secure client access portal. Explore features, functionality, and detailed documentation." />
                 <meta name="robots" content="noindex, nofollow" />
                 <link rel="canonical" href={`https://aerosolutions.dev/client-preview/${params.code}`} />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <ClientLandingPage accessCode={params.code || accessCode || ""} />
             </>
@@ -177,6 +284,8 @@ export default function App() {
                 <title>Page Not Found | Aero Solutions</title>
                 <meta name="description" content="Sorry, the page you are looking for doesn't exist. Return to our homepage to explore aviation software development services." />
                 <meta name="robots" content="noindex, follow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <NotFound />
             </>
