@@ -24,7 +24,7 @@ export default function Hero() {
   return (
     <section 
       id="home" 
-      className="pt-32 pb-24 bg-gradient-to-br from-luxury via-primary to-luxury/90 relative overflow-hidden"
+      className="pt-32 pb-24 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900/90 relative overflow-hidden"
       aria-label="Aero Solutions Introduction"
     >
       {/* Background Pattern */}
@@ -40,22 +40,22 @@ export default function Hero() {
       />
       
       {/* Subtle overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-luxury/30 z-0"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/30 z-0"></div>
       
       {/* Gold accent line at top */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-highlight via-bronze to-highlight"></div>
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 via-yellow-600 to-amber-300"></div>
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div className="text-white">
             <motion.div 
-              className="inline-block mb-4 px-3 py-1 bg-highlight/10 border border-highlight/20 rounded-full"
+              className="inline-block mb-4 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
               custom={0}
             >
-              <span className="text-highlight text-sm font-medium tracking-wider uppercase">Premium Aviation Solutions</span>
+              <span className="text-amber-300 text-sm font-medium tracking-wider uppercase">Premium Aviation Solutions</span>
             </motion.div>
             
             <motion.h1 
@@ -65,11 +65,11 @@ export default function Hero() {
               animate="visible"
               custom={1}
             >
-              Aviation Software <span className="text-highlight">Development</span> by Pilots for Pilots
+              Aviation Software <span className="text-amber-300">Development</span> by Pilots for Pilots
             </motion.h1>
             
             <motion.p 
-              className="mt-8 text-xl text-platinum leading-relaxed"
+              className="mt-8 text-xl text-gray-200 leading-relaxed"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
@@ -97,14 +97,14 @@ export default function Hero() {
             >
               <a 
                 href="#contact" 
-                className="bg-highlight hover:bg-highlight/90 text-luxury font-bold py-4 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_5px_15px_rgba(201,181,131,0.35)]"
+                className="bg-amber-400 hover:bg-amber-500 text-blue-900 font-bold py-4 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
                 aria-label="Get started with a custom aviation software solution"
               >
                 Get Started
               </a>
               <a 
                 href="#platforms" 
-                className="bg-transparent hover:bg-white/10 text-white font-semibold py-4 px-8 rounded-lg border border-highlight/30 transition-all duration-300 hover:scale-105 hover:border-highlight/60"
+                className="bg-transparent hover:bg-white/10 text-white font-semibold py-4 px-8 rounded-lg border border-amber-400/30 transition-all duration-300 hover:scale-105 hover:border-amber-400/60"
                 aria-label="Explore our aviation software platforms"
               >
                 Explore Platforms
@@ -118,42 +118,15 @@ export default function Hero() {
             initial="hidden"
             animate="visible"
           >
-            {/* Aviation-specific image - optimized */}
+            {/* Aviation-specific image - simplified version */}
             <div className="relative overflow-hidden rounded-lg shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] h-[500px] w-full">
-              {/* Low quality image placeholder - loads immediately */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center blur-sm scale-105 transition-opacity duration-300"
-                style={{
-                  backgroundImage: "url('/images/aviation-controls-tiny.jpeg')",
-                  opacity: 1
-                }}
-                aria-hidden="true"
-              />
-              
-              {/* High quality image - loads with priority */}
               <img 
                 src="/images/aviation-controls.jpeg" 
-                srcSet="/images/aviation-controls.webp, /images/aviation-controls.jpeg" 
                 alt="Advanced aviation flight controls and instruments" 
-                className="relative z-10 h-full w-full object-cover" 
+                className="h-full w-full object-cover" 
                 loading="eager"
                 width="1024"
                 height="640"
-
-                onLoad={(e) => {
-                  // Hide the placeholder when the main image loads
-                  const target = e.target as HTMLImageElement;
-                  if (target.parentElement) {
-                    const placeholder = target.parentElement.querySelector('div');
-                    if (placeholder) {
-                      placeholder.style.opacity = '0';
-                    }
-                  }
-                }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/images/aviation-tech.jpeg"; // Fallback image
-                }}
               />
             </div>
           </motion.div>
@@ -166,35 +139,35 @@ export default function Hero() {
           animate="visible"
           custom={5}
         >
-          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+          <div className="p-6 rounded-xl bg-gradient-to-br from-blue-900/70 to-blue-800/50 backdrop-blur-md border border-amber-400/20 shadow-lg hover:shadow-amber-400/10 hover:border-amber-400/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-900 border border-amber-400/30 text-amber-300 text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
               <FaLaptopCode />
             </div>
-            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Full-Stack Aviation Development</h2>
+            <h2 className="font-bold font-serif text-xl text-gray-100 mb-2">Full-Stack Aviation Development</h2>
             <p className="text-sm text-gray-200 leading-relaxed">End-to-end custom solutions built for aviation excellence</p>
           </div>
           
-          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+          <div className="p-6 rounded-xl bg-gradient-to-br from-blue-900/70 to-blue-800/50 backdrop-blur-md border border-amber-400/20 shadow-lg hover:shadow-amber-400/10 hover:border-amber-400/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-900 border border-amber-400/30 text-amber-300 text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
               <FaPlane />
             </div>
-            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Built by Pilots</h2>
+            <h2 className="font-bold font-serif text-xl text-gray-100 mb-2">Built by Pilots</h2>
             <p className="text-sm text-gray-200 leading-relaxed">Real aviation experience integrated into every feature</p>
           </div>
           
-          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+          <div className="p-6 rounded-xl bg-gradient-to-br from-blue-900/70 to-blue-800/50 backdrop-blur-md border border-amber-400/20 shadow-lg hover:shadow-amber-400/10 hover:border-amber-400/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-900 border border-amber-400/30 text-amber-300 text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
               <FaHandshake />
             </div>
-            <h2 className="font-bold font-serif text-xl text-platinum mb-2">No Payment Until Satisfied</h2>
+            <h2 className="font-bold font-serif text-xl text-gray-100 mb-2">No Payment Until Satisfied</h2>
             <p className="text-sm text-gray-200 leading-relaxed">Zero financial risk with our satisfaction guarantee</p>
           </div>
           
-          <div className="p-6 rounded-xl bg-gradient-to-br from-luxury/70 to-primary/50 backdrop-blur-md border border-highlight/20 shadow-lg hover:shadow-highlight/10 hover:border-highlight/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-luxury border border-highlight/30 text-highlight text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
+          <div className="p-6 rounded-xl bg-gradient-to-br from-blue-900/70 to-blue-800/50 backdrop-blur-md border border-amber-400/20 shadow-lg hover:shadow-amber-400/10 hover:border-amber-400/30 transition-all duration-300 transform hover:-translate-y-1" role="listitem">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-900 border border-amber-400/30 text-amber-300 text-2xl mb-4 mx-auto shadow-inner" aria-hidden="true">
               <FaSync />
             </div>
-            <h2 className="font-bold font-serif text-xl text-platinum mb-2">Four Integrated Platforms</h2>
+            <h2 className="font-bold font-serif text-xl text-gray-100 mb-2">Four Integrated Platforms</h2>
             <p className="text-sm text-gray-200 leading-relaxed">Comprehensive aviation ecosystem for all your needs</p>
           </div>
           
