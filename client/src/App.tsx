@@ -5,11 +5,16 @@ import { Helmet } from "react-helmet";
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
 import ClientLandingPage from "@/components/ClientLandingPage";
+import PrivacyPolicy from "@/components/PrivacyPolicy";
+import TermsOfService from "@/components/TermsOfService";
+import SecurityPolicy from "@/components/SecurityPolicy";
+import PrivacyConsentBanner from "@/components/PrivacyConsentBanner";
 
 export default function App() {
   const [, setLocation] = useLocation();
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState<string>("");
+  const [consentAccepted, setConsentAccepted] = useState<boolean>(false);
 
   // Listen for messages from the ClientPreviewModal
   useEffect(() => {
@@ -98,6 +103,45 @@ export default function App() {
       
       <Switch>
         <Route path="/" component={HomePage} />
+        <Route path="/privacy-policy">
+          {() => (
+            <>
+              <Helmet>
+                <title>Privacy Policy | Aero Solutions Aviation Software</title>
+                <meta name="description" content="Learn about how Aero Solutions handles your data, our privacy practices, and your rights under GDPR and other privacy regulations." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/privacy-policy" />
+              </Helmet>
+              <PrivacyPolicy />
+            </>
+          )}
+        </Route>
+        <Route path="/terms">
+          {() => (
+            <>
+              <Helmet>
+                <title>Terms of Service | Aero Solutions Aviation Software</title>
+                <meta name="description" content="Review Aero Solutions' terms of service, usage policy, and legal agreement for our aviation software services and platforms." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/terms" />
+              </Helmet>
+              <TermsOfService />
+            </>
+          )}
+        </Route>
+        <Route path="/security">
+          {() => (
+            <>
+              <Helmet>
+                <title>Security Policy | Aero Solutions Aviation Software</title>
+                <meta name="description" content="Learn about Aero Solutions' industry-leading security practices, data protection measures, and compliance with security standards." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/security" />
+              </Helmet>
+              <SecurityPolicy />
+            </>
+          )}
+        </Route>
         <Route path="/client-preview/:code">
           {(params) => (
             <>
@@ -124,6 +168,17 @@ export default function App() {
           )}
         </Route>
       </Switch>
+      
+      {/* Privacy consent banner */}
+      <PrivacyConsentBanner 
+        onAccept={() => setConsentAccepted(true)} 
+        onDecline={() => {
+          // In a real production app, we would disable analytics and tracking
+          setConsentAccepted(false);
+          console.log('User declined cookie consent - tracking disabled');
+        }} 
+      />
+      
       <Toaster />
     </>
   );

@@ -1,5 +1,6 @@
-import { FaEnvelope, FaPhoneAlt, FaLinkedinIn, FaTwitter, FaGithub, FaInstagram } from "react-icons/fa";
+import { FaEnvelope, FaPhoneAlt, FaLinkedinIn, FaTwitter, FaGithub, FaInstagram, FaShieldAlt } from "react-icons/fa";
 import AeroLogo from "./AeroLogo";
+import { Link } from "wouter";
 
 export default function Footer() {
   const quickLinks = [
@@ -147,10 +148,17 @@ export default function Footer() {
               <div className="h-8 w-px bg-gradient-to-b from-transparent via-highlight/40 to-transparent mx-4 hidden md:block"></div>
               <p className="text-gray-400">&copy; {new Date().getFullYear()} Aero Solutions. All rights reserved.</p>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-8">
-              <a href="#" className="text-gray-400 hover:text-highlight transition-colors duration-300">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-highlight transition-colors duration-300">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-highlight transition-colors duration-300">Sitemap</a>
+            <div className="mt-4 md:mt-0 flex flex-wrap space-x-4 md:space-x-8 justify-center md:justify-end">
+              <Link href="/privacy-policy" className="text-gray-400 hover:text-highlight transition-colors duration-300 flex items-center mb-2">
+                <FaShieldAlt className="mr-1" size={12} />
+                <span>Privacy Policy</span>
+              </Link>
+              <Link href="/security" className="text-gray-400 hover:text-highlight transition-colors duration-300 flex items-center mb-2">
+                <FaShieldAlt className="mr-1" size={12} />
+                <span>Security</span>
+              </Link>
+              <Link href="/terms" className="text-gray-400 hover:text-highlight transition-colors duration-300 mb-2">Terms of Service</Link>
+              <Link href="/sitemap.xml" className="text-gray-400 hover:text-highlight transition-colors duration-300 mb-2">Sitemap</Link>
             </div>
           </div>
         </div>
