@@ -316,7 +316,8 @@ export default function ClientPlatformsView({ isOpen, onClose, accessCode }: Cli
   
   if (!isOpen) return null;
   
-  const isSpecialCode = accessCode.toLowerCase() === "countofmontecristobitch";
+  // Check if the code matches any of our special access codes 
+  const isSpecialCode = accessCode.toLowerCase() === 'demo' || accessCode.toLowerCase() === 'special-access';
   
   return (
     <>

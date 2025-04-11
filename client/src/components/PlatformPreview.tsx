@@ -113,16 +113,20 @@ export default function PlatformPreview({ isOpen, onClose, platform }: PlatformP
                 <div className="relative rounded-xl overflow-hidden h-80 mb-8 bg-gray-100">
                   {platform.screenshots.length > 0 ? (
                     <>
-                      <img 
-                        src={platform.screenshots[currentImageIndex].image} 
-                        alt={platform.screenshots[currentImageIndex].caption} 
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/images/aviation-tech.jpeg"; // Fallback image
-                        }}
-                      />
+                      <div className="w-full h-full bg-gray-100 relative">
+                        <img 
+                          src={platform.screenshots[currentImageIndex].image} 
+                          alt={platform.screenshots[currentImageIndex].caption} 
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            console.log("Image load error, using fallback");
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/images/aviation-tech.jpeg"; // Fallback image
+                            target.onerror = null; // Prevent infinite error loop
+                          }}
+                        />
+                      </div>
                       
                       {platform.screenshots.length > 1 && (
                         <>

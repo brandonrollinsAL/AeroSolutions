@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <button 
-                  onClick={() => window.open('/client-preview/countofmontecristobitch', '_blank')}
+                  onClick={() => window.open('/client-preview/demo', '_blank')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Client Demo
