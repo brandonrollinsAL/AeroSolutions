@@ -18,6 +18,9 @@ import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import MarketplaceCheckoutPage from "@/pages/MarketplaceCheckoutPage";
 import PremiumPage from "@/pages/PremiumPage";
 import HistoryPage from "@/pages/HistoryPage";
+import LoginPage from "@/pages/LoginPage";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -274,6 +277,48 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <ClientLandingPage accessCode={params.code || accessCode || ""} />
+            </>
+          )}
+        </Route>
+        <Route path="/login">
+          {() => (
+            <>
+              <Helmet>
+                <title>Login | Aero Solutions</title>
+                <meta name="description" content="Log in to your Aero Solutions account to access premium features, subscriptions, and client previews." />
+                <meta name="robots" content="noindex, follow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <LoginPage />
+            </>
+          )}
+        </Route>
+        <Route path="/admin">
+          {() => (
+            <>
+              <Helmet>
+                <title>Admin Dashboard | Aero Solutions</title>
+                <meta name="description" content="Aero Solutions administrative dashboard for platform management." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <AdminDashboardPage />
+            </>
+          )}
+        </Route>
+        <Route path="/admin/client-previews">
+          {() => (
+            <>
+              <Helmet>
+                <title>Manage Client Previews | Admin | Aero Solutions</title>
+                <meta name="description" content="Admin tool for managing client preview access codes." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <AdminClientPreviewsPage />
             </>
           )}
         </Route>

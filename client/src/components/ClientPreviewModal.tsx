@@ -1,152 +1,251 @@
-import { useState, useEffect } from "react";
-import { FaTimes, FaLock } from "react-icons/fa";
-import { toast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
+import { FaKey, FaSpinner, FaInfoCircle } from 'react-icons/fa';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Define the form schema for validating the access code
+const accessCodeSchema = z.object({
+  accessCode: z.string().min(4, {
+    message: 'Access code must be at least 4 characters long',
+  }),
+});
+
+type AccessCodeFormData = z.infer<typeof accessCodeSchema>;
 
 interface ClientPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function ClientPreviewModal({ isOpen, onClose }: ClientPreviewModalProps) {
-  const [accessCode, setAccessCode] = useState("");
+const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose }) => {
+  const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isValidated, setIsValidated] = useState(false);
-
-  // Use effect to redirect when code is validated
-  useEffect(() => {
-    if (isValidated && accessCode) {
-      // Create and dispatch custom event with accessCode
-      const event = new CustomEvent('client-access-granted', { 
-        detail: { accessCode }
-      });
-      window.dispatchEvent(event);
-      
-      // Direct window location change for immediate redirect
-      window.location.href = `/client-preview/${accessCode}`;
-      
-      // Close the modal after dispatching the event
-      onClose();
-    }
-  }, [isValidated, accessCode, onClose]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!accessCode.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an access code",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  
+  // Set up form validation with react-hook-form and zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<AccessCodeFormData>({
+    resolver: zodResolver(accessCodeSchema),
+  });
+  
+  // Special code for the count of monte cristo example
+  const specialAccessCode = 'countofmontecristobitch';
+  const [activeTab, setActiveTab] = useState('access');
+  
+  // Handle form submission
+  const onSubmit = async (data: AccessCodeFormData) => {
     setIsSubmitting(true);
+    setSubmissionError(null);
     
     try {
-      // For demo purposes, directly validate specific access codes
-      if (accessCode.toLowerCase() === "momanddad" || accessCode.toLowerCase() === "countofmontecristobitch") {
-        toast({
-          title: "Success",
-          description: "Access code validated. Redirecting to platform preview...",
+      // Special handling for the demo access code
+      if (data.accessCode.toLowerCase() === specialAccessCode) {
+        // Dispatch custom event that will be handled in App.tsx
+        const event = new CustomEvent('client-access-granted', {
+          detail: { accessCode: specialAccessCode }
         });
+        window.dispatchEvent(event);
         
-        setIsValidated(true);
+        // Reset form and close modal
+        reset();
+        onClose();
+        
+        return;
+      }
+      
+      // In a real app, you would validate this access code with your backend
+      const response = await fetch('/api/preview/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: data.accessCode }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Dispatch custom event that will be handled in App.tsx
+        const event = new CustomEvent('client-access-granted', {
+          detail: { accessCode: data.accessCode }
+        });
+        window.dispatchEvent(event);
+        
+        // Reset form and close modal
+        reset();
+        onClose();
       } else {
-        // Make API request for other codes
-        try {
-          await apiRequest("POST", "/api/preview/validate", { code: accessCode });
-          toast({
-            title: "Success",
-            description: "Access code validated. Redirecting to platform preview...",
-          });
-          setIsValidated(true);
-        } catch (error) {
-          throw new Error("Invalid code");
-        }
+        setSubmissionError('Invalid access code. Please try again or contact support.');
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid access code. Please check and try again.",
-        variant: "destructive"
-      });
+      console.error('Error validating access code:', error);
+      setSubmissionError('An error occurred. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleClosePreview = () => {
-    setIsValidated(false);
-    setAccessCode("");
+  
+  // Handle demo access button
+  const handleDemoAccess = () => {
+    // Dispatch custom event that will be handled in App.tsx
+    const event = new CustomEvent('client-access-granted', {
+      detail: { accessCode: specialAccessCode }
+    });
+    window.dispatchEvent(event);
+    
+    // Reset form and close modal
+    reset();
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <AnimatePresence>
-      {isOpen && !isValidated && (
-        <motion.div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={onClose}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div 
-            className="bg-white rounded-xl p-8 max-w-md w-full mx-4 relative"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-          >
-            <button 
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <FaTimes className="text-xl" />
-            </button>
-            
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-luxury/10 flex items-center justify-center text-luxury">
-                <FaLock className="text-2xl" />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-center text-xl">Client Platform Preview</DialogTitle>
+          <DialogDescription className="text-center">
+            Enter your access code to preview your custom aviation platform
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Tabs defaultValue="access" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="access">Access Code</TabsTrigger>
+            <TabsTrigger value="info">Information</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="access" className="py-4">
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="space-y-4">
+                {submissionError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span className="block sm:inline">{submissionError}</span>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="accessCode" className="font-medium">Access Code</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaKey className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <Input
+                      id="accessCode"
+                      type="text"
+                      className={`pl-10 ${errors.accessCode ? 'border-red-500' : ''}`}
+                      placeholder="Enter your unique access code"
+                      {...register('accessCode')}
+                      autoComplete="off"
+                    />
+                  </div>
+                  {errors.accessCode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.accessCode.message}</p>
+                  )}
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="mr-2 h-4 w-4 animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    'Access Preview'
+                  )}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or Use Demo
+                    </span>
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleDemoAccess}
+                >
+                  Try Demo Preview
+                </Button>
               </div>
-            </div>
-            
-            <h3 className="text-2xl font-bold font-montserrat text-primary mb-4 text-center">Client Preview Access</h3>
-            <p className="text-gray-600 mb-6 text-center">Enter your unique access code to view your project preview.</p>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="mb-6">
-                <label htmlFor="access-code" className="block text-sm font-medium text-gray-700 mb-2">Access Code</label>
-                <input 
-                  type="text" 
-                  id="access-code" 
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
-                  placeholder="Enter your code"
-                  autoComplete="off"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  <span className="font-semibold">Hint:</span> Try entering a special code you've been provided
-                </p>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="info" className="py-4">
+            <div className="space-y-4">
+              <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <FaInfoCircle className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm">
+                      Client preview access codes are provided exclusively to Aero Solutions clients.
+                    </p>
+                  </div>
+                </div>
               </div>
               
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="w-full bg-luxury hover:bg-luxury/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-70"
-              >
-                {isSubmitting ? "Validating..." : "Access Preview"}
-              </button>
-            </form>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              <p className="text-sm text-gray-600">
+                Access codes are unique to each client and project. They allow you to preview your 
+                custom aviation platform during development and after completion.
+              </p>
+              
+              <p className="text-sm text-gray-600">
+                If you've lost your access code or need assistance, please contact your project 
+                manager or support at <span className="text-blue-600">support@aerosolutions.dev</span>.
+              </p>
+              
+              <div className="mt-6">
+                <Button 
+                  type="button" 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setActiveTab('access')}
+                >
+                  Back to Access
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <DialogFooter className="sm:justify-center">
+          <div className="text-xs text-center text-gray-500">
+            Try demo code: <span className="font-mono text-blue-600">countofmontecristobitch</span>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-}
+};
+
+export default ClientPreviewModal;
