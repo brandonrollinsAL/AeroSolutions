@@ -47,8 +47,7 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
     resolver: zodResolver(accessCodeSchema),
   });
   
-  // Special code comes from the backend, we'll just use a placeholder here
-  const specialAccessCode = 'demo-access';
+  // State to track which tab is active
   const [activeTab, setActiveTab] = useState('access');
   
   // Handle form submission
@@ -57,22 +56,7 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
     setSubmissionError(null);
     
     try {
-      // Special handling for the demo access code
-      if (data.accessCode.toLowerCase() === specialAccessCode) {
-        // Dispatch custom event that will be handled in App.tsx
-        const event = new CustomEvent('client-access-granted', {
-          detail: { accessCode: specialAccessCode }
-        });
-        window.dispatchEvent(event);
-        
-        // Reset form and close modal
-        reset();
-        onClose();
-        
-        return;
-      }
-      
-      // In a real app, you would validate this access code with your backend
+      // Always validate against the backend securely
       const response = await fetch('/api/preview/validate', {
         method: 'POST',
         headers: {
@@ -86,7 +70,10 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
       if (result.success) {
         // Dispatch custom event that will be handled in App.tsx
         const event = new CustomEvent('client-access-granted', {
-          detail: { accessCode: data.accessCode }
+          detail: { 
+            accessCode: data.accessCode,
+            accessType: result.accessType || 'client'
+          }
         });
         window.dispatchEvent(event);
         
@@ -105,16 +92,43 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
   };
   
   // Handle demo access button
-  const handleDemoAccess = () => {
-    // Dispatch custom event that will be handled in App.tsx
-    const event = new CustomEvent('client-access-granted', {
-      detail: { accessCode: specialAccessCode }
-    });
-    window.dispatchEvent(event);
+  const handleDemoAccess = async () => {
+    setIsSubmitting(true);
     
-    // Reset form and close modal
-    reset();
-    onClose();
+    try {
+      // Call the backend to validate a demo access code
+      const response = await fetch('/api/preview/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: 'demo' }),  // Just a placeholder, backend will recognize as demo request
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Dispatch custom event that will be handled in App.tsx
+        const event = new CustomEvent('client-access-granted', {
+          detail: { 
+            accessCode: 'demo', 
+            accessType: 'demo' 
+          }
+        });
+        window.dispatchEvent(event);
+        
+        // Reset form and close modal
+        reset();
+        onClose();
+      } else {
+        setSubmissionError('Demo access is currently unavailable. Please try again later.');
+      }
+    } catch (error) {
+      console.error('Error accessing demo:', error);
+      setSubmissionError('An error occurred. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -240,7 +254,7 @@ const ClientPreviewModal: React.FC<ClientPreviewModalProps> = ({ isOpen, onClose
         
         <DialogFooter className="sm:justify-center">
           <div className="text-xs text-center text-gray-500">
-            Try demo code: <span className="font-mono text-blue-600">countofmontecristobitch</span>
+            Click "Try Demo Preview" above for instant access
           </div>
         </DialogFooter>
       </DialogContent>
