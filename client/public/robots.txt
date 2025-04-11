@@ -1,0 +1,19 @@
+# robots.txt for Aero Solutions
+
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /account
+Disallow: /client-preview
+Disallow: /account/orders
+Disallow: /account/subscriptions
+Disallow: /subscriptions/checkout
+Disallow: /marketplace/purchase
+
+# Allow Google to index everything
+User-agent: Googlebot
+Allow: /
+
+# Sitemap location
+Sitemap: https://aerosolutions.dev/sitemap.xml
