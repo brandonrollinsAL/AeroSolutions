@@ -3,7 +3,8 @@ import type { InsertSubscriptionPlan, InsertMarketplaceItem } from '@shared/sche
 
 // Initialize Stripe with API key from environment variables
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16', // Latest stable version
+  apiVersion: '2023-10-16', // Using stable version compatible with our code
+  // Note: the newest version is '2025-03-31.basil' but we're using a compatible stable version
 });
 
 class StripeService {

@@ -7,6 +7,7 @@ import { generateCopilotResponse } from "./utils/openai";
 import NodeCache from 'node-cache';
 import { body, query, param, validationResult } from 'express-validator';
 import { generateToken, authorize } from './utils/auth';
+import { stripeService } from './utils/stripe';
 import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
@@ -90,6 +91,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/subscriptions', subscriptionRouter);
   app.use('/api/marketplace', marketplaceRouter);
   app.use('/api/ads', advertisementRouter);
+  
+  // Stripe configuration endpoint (provides publishable key for client-side)
+  app.get('/api/stripe/config', (req: Request, res: Response) => {
+    res.status(200).json({
+      success: true,
+      publishableKey: stripeService.getPublishableKey(),
+    });
+  });
   
   // Add response time tracking for performance monitoring
   app.use((req, res, next) => {
