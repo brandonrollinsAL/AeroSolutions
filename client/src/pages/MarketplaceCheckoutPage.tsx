@@ -14,8 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import PaymentForm from '@/components/PaymentForm';
 
-// Initialize Stripe with public key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe with public key from server
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '', {
+  locale: 'en',
+});
 
 const MarketplaceCheckoutPage: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -270,6 +272,7 @@ const MarketplaceCheckoutPage: React.FC = () => {
                 <PaymentForm 
                   onSuccess={handlePaymentSuccess}
                   amount={totalPrice}
+                  clientSecret={clientSecret}
                 />
               </Elements>
             )}

@@ -9,9 +9,10 @@ interface PaymentFormProps {
   onSuccess: () => void;
   amount: number;
   interval?: string;
+  clientSecret?: string;
 }
 
-const PaymentForm: React.FC<PaymentFormProps> = ({ onSuccess, amount, interval = 'month' }) => {
+const PaymentForm: React.FC<PaymentFormProps> = ({ onSuccess, amount, interval = 'month', clientSecret }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -22,6 +23,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSuccess, amount, interval =
 
     if (!stripe || !elements) {
       // Stripe.js has not loaded yet
+      return;
+    }
+
+    if (!clientSecret) {
+      setPaymentError('Payment not initialized correctly. Please try again.');
       return;
     }
 
@@ -36,7 +42,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ onSuccess, amount, interval =
       return;
     }
 
-    const { error, paymentIntent } = await stripe.confirmCardPayment('', {
+    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
       payment_method: {
         card: cardElement,
         billing_details: {

@@ -13,9 +13,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle } from 'lucide-react';
 import PaymentForm from '@/components/PaymentForm';
 
-// Initialize Stripe with public key
-// In a real app, fetch this from your server
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe with public key from server
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '', {
+  locale: 'en',
+});
 
 const SubscriptionCheckoutPage: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -197,6 +198,7 @@ const SubscriptionCheckoutPage: React.FC = () => {
                   onSuccess={handlePaymentSuccess}
                   amount={parseFloat(plan.price)}
                   interval={plan.interval}
+                  clientSecret={clientSecret}
                 />
               </Elements>
             ) : (
