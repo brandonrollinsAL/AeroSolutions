@@ -115,7 +115,7 @@ export default function AdminClientPreviewsPage() {
       },
       {
         id: 4,
-        code: 'countofmontecristobitch',
+        code: 'demo',
         clientName: 'Monte Cristo Special Access',
         projectId: 4,
         expiresAt: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000), // 365 days from now
@@ -306,7 +306,7 @@ export default function AdminClientPreviewsPage() {
               <Button 
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => window.open('/client-preview/countofmontecristobitch', '_blank')}
+                onClick={() => window.open('/client-preview/demo', '_blank')}
               >
                 <FaEye className="mr-2 h-4 w-4" />
                 Preview Example

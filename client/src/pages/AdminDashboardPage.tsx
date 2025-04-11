@@ -262,7 +262,7 @@ export default function AdminDashboardPage() {
                 <Button 
                   variant="outline" 
                   className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => window.open('/client-preview/countofmontecristobitch', '_blank')}
+                  onClick={() => window.open('/client-preview/demo', '_blank')}
                 >
                   <FaGlobe className="h-5 w-5 text-blue-600" />
                   <span className="text-sm">View Demo Preview</span>
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
                   variant="outline" 
                   className="h-auto flex flex-col items-center justify-center p-4 gap-2"
                   onClick={() => {
-                    navigator.clipboard.writeText('countofmontecristobitch');
+                    navigator.clipboard.writeText('demo');
                     toast({
                       title: 'Copied!',
                       description: 'Demo access code copied to clipboard',
