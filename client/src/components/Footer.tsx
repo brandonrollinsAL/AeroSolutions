@@ -1,168 +1,146 @@
-import { FaEnvelope, FaPhoneAlt, FaLinkedinIn, FaTwitter, FaGithub, FaInstagram, FaShieldAlt } from "react-icons/fa";
-import AeroLogo from "./AeroLogo";
-import { Link } from "wouter";
+import React from 'react';
+import { Link } from 'wouter';
+import { Separator } from '@/components/ui/separator';
+import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 
-export default function Footer() {
-  const quickLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Services", href: "#services" },
-    { name: "Platforms", href: "#platforms" },
-    { name: "About Us", href: "#about" },
-    { name: "Blog", href: "#blog" },
-    { name: "Contact", href: "#contact" }
-  ];
+const Footer: React.FC = () => {
+  const currentYear = new Date().getFullYear();
   
-  const platforms = [
-    { name: "AeroSync", href: "#" },
-    { name: "AeroFlight", href: "#" },
-    { name: "ExecSync", href: "#" },
-    { name: "SkyForge Legend", href: "#" },
-    { name: "Stitchlet", href: "#" },
-    { name: "AeroOps", href: "#" }
-  ];
-
   return (
-    <footer className="bg-gradient-to-b from-luxury to-black text-white pt-20 pb-8 relative">
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-highlight to-transparent"></div>
-      <div className="absolute top-0 left-0 right-0 h-px bg-highlight/20"></div>
-      
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-[url('/images/grid-pattern.png')] bg-repeat opacity-5"></div>
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-10 mb-16">
+    <footer className="bg-background border-t">
+      <div className="container px-4 py-12 mx-auto">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <div className="flex items-center space-x-3 mb-6">
-              <AeroLogo size="md" animated={false} />
-              <span className="text-2xl font-bold font-serif text-white tracking-tight">Aero Solutions</span>
-            </div>
-            
-            <p className="text-gray-300 mb-6 leading-relaxed">
-              Elevating aviation software to new heights with custom technology solutions designed by pilots for the unique challenges of the industry.
+            <h2 className="text-lg font-semibold text-primary mb-4">Aero Solutions</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Providing cutting-edge aviation technology solutions since 2018. Innovation in flight, excellence in service.
             </p>
-            
-            <div className="flex items-start space-x-2 text-sm text-gray-400">
-              <div className="mt-1 text-highlight"><FaPhoneAlt /></div>
-              <p>1150 NW 72nd AVE Tower 1 STE 455 #17102, Miami, FL 33126, USA</p>
+            <div className="flex space-x-4">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <span className="sr-only">Facebook</span>
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <span className="sr-only">Twitter</span>
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <span className="sr-only">LinkedIn</span>
+                <Linkedin className="h-5 w-5" />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <span className="sr-only">Instagram</span>
+                <Instagram className="h-5 w-5" />
+              </a>
             </div>
           </div>
           
           <div>
-            <h4 className="text-lg font-bold font-serif text-highlight mb-6 tracking-wide">Quick Links</h4>
-            <ul className="space-y-4">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <a 
-                    href={link.href} 
-                    className="text-gray-300 hover:text-highlight transition-colors duration-300 flex items-center"
-                  >
-                    <span className="mr-2">→</span>
-                    {link.name}
-                  </a>
-                </li>
-              ))}
+            <h2 className="text-lg font-semibold text-primary mb-4">Platforms</h2>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/platforms/aerosync" className="text-muted-foreground hover:text-primary transition-colors">
+                  AeroSync
+                </Link>
+              </li>
+              <li>
+                <Link href="/platforms/aeroops" className="text-muted-foreground hover:text-primary transition-colors">
+                  AeroOps
+                </Link>
+              </li>
+              <li>
+                <Link href="/platforms/aeroflight" className="text-muted-foreground hover:text-primary transition-colors">
+                  AeroFlight
+                </Link>
+              </li>
+              <li>
+                <Link href="/platforms/execsync" className="text-muted-foreground hover:text-primary transition-colors">
+                  ExecSync
+                </Link>
+              </li>
+              <li>
+                <Link href="/platforms/aerolink" className="text-muted-foreground hover:text-primary transition-colors">
+                  AeroLink
+                </Link>
+              </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="text-lg font-bold font-serif text-highlight mb-6 tracking-wide">Our Platforms</h4>
-            <ul className="space-y-4">
-              {platforms.map((platform, index) => (
-                <li key={index}>
-                  <a 
-                    href={platform.href} 
-                    className="text-gray-300 hover:text-highlight transition-colors duration-300 flex items-center"
-                  >
-                    <span className="mr-2">→</span>
-                    {platform.name}
-                  </a>
-                </li>
-              ))}
+            <h2 className="text-lg font-semibold text-primary mb-4">Quick Links</h2>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/services" className="text-muted-foreground hover:text-primary transition-colors">
+                  Services
+                </Link>
+              </li>
+              <li>
+                <Link href="/marketplace" className="text-muted-foreground hover:text-primary transition-colors">
+                  Marketplace
+                </Link>
+              </li>
+              <li>
+                <Link href="/subscriptions" className="text-muted-foreground hover:text-primary transition-colors">
+                  Subscriptions
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                  About Us
+                </Link>
+              </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="text-lg font-bold font-serif text-highlight mb-6 tracking-wide">Contact Us</h4>
-            <ul className="space-y-4 mb-8">
+            <h2 className="text-lg font-semibold text-primary mb-4">Contact Us</h2>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start">
+                <MapPin className="h-5 w-5 text-muted-foreground mr-2 shrink-0" />
+                <span className="text-muted-foreground">
+                  123 Aviation Way, Suite 450<br />Charlotte, NC 28202
+                </span>
+              </li>
               <li className="flex items-center">
-                <div className="bg-highlight/10 p-2 rounded-lg mr-3 flex items-center justify-center">
-                  <FaEnvelope className="text-highlight" />
-                </div>
-                <a 
-                  href="mailto:info@aerosolutions.com" 
-                  className="text-gray-300 hover:text-highlight transition-colors duration-300"
-                >
-                  info@aerosolutions.com
+                <Phone className="h-5 w-5 text-muted-foreground mr-2" />
+                <a href="tel:+13035550122" className="text-muted-foreground hover:text-primary transition-colors">
+                  (303) 555-0122
                 </a>
               </li>
               <li className="flex items-center">
-                <div className="bg-highlight/10 p-2 rounded-lg mr-3 flex items-center justify-center">
-                  <FaPhoneAlt className="text-highlight" />
-                </div>
-                <a 
-                  href="tel:+13055551234" 
-                  className="text-gray-300 hover:text-highlight transition-colors duration-300"
-                >
-                  +1-305-555-1234
+                <Mail className="h-5 w-5 text-muted-foreground mr-2" />
+                <a href="mailto:info@aerosolutions.dev" className="text-muted-foreground hover:text-primary transition-colors">
+                  info@aerosolutions.dev
                 </a>
               </li>
             </ul>
-            
-            <div className="flex space-x-3">
-              <a 
-                href="#" 
-                className="w-10 h-10 bg-highlight/10 hover:bg-highlight/20 text-highlight rounded-lg flex items-center justify-center transition-all duration-300 border border-highlight/20 hover:border-highlight/50"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedinIn />
-              </a>
-              <a 
-                href="#" 
-                className="w-10 h-10 bg-highlight/10 hover:bg-highlight/20 text-highlight rounded-lg flex items-center justify-center transition-all duration-300 border border-highlight/20 hover:border-highlight/50"
-                aria-label="Twitter"
-              >
-                <FaTwitter />
-              </a>
-              <a 
-                href="#" 
-                className="w-10 h-10 bg-highlight/10 hover:bg-highlight/20 text-highlight rounded-lg flex items-center justify-center transition-all duration-300 border border-highlight/20 hover:border-highlight/50"
-                aria-label="GitHub"
-              >
-                <FaGithub />
-              </a>
-              <a 
-                href="#" 
-                className="w-10 h-10 bg-highlight/10 hover:bg-highlight/20 text-highlight rounded-lg flex items-center justify-center transition-all duration-300 border border-highlight/20 hover:border-highlight/50"
-                aria-label="Instagram"
-              >
-                <FaInstagram />
-              </a>
-            </div>
           </div>
         </div>
         
-        <div className="border-t border-white/10 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center">
-              <div className="h-8 w-px bg-gradient-to-b from-transparent via-highlight/40 to-transparent mx-4 hidden md:block"></div>
-              <p className="text-gray-400">&copy; {new Date().getFullYear()} Aero Solutions. All rights reserved.</p>
-            </div>
-            <div className="mt-4 md:mt-0 flex flex-wrap space-x-4 md:space-x-8 justify-center md:justify-end">
-              <Link href="/privacy-policy" className="text-gray-400 hover:text-highlight transition-colors duration-300 flex items-center mb-2">
-                <FaShieldAlt className="mr-1" size={12} />
-                <span>Privacy Policy</span>
-              </Link>
-              <Link href="/security" className="text-gray-400 hover:text-highlight transition-colors duration-300 flex items-center mb-2">
-                <FaShieldAlt className="mr-1" size={12} />
-                <span>Security</span>
-              </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-highlight transition-colors duration-300 mb-2">Terms of Service</Link>
-              <Link href="/sitemap.xml" className="text-gray-400 hover:text-highlight transition-colors duration-300 mb-2">Sitemap</Link>
-            </div>
+        <Separator className="my-8" />
+        
+        <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
+          <p>&copy; {currentYear} Aero Solutions. All rights reserved.</p>
+          <div className="flex space-x-6 mt-4 md:mt-0">
+            <Link href="/privacy-policy" className="hover:text-primary transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/security" className="hover:text-primary transition-colors">
+              Security
+            </Link>
           </div>
         </div>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

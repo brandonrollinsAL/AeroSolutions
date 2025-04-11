@@ -9,6 +9,10 @@ import PrivacyPolicy from "@/components/PrivacyPolicy";
 import TermsOfService from "@/components/TermsOfService";
 import SecurityPolicy from "@/components/SecurityPolicy";
 import PrivacyConsentBanner from "@/components/PrivacyConsentBanner";
+import SubscriptionsPage from "@/pages/SubscriptionsPage";
+import MarketplacePage from "@/pages/MarketplacePage";
+import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
+import MarketplaceCheckoutPage from "@/pages/MarketplaceCheckoutPage";
 
 export default function App() {
   const [, setLocation] = useLocation();
@@ -142,6 +146,10 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/subscriptions" component={SubscriptionsPage} />
+        <Route path="/subscriptions/checkout" component={SubscriptionCheckoutPage} />
+        <Route path="/marketplace" component={MarketplacePage} />
+        <Route path="/marketplace/purchase" component={MarketplaceCheckoutPage} />
         <Route path="/client-preview/:code">
           {(params) => (
             <>

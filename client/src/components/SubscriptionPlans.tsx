@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import {
   Card,
   CardContent,
@@ -11,61 +12,49 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle } from "lucide-react";
-import { queryClient } from '@/lib/queryClient';
-import { toast } from '@/hooks/use-toast';
+import { Check, CheckCircle, ArrowRight } from "lucide-react";
 
 const SubscriptionPlans: React.FC = () => {
-  // Fetch subscription plans
-  const { data: plans, isLoading, error } = useQuery({
+  const [, setLocation] = useLocation();
+  
+  // Fetch subscription plans data
+  const { data: plansData, isLoading, error } = useQuery({
     queryKey: ['/api/subscriptions/plans'],
     refetchOnWindowFocus: false,
   });
 
-  // Handle subscribe action
-  const handleSubscribe = async (planId: number) => {
-    try {
-      // Check if user is logged in
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to subscribe to a plan",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Redirect to subscription page with plan ID
-      window.location.href = `/subscription/checkout?planId=${planId}`;
-    } catch (error) {
-      console.error('Error subscribing to plan:', error);
-      toast({
-        title: "Subscription Error",
-        description: "Failed to process subscription request",
-        variant: "destructive",
-      });
+  // Handle subscription
+  const handleSubscribe = (planId: number) => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Redirect to login with return URL
+      setLocation(`/login?redirect=/subscriptions/checkout?planId=${planId}`);
+      return;
     }
+    
+    // If user is logged in, go to checkout
+    setLocation(`/subscriptions/checkout?planId=${planId}`);
   };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="flex flex-col">
+          <Card key={i} className="flex flex-col h-full">
             <CardHeader>
-              <Skeleton className="h-8 w-24 mb-2" />
-              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="h-7 w-1/2" />
             </CardHeader>
-            <CardContent className="flex-grow">
-              <Skeleton className="h-5 w-full mb-2" />
-              <Skeleton className="h-5 w-3/4 mb-2" />
-              <Skeleton className="h-5 w-1/2 mb-4" />
-              
-              <div className="space-y-2 mt-4">
+            <CardContent className="flex-grow space-y-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <div className="mt-6 space-y-2">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
               </div>
             </CardContent>
             <CardFooter>
@@ -86,42 +75,62 @@ const SubscriptionPlans: React.FC = () => {
     );
   }
 
+  const plans = plansData?.data || [];
+
+  if (plans.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <h3 className="text-xl font-medium">No Plans Available</h3>
+        <p className="mt-2 text-muted-foreground">Subscription plans are currently unavailable. Please check back later.</p>
+      </div>
+    );
+  }
+
+  // Sort plans by price
+  const sortedPlans = [...plans].sort((a, b) => 
+    parseFloat(a.price) - parseFloat(b.price)
+  );
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-      {plans?.data?.map((plan: any) => (
-        <Card key={plan.id} className="flex flex-col transition-all duration-300 hover:shadow-lg border-opacity-50 hover:border-primary">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-center mb-2">
-              <CardTitle className="text-xl font-bold text-primary">{plan.name}</CardTitle>
-              {plan.isPopular && (
-                <Badge variant="secondary" className="ml-2">
-                  Most Popular
-                </Badge>
-              )}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {sortedPlans.map((plan: any) => (
+        <Card 
+          key={plan.id} 
+          className={`flex flex-col h-full transition-all duration-300 hover:shadow-lg
+            ${plan.isPopular ? 'border-primary border-2 relative' : 'border-opacity-50'}
+          `}
+        >
+          {plan.isPopular && (
+            <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-3">
+              <Badge className="bg-primary text-white shadow-md">Most Popular</Badge>
             </div>
-            <CardDescription className="text-2xl font-bold">
-              ${parseFloat(plan.price).toFixed(2)}
-              <span className="text-sm font-normal text-muted-foreground">/{plan.interval}</span>
+          )}
+          <CardHeader>
+            <CardTitle className="text-xl">{plan.name}</CardTitle>
+            <CardDescription className="flex items-baseline mt-2">
+              <span className="text-3xl font-bold text-primary">${parseFloat(plan.price).toFixed(2)}</span>
+              <span className="ml-1 text-sm text-muted-foreground">/{plan.interval}</span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex-grow pt-3">
-            <p className="text-muted-foreground mb-4">{plan.description}</p>
-            <div className="space-y-2 mt-4">
+          <CardContent className="flex-grow">
+            <p className="text-sm text-muted-foreground mb-6">{plan.description}</p>
+            <div className="space-y-3">
               {plan.features?.map((feature: string, i: number) => (
-                <div key={i} className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-primary mr-2" />
+                <div key={i} className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-primary shrink-0 mr-2" />
                   <span className="text-sm">{feature}</span>
                 </div>
               ))}
             </div>
           </CardContent>
-          <CardFooter className="pt-4">
+          <CardFooter>
             <Button 
-              className="w-full" 
+              onClick={() => handleSubscribe(plan.id)} 
+              className="w-full group"
               variant={plan.isPopular ? "default" : "outline"}
-              onClick={() => handleSubscribe(plan.id)}
             >
-              Subscribe Now
+              Subscribe
+              <ArrowRight className="ml-2 h-4 w-0 group-hover:w-4 transition-all" />
             </Button>
           </CardFooter>
         </Card>
