@@ -53,6 +53,7 @@
   "founding_team": "Nuestro Equipo Fundador",
   "our_legacy": "Nuestro Legado",
   "legacy_text": "Estamos orgullosos de nuestras contribuciones para hacer la aviación más segura, más eficiente y ambientalmente consciente a través de soluciones tecnológicas innovadoras.",
+  "our_history": "Nuestra Historia",
   
   "footer_company": "Empresa",
   "footer_platforms": "Plataformas",
@@ -63,6 +64,13 @@
   "footer_terms": "Términos de Servicio",
   "footer_security": "Seguridad",
   "footer_copyright": "© 2025 Aero Solutions. Todos los derechos reservados.",
+  "footer_tagline": "Transformando la Aviación a través de Tecnología Innovadora",
+  "navigation": "Navegación",
+  "legal": "Legal",
+  "terms_of_service": "Términos de Servicio",
+  "privacy_policy": "Política de Privacidad",
+  "security_policy": "Política de Seguridad",
+  "all_rights_reserved": "Todos los derechos reservados",
   
   "contact_us": "Contáctenos",
   "contact_name": "Nombre",
