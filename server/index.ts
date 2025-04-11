@@ -4,17 +4,35 @@ import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import helmet from "helmet";
 import { authenticate } from "./utils/auth";
+import { cachingMiddleware, conditionalRequestMiddleware } from "./utils/caching";
+import { apiRateLimiter, authRateLimiter, defaultRateLimiter } from "./utils/rate-limiting";
+import compression from "express-compression";
 
-// Extend Express Request type to include user property
+// Extend Express Request type to include user property and timing
 declare global {
   namespace Express {
     interface Request {
       user?: any;
+      startTime?: [number, number]; // hrtime tuple
     }
   }
 }
 
 const app = express();
+
+// Performance and security middleware
+// Compress responses
+app.use(compression({
+  threshold: 0, // Compress all responses
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      // Don't compress responses with this request header
+      return false;
+    }
+    // Compress by default
+    return true;
+  }
+}));
 
 // Apply security headers
 app.use(helmet({
@@ -32,9 +50,44 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
+// Apply caching headers
+app.use(cachingMiddleware());
+app.use(conditionalRequestMiddleware());
+
+// Apply rate limiting - protect different routes with appropriate limits
+app.use('/api/auth', authRateLimiter);  // Stricter rate limiting for auth endpoints
+app.use('/api', apiRateLimiter);        // Standard API rate limiting
+app.use(defaultRateLimiter);            // Default rate limiting for all other routes
+
 // Body parsers
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
+
+// Define a custom type for the request with timing
+interface TimedRequest extends Request {
+  startTime?: [number, number]; // hrtime tuple
+}
+
+// Add request timing middleware
+app.use((req: TimedRequest, res: Response, next: NextFunction) => {
+  // Track request start time
+  req.startTime = process.hrtime();
+  
+  // Store original send method
+  const originalSend = res.send;
+  
+  // Override send method to add timing header
+  res.send = function(...args) {
+    if (req.startTime) {
+      const diff = process.hrtime(req.startTime);
+      const time = diff[0] * 1e3 + diff[1] * 1e-6; // time in ms
+      res.setHeader('X-Response-Time', `${time.toFixed(2)}ms`);
+    }
+    return originalSend.apply(this, args);
+  };
+  
+  next();
+});
 
 // JWT Authentication middleware
 app.use(authenticate);
