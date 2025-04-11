@@ -1,10 +1,15 @@
 import { 
   users, type User, type InsertUser,
   contactSubmissions, type Contact, type InsertContact,
-  clientPreviews, type ClientPreview, type InsertClientPreview
+  clientPreviews, type ClientPreview, type InsertClientPreview,
+  subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan,
+  userSubscriptions, type UserSubscription, type InsertUserSubscription,
+  marketplaceItems, type MarketplaceItem, type InsertMarketplaceItem,
+  marketplaceOrders, type MarketplaceOrder, type InsertMarketplaceOrder,
+  advertisements, type Advertisement, type InsertAdvertisement
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, lt, sql, desc, asc } from "drizzle-orm";
 
 // Extend the interface with needed CRUD methods
 export interface IStorage {
@@ -21,6 +26,36 @@ export interface IStorage {
   createClientPreview(preview: InsertClientPreview): Promise<ClientPreview>;
   getClientPreviewByCode(code: string): Promise<ClientPreview | undefined>;
   validateClientPreviewCode(code: string): Promise<boolean>;
+  
+  // Subscription methods
+  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
+  getUserSubscriptions(userId: number): Promise<UserSubscription[]>;
+  getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined>;
+  updateUserSubscription(id: number, data: Partial<InsertUserSubscription>): Promise<UserSubscription>;
+  
+  // Marketplace methods
+  createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem>;
+  getAllMarketplaceItems(): Promise<MarketplaceItem[]>;
+  getAvailableMarketplaceItems(): Promise<MarketplaceItem[]>;
+  getMarketplaceItem(id: number): Promise<MarketplaceItem | undefined>;
+  updateMarketplaceItem(id: number, data: Partial<InsertMarketplaceItem>): Promise<MarketplaceItem>;
+  createMarketplaceOrder(order: InsertMarketplaceOrder): Promise<MarketplaceOrder>;
+  getUserMarketplaceOrders(userId: number): Promise<MarketplaceOrder[]>;
+  updateMarketplaceOrder(id: number, data: Partial<InsertMarketplaceOrder>): Promise<MarketplaceOrder>;
+  
+  // Advertisement methods
+  createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement>;
+  getAllAdvertisements(): Promise<Advertisement[]>;
+  getActiveAdvertisements(): Promise<Advertisement[]>;
+  getActiveAdvertisementsByType(type: string): Promise<Advertisement[]>;
+  getAdvertisement(id: number): Promise<Advertisement | undefined>;
+  updateAdvertisement(id: number, data: Partial<InsertAdvertisement>): Promise<Advertisement>;
+  incrementAdImpressions(id: number): Promise<void>;
+  incrementAdClicks(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
