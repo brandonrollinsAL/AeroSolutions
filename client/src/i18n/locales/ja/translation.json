@@ -53,6 +53,7 @@
   "founding_team": "創業チーム",
   "our_legacy": "私たちの遺産",
   "legacy_text": "革新的な技術ソリューションを通じて、航空をより安全で効率的、そして環境に優しくすることに貢献してきたことを誇りに思います。",
+  "our_history": "私たちの歴史",
   
   "footer_company": "企業",
   "footer_platforms": "プラットフォーム",
@@ -63,6 +64,13 @@
   "footer_terms": "利用規約",
   "footer_security": "セキュリティ",
   "footer_copyright": "© 2025 Aero Solutions. All rights reserved.",
+  "footer_tagline": "革新的な技術で航空を変革する",
+  "navigation": "ナビゲーション",
+  "legal": "法的事項",
+  "terms_of_service": "利用規約",
+  "privacy_policy": "プライバシーポリシー",
+  "security_policy": "セキュリティポリシー",
+  "all_rights_reserved": "すべての権利を保有",
   
   "contact_us": "お問い合わせ",
   "contact_name": "名前",

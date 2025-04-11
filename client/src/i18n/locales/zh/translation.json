@@ -53,6 +53,7 @@
   "founding_team": "我们的创始团队",
   "our_legacy": "我们的传承",
   "legacy_text": "我们为通过创新技术解决方案使航空更安全、更高效、更环保而感到自豪。",
+  "our_history": "我们的历史",
   
   "footer_company": "公司",
   "footer_platforms": "平台",
@@ -63,6 +64,13 @@
   "footer_terms": "服务条款",
   "footer_security": "安全",
   "footer_copyright": "© 2025 Aero Solutions. 保留所有权利。",
+  "footer_tagline": "通过创新技术改变航空业",
+  "navigation": "导航",
+  "legal": "法律",
+  "terms_of_service": "服务条款",
+  "privacy_policy": "隐私政策",
+  "security_policy": "安全政策",
+  "all_rights_reserved": "保留所有权利",
   
   "contact_us": "联系我们",
   "contact_name": "姓名",
