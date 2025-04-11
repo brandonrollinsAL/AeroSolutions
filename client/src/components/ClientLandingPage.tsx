@@ -38,7 +38,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
   const [openCountChatbot, setOpenCountChatbot] = useState(false);
   const [countChatbotOption, setCountChatbotOption] = useState<string | null>(null);
   
-  const isSpecialCode = accessCode.toLowerCase() === "countofmontecristobitch";
+  // Check if the code matches any of our special access codes
+  const isSpecialCode = accessCode.toLowerCase() === 'demo' || accessCode.toLowerCase() === 'special-access';
 
   const platforms: ClientPlatform[] = [
     {
