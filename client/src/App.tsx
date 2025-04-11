@@ -21,6 +21,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import LoginPage from "@/pages/LoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
+import CockpitInteractionsPage from "@/pages/CockpitInteractionsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -319,6 +320,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <AdminClientPreviewsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/cockpit-interactions">
+          {() => (
+            <>
+              <Helmet>
+                <title>Interactive Cockpit Controls | Aero Solutions</title>
+                <meta name="description" content="Experience aviation-inspired interactive controls that demonstrate our attention to detail and understanding of pilot interfaces." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://aerosolutions.dev/cockpit-interactions" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <CockpitInteractionsPage />
             </>
           )}
         </Route>

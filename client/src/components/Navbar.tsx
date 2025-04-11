@@ -238,6 +238,21 @@ const Navbar: React.FC = () => {
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <Link href="/cockpit-interactions">
+                    <NavigationMenuLink 
+                      className={`group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none ${
+                        location === '/cockpit-interactions' ? 'bg-accent text-accent-foreground' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                      }`}
+                    >
+                      <span className="relative">
+                        Cockpit Controls
+                        <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[9px] px-1 rounded-full">NEW</span>
+                      </span>
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
             
@@ -327,6 +342,15 @@ const Navbar: React.FC = () => {
                     {route.label}
                   </Link>
                 ))}
+                
+                <Link
+                  href="/cockpit-interactions"
+                  className="w-full text-left block rounded-md px-3 py-2 text-base font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 mt-2 relative"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Cockpit Controls
+                  <span className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] px-1 rounded-full">NEW</span>
+                </Link>
                 
                 <button
                   className="w-full text-left block rounded-md px-3 py-2 text-base font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 mt-2"
