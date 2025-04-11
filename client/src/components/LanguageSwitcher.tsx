@@ -1,47 +1,62 @@
-import { FC } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Globe } from 'lucide-react';
 
-const LanguageSwitcher: FC = () => {
-  const { i18n, t } = useTranslation();
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
-
+const LanguageSwitcher: React.FC = () => {
+  const { i18n } = useTranslation();
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
+  
   const languages = [
-    { code: 'en', label: 'English' },
+    { code: 'en-US', label: 'English' },
+    { code: 'es', label: 'Español' },
     { code: 'fr', label: 'Français' },
-    { code: 'es', label: 'Español' }
+    { code: 'de', label: 'Deutsch' },
+    { code: 'zh', label: '中文' },
+    { code: 'ja', label: '日本語' },
   ];
-
+  
+  // Update the current language state when i18n.language changes
+  useEffect(() => {
+    setCurrentLanguage(i18n.language);
+  }, [i18n.language]);
+  
+  const handleLanguageChange = (value: string) => {
+    i18n.changeLanguage(value);
+    setCurrentLanguage(value);
+    
+    // Store the language preference in localStorage
+    localStorage.setItem('preferredLanguage', value);
+    
+    // Update HTML lang attribute
+    document.documentElement.lang = value.split('-')[0];
+  };
+  
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2">
-          <Globe className="h-4 w-4" />
-          <span>{t('nav_language')}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {languages.map((language) => (
-          <DropdownMenuItem
-            key={language.code}
-            onClick={() => changeLanguage(language.code)}
-            className={i18n.language === language.code ? "bg-primary/10" : ""}
-          >
-            {language.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center">
+      <Select value={currentLanguage} onValueChange={handleLanguageChange}>
+        <SelectTrigger className="w-[130px] h-8 text-sm border-none focus:ring-0 focus:ring-offset-0">
+          <SelectValue placeholder="Select Language" />
+        </SelectTrigger>
+        <SelectContent>
+          {languages.map((language) => (
+            <SelectItem
+              key={language.code}
+              value={language.code}
+              className="cursor-pointer"
+            >
+              {language.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 
