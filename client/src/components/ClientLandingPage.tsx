@@ -836,11 +836,11 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   
                   <div className="bg-gray-900 rounded-lg p-4 mb-3">
                     <div className="flex mb-2 items-center">
-                      <div className="w-6 h-6 rounded-full bg-yellow-500 text-black flex items-center justify-center mr-2 flex-shrink-0">
-                        <FaFire className="text-red-600 text-xs" />
+                      <div className="w-6 h-6 rounded-full bg-[#EDEFF2] text-[#3B5B9D] flex items-center justify-center mr-2 flex-shrink-0">
+                        <FaRocket className="text-[#00D1D1] text-xs" />
                       </div>
                       <p className="text-white text-sm">
-                        Hi Bernie and Nicole! I've been expecting you. I'm here to help you put that cunt Tom Rollins out of business and into the homeless shelter.
+                        Welcome to Elevion's Web Services! How can we help your business succeed online today?
                       </p>
                     </div>
                     
@@ -898,14 +898,14 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                       }}
                       className="bg-[#3B5B9D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#2A4A8C] transition-colors"
                     >
-                      Open Full Chat Interface
+                      Chat with ElevateBot Assistant
                     </button>
                   </div>
                 </div>
                 
                 <button 
                   onClick={() => setShowInvestorPopup(false)}
-                  className="bg-white text-blue-800 font-bold py-2 px-8 rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
+                  className="bg-white text-[#3B5B9D] font-bold py-2 px-8 rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
                 >
                   Close
                 </button>
