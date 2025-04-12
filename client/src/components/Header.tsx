@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';  
 import { Menu, X, ChevronDown } from 'lucide-react';  
 import ClientPreviewModal from "./ClientPreviewModal";
-import ElevionLogo from "./AeroLogo";
+import ElevionLogo from "./ElevionLogo";
 
 export default function Header() {  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);  

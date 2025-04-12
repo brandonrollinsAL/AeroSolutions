@@ -1,0 +1,68 @@
+Prompt 1: Remove Aero Solutions Branding and Update Global Styles for Elevion
+Objective: Remove all Aero Solutions branding (name, text, colors, founder details) from the website, update global styles to fully reflect Elevion’s branding (Slate Blue, Electric Cyan, Light Gray, Sunset Orange, Poppins/Lato/Inter typography), and ensure a professional, vague tone implying extensive experience across platforms.
+
+Details:
+
+Aero Solutions is being rebranded as Elevion, a full-stack web development company leveraging AI technology to empower small businesses. The new color scheme is Slate Blue (#3B5B9D), Electric Cyan (#00D1D1), Light Gray (#EDEFF2), and Sunset Orange (#FF7043). The typography uses Poppins for headings, Lato for body text, and Inter for UI elements.
+Remove all references to Aero Solutions, including the name, old color palette (rich sapphire blue, soft gold, bronze, platinum), and founder details (Brandon Rollins, "Fuck Embry Riddle was expensive" quote, and related content). Update the website to imply extensive experience across platforms without specifying details, using a professional tone. Ensure all existing pages and components reflect Elevion’s branding.
+Step 1: Update Global Styles
+
+Update client/src/index.css to remove Aero Solutions’ colors and apply Elevion’s color scheme and typography:
+css
+
+Collapse
+
+Wrap
+
+Copy
+@tailwind base;  
+@tailwind components;  
+@tailwind utilities;  
+
+:root {  
+  --slate-blue: #3B5B9D;  
+  --electric-cyan: #00D1D1;  
+  --light-gray: #EDEFF2;  
+  --sunset-orange: #FF7043;  
+}  
+
+body {  
+  margin: 0;  
+  font-family: 'Lato', sans-serif;  
+  background-color: var(--light-gray);  
+}  
+
+h1, h2, h3, h4, h5, h6 {  
+  font-family: 'Poppins', sans-serif;  
+}  
+
+button, a, nav {  
+  font-family: 'Inter', sans-serif;  
+}  
+Update client/tailwind.config.js to include Elevion’s colors:
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+module.exports = {  
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],  
+  theme: {  
+    extend: {  
+      colors: {  
+        'slate-blue': '#3B5B9D',  
+        'electric-cyan': '#00D1D1',  
+        'light-gray': '#EDEFF2',  
+        'sunset-orange': '#FF7043',  
+      },  
+      fontFamily: {  
+        poppins: ['Poppins', 'sans-serif'],  
+        lato: ['Lato', 'sans-serif'],  
+        inter: ['Inter', 'sans-serif'],  
+      },  
+    },  
+  },  
+  plugins: [],  
+};
