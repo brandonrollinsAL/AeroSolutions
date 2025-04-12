@@ -275,12 +275,12 @@ export default function AdminClientPreviewsPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Manage Client Previews | Admin | Aero Solutions</title>
+        <title>Manage Client Previews | Admin | Elevion</title>
         <meta name="description" content="Admin dashboard to manage client preview access codes" />
         <meta name="robots" content="noindex,nofollow" />
         <html lang={t('language_code')} />
       </Helmet>
-      <LanguageMetaTags />
+      <LanguageMetaTags currentPath="/admin/client-previews" />
       
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col gap-8">

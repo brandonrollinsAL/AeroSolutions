@@ -1,0 +1,68 @@
+import { useState } from 'react';  
+import { Link, Route } from 'wouter';  
+import { Menu, X } from 'lucide-react';  
+
+const Dashboard = () => {  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);  
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);  
+
+  const navItems = [  
+    { label: 'Overview', path: '/dashboard' },  
+    { label: 'Client Projects', path: '/dashboard/projects' },  
+    { label: 'User Management', path: '/dashboard/users' },  
+    { label: 'Analytics', path: '/dashboard/analytics' },  
+    { label: 'Content Management', path: '/dashboard/content' },  
+  ];  
+
+  return (  
+    <div className="flex min-h-screen">  
+      {/* Sidebar */}  
+      <aside  
+        className={`bg-slate-blue text-white w-64 fixed inset-y-0 left-0 transform ${  
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'  
+        } md:translate-x-0 transition-transform duration-300 ease-in-out z-50`}  
+      >  
+        <div className="p-4 flex justify-between items-center">  
+          <h2 className="text-2xl font-poppins text-electric-cyan">Elevion Admin</h2>  
+          <button onClick={toggleSidebar} className="md:hidden text-white">  
+            <X size={24} />  
+          </button>  
+        </div>  
+        <nav className="mt-4">  
+          {navItems.map((item) => (  
+            <Link  
+              key={item.label}  
+              href={item.path}  
+              className="block px-4 py-2 text-light-gray hover:bg-electric-cyan hover:text-white font-inter transition-colors duration-200"  
+            >  
+              {item.label}  
+            </Link>  
+          ))}  
+        </nav>  
+      </aside>  
+
+      {/* Main Content */}  
+      <div className="flex-1 md:ml-64">  
+        <header className="bg-slate-blue text-white p-4 flex justify-between items-center">  
+          <button onClick={toggleSidebar} className="md:hidden text-light-gray">  
+            <Menu size={24} />  
+          </button>  
+          <h1 className="text-xl font-poppins">Welcome, Admin</h1>  
+          <Link href="/logout" className="text-sunset-orange font-inter hover:text-electric-cyan">Logout</Link>  
+        </header>  
+        <main className="p-6 bg-light-gray min-h-[calc(100vh-64px)]">  
+          <Route path="/dashboard">  
+            <h2 className="text-3xl font-poppins text-slate-blue">Overview</h2>  
+            <p className="text-lato text-slate-blue mt-4">Welcome to the Elevion admin dashboard. Manage your client projects, users, analytics, and content from here.</p>  
+          </Route>  
+          <Route path="/dashboard/projects"><h2 className="text-3xl font-poppins text-slate-blue">Client Projects</h2></Route>  
+          <Route path="/dashboard/users"><h2 className="text-3xl font-poppins text-slate-blue">User Management</h2></Route>  
+          <Route path="/dashboard/analytics"><h2 className="text-3xl font-poppins text-slate-blue">Analytics</h2></Route>  
+          <Route path="/dashboard/content"><h2 className="text-3xl font-poppins text-slate-blue">Content Management</h2></Route>  
+        </main>  
+      </div>  
+    </div>  
+  );  
+};  
+export default Dashboard;  

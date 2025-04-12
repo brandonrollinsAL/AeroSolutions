@@ -59,12 +59,12 @@ export default function AdminDashboardPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Admin Dashboard | Aero Solutions</title>
-        <meta name="description" content="Admin dashboard for Aero Solutions platform" />
+        <title>Admin Dashboard | Elevion</title>
+        <meta name="description" content="Admin dashboard for Elevion web development platform" />
         <meta name="robots" content="noindex,nofollow" />
         <html lang={t('language_code')} />
       </Helmet>
-      <LanguageMetaTags />
+      <LanguageMetaTags currentPath="/admin" />
       
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col gap-8">
@@ -76,7 +76,7 @@ export default function AdminDashboardPage() {
                 Admin Dashboard
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage, monitor, and control all aspects of the Aero Solutions platform
+                Manage, monitor, and control all aspects of the Elevion web development platform
               </p>
             </div>
             
