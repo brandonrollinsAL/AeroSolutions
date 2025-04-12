@@ -11,22 +11,23 @@ import Footer from '@/components/Footer';
 import Copilot from '@/components/Copilot';
 import SEOHead from '@/components/SEOHead';
 import StructuredData from '@/components/StructuredData';
+import FreeMockupForm from '@/components/FreeMockupForm';
 
 export default function HomePage() {
   // Professional service data for structured data
   const professionalServiceData = {
-    name: "Aero Solutions",
-    description: "Premier aviation software development company specializing in custom solutions with unique no-payment-until-satisfied guarantee.",
-    url: "https://aerosolutions.dev",
-    logo: "https://aerosolutions.dev/logo.png",
+    name: "Elevion",
+    description: "Premier web development company specializing in custom solutions for small businesses with unique no-payment-until-satisfied guarantee.",
+    url: "https://elevion.dev",
+    logo: "https://elevion.dev/logo.png",
     image: [
-      "https://aerosolutions.dev/images/office.jpg",
-      "https://aerosolutions.dev/images/team.jpg",
-      "https://aerosolutions.dev/images/software-demo.jpg"
+      "https://elevion.dev/images/office.jpg",
+      "https://elevion.dev/images/team.jpg",
+      "https://elevion.dev/images/development-demo.jpg"
     ],
     address: {
       "@type": "PostalAddress",
-      "streetAddress": "1150 NW 72nd AVE Tower 1 STE 455 #17102",
+      "streetAddress": "1150 Web Development Dr, Suite 455",
       "addressLocality": "Miami",
       "addressRegion": "FL",
       "postalCode": "33126",
@@ -38,7 +39,7 @@ export default function HomePage() {
       "longitude": "-80.3220"
     },
     telephone: "+1-800-555-0199",
-    email: "info@aerosolutions.dev",
+    email: "info@elevion.dev",
     priceRange: "$$",
     openingHoursSpecification: [
       {
@@ -48,46 +49,45 @@ export default function HomePage() {
         "closes": "18:00"
       }
     ],
-    founder: {
-      "@type": "Person",
-      "name": "Brandon Rollins",
-      "jobTitle": "Founder and Lead Engineer",
-      "description": "Professional pilot and self-taught software engineer",
-      "image": "https://aerosolutions.dev/images/brandon-rollins.jpg"
-    },
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      "name": "Aviation Software Services",
+      "name": "Web Development Services",
       "itemListElement": [
         {
           "@type": "Offer",
-          "name": "Custom Software Development",
-          "description": "End-to-end software development for aviation companies",
-          "url": "https://aerosolutions.dev/services/custom-development"
+          "name": "Custom Web Development",
+          "description": "End-to-end web development for small businesses",
+          "url": "https://elevion.dev/services/custom-development"
         },
         {
           "@type": "Offer",
-          "name": "AeroSync Platform",
-          "description": "Comprehensive aviation data synchronization platform",
-          "url": "https://aerosolutions.dev/platforms/aerosync"
+          "name": "WebCraft Platform",
+          "description": "Comprehensive website design and development platform",
+          "url": "https://elevion.dev/platforms/webcraft"
         },
         {
           "@type": "Offer",
-          "name": "AeroFlight System",
-          "description": "Advanced flight simulation and training platform",
-          "url": "https://aerosolutions.dev/platforms/aeroflight"
+          "name": "EcomPro System",
+          "description": "Advanced e-commerce solutions for online sales",
+          "url": "https://elevion.dev/platforms/ecompro"
         },
         {
           "@type": "Offer",
-          "name": "AeroOps Management",
-          "description": "End-to-end aviation operations management platform",
-          "url": "https://aerosolutions.dev/platforms/aeroops"
+          "name": "ContentHub Management",
+          "description": "Content management systems for easy website updates",
+          "url": "https://elevion.dev/platforms/contenthub"
         },
         {
           "@type": "Offer",
-          "name": "ExecSync Solution",
-          "description": "Executive productivity and communication platform",
-          "url": "https://aerosolutions.dev/platforms/execsync"
+          "name": "AnalyticEdge Solution",
+          "description": "Data analytics and business intelligence for growth",
+          "url": "https://elevion.dev/platforms/analyticedge"
+        },
+        {
+          "@type": "Offer",
+          "name": "AppForge Platform",
+          "description": "Mobile app development for expanded customer reach",
+          "url": "https://elevion.dev/platforms/appforge"
         }
       ]
     },
@@ -101,9 +101,9 @@ export default function HomePage() {
         },
         "author": {
           "@type": "Person",
-          "name": "John Miller"
+          "name": "Jane Doe"
         },
-        "reviewBody": "Aero Solutions transformed our flight operations with their custom software. The team's aviation expertise made all the difference."
+        "reviewBody": "Elevion transformed our online presence with their custom website. The team's small business expertise made all the difference."
       },
       {
         "@type": "Review",
@@ -114,9 +114,9 @@ export default function HomePage() {
         },
         "author": {
           "@type": "Person",
-          "name": "Sarah Johnson"
+          "name": "John Smith"
         },
-        "reviewBody": "Their no-payment-until-satisfied model gave us confidence to pursue a complex project. The results exceeded our expectations."
+        "reviewBody": "Their no-payment-until-satisfied model gave us confidence to pursue a complex e-commerce project. The results exceeded our expectations."
       }
     ]
   };
@@ -134,10 +134,18 @@ export default function HomePage() {
       },
       {
         "@type": "Question",
-        "name": "What aviation platforms does Aero Solutions offer?",
+        "name": "What web development platforms does Elevion offer?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "We've developed several proprietary platforms: AeroSync (data synchronization), AeroFlight (flight simulation and training), AeroOps (operations management), and ExecSync (executive productivity). These can be customized to your specific needs or integrated with your existing systems."
+          "text": "We've developed several proprietary platforms: WebCraft (website development), EcomPro (e-commerce solutions), ContentHub (content management), AnalyticEdge (data analytics), and AppForge (mobile app development). These can be customized to your specific needs or integrated with your existing systems."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the free mockup service work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We create a custom design concept tailored to your business at no cost. Just fill out our form with your business details, and our team will create a professional mockup so you can see what we can build for you before making any commitment."
         }
       },
       {
@@ -154,16 +162,16 @@ export default function HomePage() {
   return (
     <>
       <SEOHead
-        title="Aero Solutions: Advanced Aviation Software Development by Pilots for Pilots"
-        description="Aero Solutions delivers aviation software that transforms flight operations—custom platforms including AeroSync, AeroFlight, AeroOps, and ExecSync built by pilots. No payment until 100% satisfaction guaranteed."
-        keywords="aviation software development, AeroSync data platform, AeroFlight management system, AeroOps operations software, ExecSync executive solution, aviation technology integration, custom flight management systems, pilot-developed software, no upfront payment development, Miami aviation software company, aircraft maintenance tracking"
-        ogTitle="Aero Solutions: Miami's Premier Aviation Software Development | No Payment Until 100% Satisfaction"
-        ogDescription="Discover our industry-leading aviation platforms: AeroSync, AeroFlight, AeroOps, and ExecSync—built by pilots who understand your operational challenges. You own 100% of your custom solution upon completion."
-        ogImage="https://aerosolutions.dev/og-image-homepage.jpg"
-        twitterTitle="Aero Solutions: Pilot-Built Aviation Software | AeroSync, AeroFlight & More"
-        twitterDescription="Transform your flight operations with custom software built by pilots. Our platforms integrate with your existing systems for seamless aviation management."
-        twitterImage="https://aerosolutions.dev/twitter-card-image.jpg"
-        canonicalUrl="https://aerosolutions.dev/"
+        title="Elevion: AI-Powered Web Development for Small Businesses | Free Mockups"
+        description="Elevion delivers custom web solutions that transform your online presence—platforms including WebCraft, EcomPro, ContentHub, and more. No payment until 100% satisfaction guaranteed."
+        keywords="web development, website design, small business websites, e-commerce solutions, WebCraft platform, EcomPro system, ContentHub management, AnalyticEdge solution, AppForge platform, free website mockup, no upfront payment development, Miami web development company, responsive website design"
+        ogTitle="Elevion: Miami's Premier Web Development Company | Free Mockups, No Payment Until 100% Satisfaction"
+        ogDescription="Discover our industry-leading web platforms: WebCraft, EcomPro, ContentHub, AnalyticEdge, and AppForge—built by developers who understand your business challenges. Get a free mockup today!"
+        ogImage="https://elevion.dev/og-image-homepage.jpg"
+        twitterTitle="Elevion: AI-Powered Web Development | Free Mockups, No Payment Until Satisfied"
+        twitterDescription="Transform your online presence with custom web solutions. Our platforms integrate with your existing systems for seamless business growth."
+        twitterImage="https://elevion.dev/twitter-card-image.jpg"
+        canonicalUrl="https://elevion.dev/"
       >
         {/* Structured data is now separated into its own component */}
         <StructuredData type="ProfessionalService" data={professionalServiceData} />
@@ -174,6 +182,7 @@ export default function HomePage() {
       <main>
         <Hero />
         <Services />
+        <FreeMockupForm />
         <Ownership />
         <Platforms />
         <About />
