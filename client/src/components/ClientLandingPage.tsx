@@ -3,7 +3,7 @@ import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, F
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
 import WebConnectPlatformView from "./WebConnectPlatformView";
-import TheCountChatbot from "./TheCountChatbot";
+import ElevateBot from "./ElevateBot";
 import { useLocation } from "wouter";
 import wolfOfWallStreetImage from "../assets/wolf-of-wall-street.jpg";
 import familyImage1 from "../assets/family/D22397D6-2EF2-45C5-A107-D6BD5E7210F4.jpeg";
@@ -35,8 +35,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
   const [showInvestorPopup, setShowInvestorPopup] = useState(false);
   const [showWebConnect, setShowWebConnect] = useState(false);
   const [, setLocation] = useLocation();
-  const [openCountChatbot, setOpenCountChatbot] = useState(false);
-  const [countChatbotOption, setCountChatbotOption] = useState<string | null>(null);
+  const [openElevateBot, setOpenElevateBot] = useState(false);
+  const [elevateBotOption, setElevateBotOption] = useState<string | null>(null);
   
   // Check if the code matches any of our special access codes
   const isSpecialCode = accessCode.toLowerCase() === 'demo' || accessCode.toLowerCase() === 'special-access';
@@ -915,8 +915,8 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
         </div>
       )}
 
-      {/* The Count Chatbot - Always rendered but only shown when needed */}
-      <TheCountChatbot isOpen={isSpecialCode && openCountChatbot} initialOption={countChatbotOption} />
+      {/* ElevateBot - Always rendered but only shown when needed */}
+      <ElevateBot isOpen={isSpecialCode && openElevateBot} initialOption={elevateBotOption} />
       
       {/* WebConnect Platform View */}
       <WebConnectPlatformView
