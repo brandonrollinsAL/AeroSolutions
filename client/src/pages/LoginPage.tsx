@@ -125,7 +125,7 @@ export default function LoginPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>{t('login_page_title')} | Aero Solutions</title>
+        <title>{t('login_page_title')} | Elevion</title>
         <meta name="description" content={t('login_page_description')} />
         <html lang={t('language_code')} />
       </Helmet>
@@ -218,7 +218,7 @@ export default function LoginPage() {
                 {/* Admin login hint */}
                 <div className="mt-6 pt-4 border-t border-gray-200 w-full text-center">
                   <p className="text-xs text-gray-500">
-                    <span className="font-medium">Admin access</span>: brandonrollins@aerolink.community
+                    <span className="font-medium">Admin access</span>: admin@elevion.dev
                   </p>
                 </div>
               </CardFooter>

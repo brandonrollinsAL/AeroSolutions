@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'wouter';
 import { useTranslation } from 'react-i18next';
-import AeroLogo from './AeroLogo';
+import ElevionLogo from './ElevionLogo';
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube, FaGithub, FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
@@ -14,9 +14,9 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <AeroLogo size="md" />
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
-                Aero Solutions
+              <ElevionLogo size="md" />
+              <span className="text-xl font-bold bg-gradient-to-r from-electric-cyan to-light-gray bg-clip-text text-transparent">
+                Elevion
               </span>
             </div>
             <p className="text-gray-300 max-w-xs">
@@ -129,11 +129,11 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-center">
                 <FaPhoneAlt className="h-4 w-4 text-blue-400 mr-2 flex-shrink-0" />
-                <span className="text-gray-300">+1 (800) 555-AERO</span>
+                <span className="text-gray-300">+1 (800) 555-ELEV</span>
               </li>
               <li className="flex items-center">
                 <FaEnvelope className="h-4 w-4 text-blue-400 mr-2 flex-shrink-0" />
-                <span className="text-gray-300">info@aerosolns.com</span>
+                <span className="text-gray-300">info@elevion.dev</span>
               </li>
             </ul>
           </div>
@@ -142,7 +142,7 @@ const Footer: React.FC = () => {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 py-6 text-sm text-gray-400 flex flex-col md:flex-row justify-between items-center">
           <div>
-            &copy; {new Date().getFullYear()} Aero Solutions. {t('all_rights_reserved')}
+            &copy; {new Date().getFullYear()} Elevion. {t('all_rights_reserved')}
           </div>
           <div className="mt-4 md:mt-0">
             <span className="mr-4">FAQ</span>

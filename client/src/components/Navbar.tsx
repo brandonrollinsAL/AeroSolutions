@@ -20,7 +20,7 @@ import {
 import { Menu, X, ChevronDown, User, LogOut, Star, History, Globe, Shield, Users } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 import ClientPreviewModal from './ClientPreviewModal';
-import AeroLogo from './AeroLogo';
+import ElevionLogo from './ElevionLogo';
 import { motion } from 'framer-motion';
 
 const Navbar: React.FC = () => {
