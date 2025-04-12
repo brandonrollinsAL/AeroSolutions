@@ -1,0 +1,142 @@
+import { useState } from 'react';  
+
+const Home = () => {  
+  const [formData, setFormData] = useState({ name: '', email: '', businessType: '', message: '' });  
+  const [submitted, setSubmitted] = useState(false);  
+
+  const handleChange = (e) => {  
+    setFormData({ ...formData, [e.target.name]: e.target.value });  
+  };  
+
+  const handleSubmit = async (e) => {  
+    e.preventDefault();  
+    await fetch('/api/contact', {  
+      method: 'POST',  
+      headers: { 'Content-Type': 'application/json' },  
+      body: JSON.stringify(formData),  
+    });  
+    setSubmitted(true);  
+  };  
+
+  return (  
+    <div className="bg-light-gray">  
+      {/* Hero Section */}  
+      <section className="relative bg-gradient-to-r from-slate-blue to-electric-cyan text-white py-20 px-6 text-center">  
+        <div className="max-w-5xl mx-auto">  
+          <h1 className="text-5xl md:text-6xl font-poppins mb-4">Elevate Your Business with Elevion</h1>  
+          <p className="text-xl font-lato mb-8">Power your future with AI-driven web solutions that help small businesses grow, compete, and thrive.</p>  
+          <a  
+            href="#free-mockup"  
+            className="inline-block bg-electric-cyan text-white font-inter text-sm uppercase tracking-wide px-6 py-3 rounded-lg hover:bg-sunset-orange transition-colors duration-200"  
+          >  
+            Request a Free Mockup  
+          </a>  
+        </div>  
+      </section>  
+
+      {/* Trust Signals Section */}  
+      <section className="py-16 px-6">  
+        <div className="max-w-5xl mx-auto text-center">  
+          <h2 className="text-3xl font-poppins text-slate-blue mb-8">Trusted by Small Businesses Worldwide</h2>  
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">  
+            <div className="bg-white p-6 rounded-lg shadow-md">  
+              <p className="text-lato text-slate-blue italic mb-4">"Elevion transformed our online presence and doubled our sales in just three months!"</p>  
+              <p className="text-lato text-sunset-orange font-bold">— Jane Doe, Bakery Owner</p>  
+            </div>  
+            <div className="bg-white p-6 rounded-lg shadow-md">  
+              <p className="text-lato text-slate-blue italic mb-4">"Their AI-driven solutions gave us a competitive edge we never thought possible."</p>  
+              <p className="text-lato text-sunset-orange font-bold">— John Smith, Retail CEO</p>  
+            </div>  
+            <div className="bg-white p-6 rounded-lg shadow-md">  
+              <p className="text-lato text-slate-blue italic mb-4">"Reliable, innovative, and easy to work with—Elevion is the best!"</p>  
+              <p className="text-lato text-sunset-orange font-bold">— Sarah Lee, Craft Business Founder</p>  
+            </div>  
+          </div>  
+        </div>  
+      </section>  
+
+      {/* Features Section */}  
+      <section className="py-16 px-6 bg-slate-blue text-white">  
+        <div className="max-w-5xl mx-auto">  
+          <h2 className="text-3xl font-poppins text-center mb-12">Why Choose Elevion?</h2>  
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">  
+            <div className="text-center">  
+              <div className="text-electric-cyan text-4xl mb-4">⚡</div>  
+              <h3 className="text-xl font-poppins mb-2">AI-Driven Web Development</h3>  
+              <p className="text-lato">Leverage the power of AI to create stunning, high-performing websites tailored to your business.</p>  
+            </div>  
+            <div className="text-center">  
+              <div className="text-electric-cyan text-4xl mb-4">📈</div>  
+              <h3 className="text-xl font-poppins mb-2">Growth Solutions</h3>  
+              <p className="text-lato">Boost your online visibility and sales with data-driven strategies and tools.</p>  
+            </div>  
+            <div className="text-center">  
+              <div className="text-electric-cyan text-4xl mb-4">🤝</div>  
+              <h3 className="text-xl font-poppins mb-2">Trusted Support</h3>  
+              <p className="text-lato">Get 24/7 priority support to ensure your business never misses a beat.</p>  
+            </div>  
+          </div>  
+        </div>  
+      </section>  
+
+      {/* Free Mockup CTA Section */}  
+      <section id="free-mockup" className="py-16 px-6 bg-light-gray">  
+        <div className="max-w-5xl mx-auto text-center">  
+          <h2 className="text-3xl font-poppins text-slate-blue mb-4">See What Elevion Can Do for You – For Free</h2>  
+          <p className="text-lato text-slate-blue mb-8">  
+            Request a free, no-obligation mockup of your new website, platform, or app. Our team will create a custom design tailored to your business at no cost. We’re so confident you’ll love it that there’s no payment required until the job is complete to your exact specifications.  
+          </p>  
+          {!submitted ? (  
+            <form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-4">  
+              <input  
+                type="text"  
+                name="name"  
+                value={formData.name}  
+                onChange={handleChange}  
+                placeholder="Your Name"  
+                className="w-full p-3 border rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan"  
+                required  
+              />  
+              <input  
+                type="email"  
+                name="email"  
+                value={formData.email}  
+                onChange={handleChange}  
+                placeholder="Your Email"  
+                className="w-full p-3 border rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan"  
+                required  
+              />  
+              <input  
+                type="text"  
+                name="businessType"  
+                value={formData.businessType}  
+                onChange={handleChange}  
+                placeholder="Business Type (e.g., Bakery, Retail)"  
+                className="w-full p-3 border rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan"  
+                required  
+              />  
+              <textarea  
+                name="message"  
+                value={formData.message}  
+                onChange={handleChange}  
+                placeholder="Tell us about your business and goals..."  
+                className="w-full p-3 border rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan h-32"  
+              />  
+              <button  
+                type="submit"  
+                className="bg-electric-cyan text-white font-inter text-sm uppercase tracking-wide px-6 py-3 rounded-lg hover:bg-sunset-orange transition-colors duration-200"  
+              >  
+                Request Free Mockup  
+              </button>  
+            </form>  
+          ) : (  
+            <p className="text-lato text-slate-blue text-lg">  
+              Thank you for your request! Our team will reach out within 24 hours to discuss your free mockup.  
+            </p>  
+          )}  
+        </div>  
+      </section>  
+    </div>  
+  );  
+};  
+export default Home;  
