@@ -220,8 +220,8 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
               <FaLink className="text-2xl" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold font-montserrat">AeroLink</h2>
-              <p className="text-sm text-white/80">Ultimate connectivity solution for aviation systems</p>
+              <h2 className="text-2xl font-bold font-poppins">WebConnect</h2>
+              <p className="text-sm text-white/80">Ultimate connectivity solution for web applications</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">

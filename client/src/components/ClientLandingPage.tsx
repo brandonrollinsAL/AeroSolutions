@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink, FaFire } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
-import AeroLinkPlatformView from "./AeroLinkPlatformView";
+import WebConnectPlatformView from "./WebConnectPlatformView";
 import TheCountChatbot from "./TheCountChatbot";
 import { useLocation } from "wouter";
 import wolfOfWallStreetImage from "../assets/wolf-of-wall-street.jpg";
@@ -33,7 +33,7 @@ interface ClientPlatform {
 export default function ClientLandingPage({ accessCode }: ClientLandingPageProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<ClientPlatform | null>(null);
   const [showInvestorPopup, setShowInvestorPopup] = useState(false);
-  const [showAeroLink, setShowAeroLink] = useState(false);
+  const [showWebConnect, setShowWebConnect] = useState(false);
   const [, setLocation] = useLocation();
   const [openCountChatbot, setOpenCountChatbot] = useState(false);
   const [countChatbotOption, setCountChatbotOption] = useState<string | null>(null);
@@ -918,11 +918,11 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
       {/* The Count Chatbot - Always rendered but only shown when needed */}
       <TheCountChatbot isOpen={isSpecialCode && openCountChatbot} initialOption={countChatbotOption} />
       
-      {/* AeroLink Platform View */}
-      <AeroLinkPlatformView
-        isOpen={showAeroLink}
-        onClose={() => setShowAeroLink(false)}
-        onBackToLanding={() => setShowAeroLink(false)}
+      {/* WebConnect Platform View */}
+      <WebConnectPlatformView
+        isOpen={showWebConnect}
+        onClose={() => setShowWebConnect(false)}
+        onBackToLanding={() => setShowWebConnect(false)}
       />
     </div>
   );

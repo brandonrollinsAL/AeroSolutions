@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { FaLinkedin, FaTwitter, FaGithub } from "react-icons/fa";
-import brandonImage from "../assets/brandon_profile.jpeg";
 
 export default function About() {
   const fadeInUp = {
@@ -15,89 +14,81 @@ export default function About() {
   return (
     <section id="about" className="py-20 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <motion.div
+        <div className="flex flex-col gap-8 items-center max-w-5xl mx-auto">
+          <motion.h2 
+            className="text-4xl font-bold font-poppins text-slate-blue mb-6 text-center"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={fadeInUp}
-            custom={0}
+            custom={0.5}
           >
-            <img 
-              src={brandonImage} 
-              alt="Brandon Rollins - Founder of Aero Solutions" 
-              className="rounded-xl shadow-xl w-full max-w-md mx-auto" 
-              loading="lazy"
-            />
-          </motion.div>
+            About Elevion
+          </motion.h2>
           
-          <div>
-            <motion.h2 
-              className="text-3xl font-bold font-montserrat text-primary mb-6"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeInUp}
-              custom={0.5}
-            >
-              About Us
-            </motion.h2>
-            
-            <motion.p 
-              className="text-gray-600 mb-4"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeInUp}
-              custom={1}
-            >
-              Founded by Brandon Rollins, Aero Solutions combines aviation expertise with cutting-edge software development to deliver solutions that soar. Our mission is to empower businesses with technology, from initial concept to final deployment, with the flexibility to retain us post-launch.
-            </motion.p>
-            
-            <motion.div 
-              className="bg-gray-50 rounded-xl p-6 shadow-md mb-6 border-l-4 border-luxury"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeInUp}
-              custom={1.5}
-            >
-              <h3 className="text-xl font-bold font-montserrat text-primary mb-2">Meet Our Founder</h3>
-              <p className="text-gray-600 mb-4">I'm Brandon Rollins, the founder and lead engineer of Aero Solutions. As a professional pilot and self-taught software engineer, I bring a rare blend of real-world aviation experience and technical expertise to every project. I've logged thousands of hours in the cockpit and countless more coding innovative solutions, from flight management systems to enterprise platforms.</p>
-              <p className="text-gray-600">My journey of teaching myself programming while working as a pilot gave me a unique perspective on solving complex problems. My passion is building software that addresses real challenges, and my commitment is to your satisfaction—our unique no-upfront-payment model proves it.</p>
-            </motion.div>
-            
-            <motion.p 
-              className="text-gray-600 mb-4"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeInUp}
-              custom={2}
-            >
-              <strong className="font-semibold">Our Address:</strong><br />
-              1150 NW 72nd AVE Tower 1 STE 455 #17102, Miami, FL 33126, USA
-            </motion.p>
-            
-            <motion.div 
-              className="flex space-x-4"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeInUp}
-              custom={2.5}
-            >
-              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
-                <FaLinkedin className="text-2xl" />
-              </a>
-              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
-                <FaTwitter className="text-2xl" />
-              </a>
-              <a href="#" className="text-primary hover:text-black transition-colors duration-300">
-                <FaGithub className="text-2xl" />
-              </a>
-            </motion.div>
-          </div>
+          <motion.p 
+            className="text-lato text-slate-blue mb-4 text-lg leading-relaxed"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={1}
+          >
+            Elevion is a premier full-stack web development company with decades of experience across diverse platforms. Our team of seasoned experts leverages cutting-edge AI technology to empower small businesses, helping them grow, compete, and thrive in a digital-first world.
+          </motion.p>
+          
+          <motion.p 
+            className="text-lato text-slate-blue mb-4 text-lg leading-relaxed"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={1.5}
+          >
+            We've partnered with countless businesses to deliver innovative, reliable solutions that drive measurable results. Our commitment to excellence and client satisfaction has made us a trusted leader in the industry, known for transforming digital challenges into opportunities for success.
+          </motion.p>
+          
+          <motion.p 
+            className="text-lato text-slate-blue text-lg leading-relaxed"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={2}
+          >
+            At Elevion, we believe in elevating your business with technology that's as powerful as it is accessible. Let us help you power your future.
+          </motion.p>
+          
+          <motion.p 
+            className="text-slate-blue mt-8 mb-4"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={2.5}
+          >
+            <strong className="font-semibold">Our Address:</strong><br />
+            123 Web Development Dr, Suite 200, Atlanta, GA 30339, USA
+          </motion.p>
+          
+          <motion.div 
+            className="flex space-x-6"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={fadeInUp}
+            custom={3}
+          >
+            <a href="#" className="text-slate-blue hover:text-electric-cyan transition-colors duration-300">
+              <FaLinkedin className="text-3xl" />
+            </a>
+            <a href="#" className="text-slate-blue hover:text-electric-cyan transition-colors duration-300">
+              <FaTwitter className="text-3xl" />
+            </a>
+            <a href="#" className="text-slate-blue hover:text-electric-cyan transition-colors duration-300">
+              <FaGithub className="text-3xl" />
+            </a>
+          </motion.div>
         </div>
       </div>
     </section>
