@@ -847,43 +847,43 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                     <div className="grid grid-cols-2 gap-2 mt-3">
                       <button 
                         onClick={() => {
-                          setCountChatbotOption("ruin-credit");
-                          setOpenCountChatbot(true);
+                          setElevateBotOption("website-design");
+                          setOpenElevateBot(true);
                           setShowInvestorPopup(false);
                         }} 
                         className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
                       >
-                        <span className="mr-1 text-red-500">✓</span> Ruin his credit
+                        <span className="mr-1 text-[#FF7043]">✓</span> Website Design Services
                       </button>
                       <button 
                         onClick={() => {
-                          setCountChatbotOption("steal-identity");
-                          setOpenCountChatbot(true);
+                          setElevateBotOption("web-development");
+                          setOpenElevateBot(true);
                           setShowInvestorPopup(false);
                         }} 
                         className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
                       >
-                        <span className="mr-1 text-blue-500">✓</span> Steal his identity
+                        <span className="mr-1 text-[#3B5B9D]">✓</span> Web Development
                       </button>
                       <button 
                         onClick={() => {
-                          setCountChatbotOption("call-wife");
-                          setOpenCountChatbot(true);
+                          setElevateBotOption("mobile-optimization");
+                          setOpenElevateBot(true);
                           setShowInvestorPopup(false);
                         }}  
                         className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
                       >
-                        <span className="mr-1 text-purple-500">✓</span> Call his wife
+                        <span className="mr-1 text-[#00D1D1]">✓</span> Mobile Optimization
                       </button>
                       <button 
                         onClick={() => {
-                          setCountChatbotOption("sink-boat");
-                          setOpenCountChatbot(true);
+                          setElevateBotOption("branding-design");
+                          setOpenElevateBot(true);
                           setShowInvestorPopup(false);
                         }} 
                         className="bg-gray-800 hover:bg-gray-700 text-white text-xs rounded p-2 flex items-center"
                       >
-                        <span className="mr-1 text-blue-700">✓</span> Sink his boat
+                        <span className="mr-1 text-[#3B5B9D]">✓</span> Branding & Identity
                       </button>
                     </div>
                   </div>
@@ -891,12 +891,12 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   <div className="text-center">
                     <button 
                       onClick={() => {
-                        console.log("Opening Count Chatbot", {isSpecialCode});
-                        setCountChatbotOption(null); // Reset any previous option
-                        setOpenCountChatbot(true);
+                        console.log("Opening ElevateBot", {isSpecialCode});
+                        setElevateBotOption(null); // Reset any previous option
+                        setOpenElevateBot(true);
                         setShowInvestorPopup(false);
                       }}
-                      className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="bg-[#3B5B9D] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#2A4A8C] transition-colors"
                     >
                       Open Full Chat Interface
                     </button>
