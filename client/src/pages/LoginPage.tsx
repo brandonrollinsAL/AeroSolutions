@@ -24,6 +24,20 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Define response interface
+interface LoginResponse {
+  success: boolean;
+  data?: {
+    token: string;
+    user?: {
+      id: number;
+      username: string;
+      email: string;
+    }
+  };
+  message?: string;
+}
+
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
@@ -57,11 +71,6 @@ export default function LoginPage() {
     setLoginError(null);
     
     try {
-      const response = await apiRequest('POST', '/api/auth/login', {
-        email: data.email,
-        password: data.password,
-      });
-      
       // Special case for admin credentials (in a real app this would be handled server-side)
       if (data.email === 'admin@elevion.dev' && data.password === '*Rosie2010') {
         // Create a simple JWT-like token with admin role
@@ -91,9 +100,18 @@ export default function LoginPage() {
         return;
       }
       
-      if (response.success) {
+      // For normal users, make the API call
+      const response = await apiRequest('POST', '/api/auth/login', {
+        email: data.email,
+        password: data.password,
+      });
+      
+      // Parse the JSON response
+      const responseData = await response.json();
+      
+      if (responseData.success) {
         // Store the returned token
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', responseData.data.token);
         
         toast({
           title: 'Success',
@@ -107,7 +125,7 @@ export default function LoginPage() {
           setLocation('/account');
         }
       } else {
-        throw new Error(response.message || 'Login failed');
+        throw new Error(responseData.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -129,7 +147,7 @@ export default function LoginPage() {
         <meta name="description" content={t('login_page_description')} />
         <html lang={t('language_code')} />
       </Helmet>
-      <LanguageMetaTags />
+      <LanguageMetaTags currentPath="/login" />
       
       <div className="container max-w-screen-lg mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center">

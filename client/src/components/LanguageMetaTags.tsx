@@ -12,7 +12,7 @@ interface LanguageMetaTagsProps {
  */
 const LanguageMetaTags: React.FC<LanguageMetaTagsProps> = ({ currentPath }) => {
   // Base URL for the site
-  const baseUrl = 'https://aerosolutions.dev';
+  const baseUrl = 'https://elevion.dev';
   
   // All supported languages
   const languages = ['en', 'es', 'fr', 'de', 'zh', 'ja'];
