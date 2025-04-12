@@ -59,9 +59,9 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
   // Function to add a random event to the data stream
   const addRandomEvent = () => {
     const events = [
-      { event: "Flight plan update received", status: "info" },
-      { event: "Maintenance alert triggered", status: "warning" },
-      { event: "Weather data refreshed", status: "success" },
+      { event: "Product inventory updated", status: "info" },
+      { event: "Security alert triggered", status: "warning" },
+      { event: "Analytics data refreshed", status: "success" },
       { event: "Cross-system validation completed", status: "success" },
       { event: "Data transformation error", status: "error" },
     ];
@@ -80,12 +80,12 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
     {
       icon: <FaGlobe className="text-blue-600" />,
       title: "Global Integration Network",
-      description: "Connect any aviation system worldwide with our proprietary middleware that bridges legacy and modern platforms."
+      description: "Connect any web system worldwide with our proprietary middleware that bridges legacy and modern platforms."
     },
     {
       icon: <FaShieldAlt className="text-blue-600" />,
-      title: "Military-Grade Security",
-      description: "End-to-end encryption with FIPS 140-2 compliance and zero-trust architecture protects sensitive aviation data."
+      title: "Enterprise-Grade Security",
+      description: "End-to-end encryption with FIPS 140-2 compliance and zero-trust architecture protects sensitive business data."
     },
     {
       icon: <FaServer className="text-blue-600" />,
@@ -95,7 +95,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
     {
       icon: <FaCode className="text-blue-600" />,
       title: "Custom Integration Framework",
-      description: "Our no-code integration builder allows aviation professionals to create custom data flows without developer resources."
+      description: "Our no-code integration builder allows business professionals to create custom data flows without developer resources."
     },
     {
       icon: <FaChartLine className="text-blue-600" />,
@@ -119,13 +119,13 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
     {
       method: "GET",
       endpoint: "/api/v1/systems",
-      description: "Retrieve all connected aviation systems",
+      description: "Retrieve all connected web systems",
       parameters: "?status=[active|inactive|all]",
       sampleResponse: {
         systems: [
           {
             id: "sys-123",
-            name: "Flight Management System",
+            name: "E-commerce Platform",
             status: "active",
             lastSyncTime: "2024-04-09T12:23:45Z"
           }
@@ -142,8 +142,8 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
         targetSystemId: "sys-456",
         mappingRules: [
           {
-            sourceField: "flight.id",
-            targetField: "flightId",
+            sourceField: "product.id",
+            targetField: "productId",
             transformation: "direct"
           }
         ]
@@ -171,9 +171,9 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
       requestBody: {
         mappingRules: [
           {
-            sourceField: "aircraft.registration",
-            targetField: "tailNumber",
-            transformation: "uppercase"
+            sourceField: "customer.email",
+            targetField: "emailAddress",
+            transformation: "lowercase"
           }
         ]
       }
@@ -362,7 +362,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <h5 className="font-bold mb-2">Pre-built Connectors</h5>
-                      <p className="text-sm text-gray-600">Over 200 ready-to-use connectors for aviation-specific systems and general enterprise applications.</p>
+                      <p className="text-sm text-gray-600">Over 200 ready-to-use connectors for web platforms, CMS, e-commerce, and general enterprise applications.</p>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <h5 className="font-bold mb-2">Custom Adapter Framework</h5>
@@ -374,7 +374,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <h5 className="font-bold mb-2">Protocol Support</h5>
-                      <p className="text-sm text-gray-600">Support for all major integration protocols including REST, SOAP, GraphQL, gRPC, MQTT, and proprietary aviation protocols.</p>
+                      <p className="text-sm text-gray-600">Support for all major integration protocols including REST, SOAP, GraphQL, gRPC, MQTT, and proprietary e-commerce protocols.</p>
                     </div>
                   </div>
                 </div>
@@ -392,7 +392,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                     </div>
                     <div>
                       <h5 className="font-bold mb-1">Compliance Certifications</h5>
-                      <p className="text-gray-600 text-sm">Meets or exceeds requirements for FAA, EASA, SOC 2, ISO 27001, GDPR, and other relevant regulations.</p>
+                      <p className="text-gray-600 text-sm">Meets or exceeds requirements for SOC 2, ISO 27001, GDPR, CCPA, PCI DSS, and other relevant regulations.</p>
                     </div>
                     <div>
                       <h5 className="font-bold mb-1">Audit Trails</h5>
@@ -429,12 +429,12 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
                   <h4 className="text-xl font-bold text-gray-900 mb-4">System Architecture</h4>
                   <p className="text-gray-700 mb-4">
-                    AeroLink is built on a microservices architecture with a distributed edge computing model. This design enables processing at the edge while maintaining a unified data model and control plane.
+                    WebConnect is built on a microservices architecture with a distributed edge computing model. This design enables processing at the edge while maintaining a unified data model and control plane.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <h5 className="font-bold mb-2 text-blue-900">Edge Layer</h5>
-                      <p className="text-sm text-blue-800">Deployed on-premises or in private cloud environments to interface directly with aviation systems, providing local data processing and caching capabilities.</p>
+                      <p className="text-sm text-blue-800">Deployed on-premises or in private cloud environments to interface directly with web platforms, providing local data processing and caching capabilities.</p>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <h5 className="font-bold mb-2 text-blue-900">Core Platform</h5>
@@ -505,7 +505,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                       </li>
                       <li className="flex items-start">
                         <div className="text-blue-500 mt-1 mr-3">•</div>
-                        <p><span className="font-semibold">Data Volume:</span> Proven implementations handling petabytes of operational data for major airlines.</p>
+                        <p><span className="font-semibold">Data Volume:</span> Proven implementations handling petabytes of operational data for major e-commerce platforms.</p>
                       </li>
                       <li className="flex items-start">
                         <div className="text-blue-500 mt-1 mr-3">•</div>
@@ -525,7 +525,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
                   <h4 className="text-xl font-bold text-gray-900 mb-4">API Overview</h4>
                   <p className="text-gray-700 mb-4">
-                    AeroLink provides comprehensive REST and GraphQL APIs for integration with external systems and custom applications. All APIs are versioned, documented with OpenAPI specifications, and include sandbox environments for testing.
+                    WebConnect provides comprehensive REST and GraphQL APIs for integration with external systems and custom applications. All APIs are versioned, documented with OpenAPI specifications, and include sandbox environments for testing.
                   </p>
                   <div className="bg-gray-100 p-4 rounded-lg mb-4">
                     <h5 className="font-bold mb-2">Authentication</h5>
@@ -588,17 +588,17 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                     <div className="bg-white rounded-lg border border-gray-200 p-4">
                       <h5 className="font-bold mb-2">JavaScript/TypeScript</h5>
                       <p className="text-sm text-gray-600 mb-2">Full-featured client with TypeScript definitions and React hooks.</p>
-                      <code className="text-xs bg-gray-100 p-1 rounded block">npm install @aerolink/client</code>
+                      <code className="text-xs bg-gray-100 p-1 rounded block">npm install @webconnect/client</code>
                     </div>
                     <div className="bg-white rounded-lg border border-gray-200 p-4">
                       <h5 className="font-bold mb-2">Python</h5>
                       <p className="text-sm text-gray-600 mb-2">Python client with async support and pandas integration.</p>
-                      <code className="text-xs bg-gray-100 p-1 rounded block">pip install aerolink-python</code>
+                      <code className="text-xs bg-gray-100 p-1 rounded block">pip install webconnect-python</code>
                     </div>
                     <div className="bg-white rounded-lg border border-gray-200 p-4">
                       <h5 className="font-bold mb-2">Java</h5>
                       <p className="text-sm text-gray-600 mb-2">Java client with Spring Boot integration.</p>
-                      <code className="text-xs bg-gray-100 p-1 rounded block">maven: com.aerolink:client:1.0.5</code>
+                      <code className="text-xs bg-gray-100 p-1 rounded block">maven: com.webconnect:client:1.0.5</code>
                     </div>
                   </div>
                 </div>
