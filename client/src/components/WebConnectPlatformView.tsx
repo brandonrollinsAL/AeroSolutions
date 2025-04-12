@@ -182,24 +182,24 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
 
   const useCases = [
     {
-      title: "Global Airline Operations Integration",
-      description: "A major international airline unified 27 disparate systems including crew scheduling, maintenance tracking, and flight operations using AeroLink. This reduced cross-system latency by 94% and eliminated an estimated 120,000 hours of manual data reconciliation annually.",
+      title: "Global E-commerce Platform Integration",
+      description: "A major international retailer unified 27 disparate systems including inventory management, order processing, and customer profiles using WebConnect. This reduced cross-system latency by 94% and eliminated an estimated 120,000 hours of manual data reconciliation annually.",
       results: ["94% reduction in cross-system latency", "120,000 hours saved in manual reconciliation", "99.998% data accuracy achieved"]
     },
     {
-      title: "Airport Ground Operations Management",
-      description: "A hub airport deployed AeroLink to connect airline arrival data, gate management systems, ground handling operations, and baggage systems. The integrated solution reduced aircraft turnaround times by 18 minutes on average and improved on-time departure performance by 23%.",
-      results: ["18 minute reduction in aircraft turnaround", "23% improvement in on-time departures", "32% reduction in mishandled baggage"]
+      title: "Healthcare Systems Integration",
+      description: "A large healthcare provider deployed WebConnect to connect patient records, billing systems, appointment scheduling, and medical device data. The integrated solution reduced patient wait times by 18 minutes on average and improved appointment scheduling accuracy by 23%.",
+      results: ["18 minute reduction in patient wait times", "23% improvement in scheduling accuracy", "32% reduction in billing errors"]
     },
     {
-      title: "Military Fleet Integration",
-      description: "A defense department implemented AeroLink to create a secure, unified view of maintenance, supply chain, and mission data across their fleet. The platform enabled real-time operational visibility while maintaining strict security protocols and air-gapped environments where required.",
-      results: ["97% improvement in maintenance forecasting accuracy", "68% reduction in parts inventory costs", "Zero security incidents recorded"]
+      title: "Financial Services Data Unification",
+      description: "A major financial institution implemented WebConnect to create a secure, unified view of customer accounts, transaction history, and investment data across their platforms. The platform enabled real-time financial visibility while maintaining strict security protocols and regulatory compliance.",
+      results: ["97% improvement in reporting accuracy", "68% reduction in reconciliation costs", "Zero security incidents recorded"]
     },
     {
-      title: "MRO Efficiency Transformation",
-      description: "A large MRO provider integrated customer systems, parts inventory, technician scheduling, and compliance reporting through AeroLink. This reduced aircraft maintenance turnaround time by 31% while improving regulatory compliance documentation.",
-      results: ["31% reduction in maintenance turnaround", "100% regulatory compliance documentation", "43% improved parts utilization"]
+      title: "Manufacturing Process Optimization",
+      description: "A global manufacturer integrated supply chain systems, inventory management, production scheduling, and quality control reporting through WebConnect. This reduced production cycle time by 31% while improving regulatory compliance documentation.",
+      results: ["31% reduction in production cycle time", "100% regulatory compliance documentation", "43% improved inventory utilization"]
     }
   ];
 
@@ -633,9 +633,9 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                 </div>
                 
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mt-8">
-                  <h4 className="text-xl font-bold text-blue-900 mb-4">Ready to Transform Your Aviation Operations?</h4>
+                  <h4 className="text-xl font-bold text-blue-900 mb-4">Ready to Transform Your Digital Operations?</h4>
                   <p className="text-blue-800 mb-4">
-                    Join the leading aviation organizations worldwide that have revolutionized their operational efficiency with AeroLink. Our team of aviation technology experts is ready to discuss your specific needs and demonstrate how AeroLink can transform your operations.
+                    Join the leading organizations worldwide that have revolutionized their operational efficiency with WebConnect. Our team of web technology experts is ready to discuss your specific needs and demonstrate how WebConnect can transform your business.
                   </p>
                   <div className="flex items-center justify-center mt-4">
                     <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors">
@@ -653,7 +653,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                 
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-8">
                   <p className="text-blue-800 mb-2">
-                    Experience AeroLink's system connectivity capabilities in this interactive demonstration. Connect aviation systems, monitor data flow, and see real-time integration in action.
+                    Experience WebConnect's system connectivity capabilities in this interactive demonstration. Connect web applications, monitor data flow, and see real-time integration in action.
                   </p>
                 </div>
                 
@@ -824,8 +824,8 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
                 </div>
                 
                 <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white">
-                  <h4 className="text-lg font-bold mb-3">Ready to implement AeroLink in your organization?</h4>
-                  <p className="mb-4">This is just a preview of AeroLink's powerful integration capabilities. Contact us for a complete demonstration with your actual systems.</p>
+                  <h4 className="text-lg font-bold mb-3">Ready to implement WebConnect in your organization?</h4>
+                  <p className="mb-4">This is just a preview of WebConnect's powerful integration capabilities. Contact us for a complete demonstration with your actual systems.</p>
                   <button className="bg-white text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors">
                     Schedule Full Demo
                   </button>
@@ -838,7 +838,7 @@ export default function WebConnectPlatformView({ isOpen, onClose, onBackToLandin
         {/* Footer */}
         <div className="border-t border-gray-200 p-4 bg-gray-50">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">© {new Date().getFullYear()} Aero Solutions. All rights reserved.</p>
+            <p className="text-sm text-gray-500">© {new Date().getFullYear()} Elevion. All rights reserved.</p>
             <div className="flex space-x-2">
               <button 
                 onClick={onBackToLanding}
