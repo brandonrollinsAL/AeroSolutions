@@ -10,6 +10,11 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        'poppins': ['Poppins', 'sans-serif'],
+        'lato': ['Lato', 'sans-serif'],
+        'inter': ['Inter', 'sans-serif'],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -41,8 +46,11 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        luxury: "#001F3F", // Deep Navy - adds depth and sophistication
-        highlight: "#C0C0C0", // Silver - metallic shimmer for highlights
+        /* Elevion Brand Colors */
+        'slate-blue': '#3B5B9D',
+        'electric-cyan': '#00D1D1',
+        'light-gray': '#EDEFF2',
+        'sunset-orange': '#FF7043',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -1,0 +1,68 @@
+Prompt 1: Rebrand Aero Solutions to Elevion – Update Global Styles and Header
+Objective: Rebrand Aero Solutions as Elevion by updating the company name, color scheme (Slate Blue, Electric Cyan, Light Gray, Sunset Orange), typography (Poppins, Lato, Inter), and header to reflect Elevion’s minimalist design and new identity as a web development company for small businesses.
+
+Details:
+
+Aero Solutions, a premier full-stack software development company specializing in aviation technology, is being rebranded as Elevion, a full-stack web development company leveraging AI technology to empower small businesses. The new color scheme is Slate Blue (#3B5B9D), Electric Cyan (#00D1D1), Light Gray (#EDEFF2), and Sunset Orange (#FF7043). The typography uses Poppins for headings, Lato for body text, and Inter for UI elements.
+Update the global styles to reflect the new color scheme and typography, and redesign the header to align with Elevion’s minimalist UI/UX, replacing aviation-specific menu items with ones relevant to web development services.
+Step 1: Update Global Styles
+
+Update client/src/index.css to include Elevion’s color scheme and typography:
+css
+
+Collapse
+
+Wrap
+
+Copy
+@tailwind base;  
+@tailwind components;  
+@tailwind utilities;  
+
+:root {  
+  --slate-blue: #3B5B9D;  
+  --electric-cyan: #00D1D1;  
+  --light-gray: #EDEFF2;  
+  --sunset-orange: #FF7043;  
+}  
+
+body {  
+  margin: 0;  
+  font-family: 'Lato', sans-serif;  
+  background-color: var(--light-gray);  
+}  
+
+h1, h2, h3, h4, h5, h6 {  
+  font-family: 'Poppins', sans-serif;  
+}  
+
+button, a, nav {  
+  font-family: 'Inter', sans-serif;  
+}  
+Update client/tailwind.config.js to include the new colors:
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+module.exports = {  
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],  
+  theme: {  
+    extend: {  
+      colors: {  
+        'slate-blue': '#3B5B9D',  
+        'electric-cyan': '#00D1D1',  
+        'light-gray': '#EDEFF2',  
+        'sunset-orange': '#FF7043',  
+      },  
+      fontFamily: {  
+        poppins: ['Poppins', 'sans-serif'],  
+        lato: ['Lato', 'sans-serif'],  
+        inter: ['Inter', 'sans-serif'],  
+      },  
+    },  
+  },  
+  plugins: [],  
+};

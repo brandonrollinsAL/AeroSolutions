@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@300;400;700&family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -24,48 +24,55 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Elevion Brand Colors */
+    --slate-blue: 219 43% 42%; /* #3B5B9D */
+    --electric-cyan: 180 100% 41%; /* #00D1D1 */
+    --light-gray: 210 17% 94%; /* #EDEFF2 */
+    --sunset-orange: 14 100% 63%; /* #FF7043 */
+    
+    --background: 210 17% 94%; /* light-gray */
+    --foreground: 219 43% 42%; /* slate-blue */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 219 43% 42%; /* slate-blue */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 223 64% 33%; /* #1E3A8A - Medium Blue */
+    --popover-foreground: 219 43% 42%; /* slate-blue */
+    --primary: 219 43% 42%; /* slate-blue */
     --primary-foreground: 0 0% 100%; /* #FFFFFF - White */
-    --secondary: 0 0% 100%; /* #FFFFFF - White */
+    --secondary: 180 100% 41%; /* electric-cyan */
     --secondary-foreground: 0 0% 0%; /* #000000 - Black */
-    --muted: 0 0% 98%; /* #FAFAFA - Light Gray for backgrounds */
-    --muted-foreground: 223 64% 33%; /* #1E3A8A - Medium Blue for muted text */
-    --accent: 0 0% 0%; /* #000000 - Black for accents */
+    --muted: 210 17% 94%; /* light-gray */
+    --muted-foreground: 219 43% 42%; /* slate-blue */
+    --accent: 14 100% 63%; /* sunset-orange */
     --accent-foreground: 0 0% 100%; /* #FFFFFF - White */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 210 17% 85%; /* light-gray darker */
+    --input: 210 17% 88%; /* light-gray slightly darker */
+    --ring: 180 100% 41%; /* electric-cyan */
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 223 64% 33%; /* #1E3A8A - Medium Blue */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF - White */
-    --secondary: 210 100% 12%; /* #001F3F - Deep Navy */
+    /* Elevion Dark Theme Colors */
+    --background: 219 43% 22%; /* Darker slate-blue */
+    --foreground: 210 17% 94%; /* light-gray */
+    --card: 219 43% 25%; /* Slightly lighter than background */
+    --card-foreground: 210 17% 94%; /* light-gray */
+    --popover: 219 43% 25%; /* Match card */
+    --popover-foreground: 210 17% 94%; /* light-gray */
+    --primary: 180 100% 41%; /* electric-cyan */
+    --primary-foreground: 0 0% 0%; /* #000000 - Black */
+    --secondary: 219 43% 42%; /* slate-blue */
     --secondary-foreground: 0 0% 100%; /* #FFFFFF - White */
-    --muted: 210 100% 20%; /* #003366 - Slightly lighter navy */
-    --muted-foreground: 0 0% 75%; /* #C0C0C0 - Silver */
-    --accent: 0 0% 0%; /* #000000 - Black for accents */
+    --muted: 219 43% 32%; /* In-between slate-blue */
+    --muted-foreground: 210 17% 85%; /* Slightly darker light-gray */
+    --accent: 14 100% 63%; /* sunset-orange */
     --accent-foreground: 0 0% 100%; /* #FFFFFF - White */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: hsl(212.7, 26.8%, 83.9);
+    --border: 219 43% 32%; /* Match muted */
+    --input: 219 43% 30%; /* Slightly darker than border */
+    --ring: 180 100% 41%; /* electric-cyan */
   }
 
   * {
@@ -74,11 +81,15 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Lato', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  button, a, nav, .ui-element {
+    font-family: 'Inter', sans-serif;
   }
 }
 
