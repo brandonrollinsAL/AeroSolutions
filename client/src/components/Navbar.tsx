@@ -98,7 +98,7 @@ const Navbar: React.FC = () => {
         <div className="container flex h-16 items-center px-4">
           <div className="mr-4 flex">
             <Link href="/" className="flex items-center space-x-3">
-              <AeroLogo size="md" animated={true} />
+              <ElevionLogo size="md" animated={true} />
               <motion.span 
                 initial={{ opacity: 0, x: -10 }} 
                 animate={{ opacity: 1, x: 0 }} 

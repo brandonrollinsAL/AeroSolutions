@@ -123,7 +123,7 @@ const Footer: React.FC = () => {
               <li className="flex items-start">
                 <FaMapMarkerAlt className="h-5 w-5 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
                 <span className="text-gray-300">
-                  3456 Aviation Way, Suite 400<br />
+                  123 Web Development Dr, Suite 200<br />
                   Atlanta, GA 30339
                 </span>
               </li>
