@@ -83,11 +83,11 @@ const Navbar: React.FC = () => {
   ];
   
   const platformLinks = [
-    { name: 'AeroSync', path: '/platforms/aerosync', description: 'Flight data synchronization platform' },
-    { name: 'AeroOps', path: '/platforms/aeroops', description: 'Aviation operations management system' },
-    { name: 'AeroFlight', path: '/platforms/aeroflight', description: 'Flight planning and optimization' },
-    { name: 'ExecSync', path: '/platforms/execsync', description: 'Executive aviation management' },
-    { name: 'AeroLink', path: '/platforms/aerolink', description: 'Connectivity solutions for aviation' },
+    { name: 'WebCraft', path: '/platforms/webcraft', description: 'Professional website design and development' },
+    { name: 'EcomPro', path: '/platforms/ecompro', description: 'E-commerce solutions for small businesses' },
+    { name: 'ContentHub', path: '/platforms/contenthub', description: 'Content management systems and marketing' },
+    { name: 'AnalyticEdge', path: '/platforms/analyticedge', description: 'Data analytics and business intelligence' },
+    { name: 'AppForge', path: '/platforms/appforge', description: 'Mobile app development solutions' },
   ];
 
   return (
@@ -103,9 +103,9 @@ const Navbar: React.FC = () => {
                 initial={{ opacity: 0, x: -10 }} 
                 animate={{ opacity: 1, x: 0 }} 
                 transition={{ delay: 0.2 }}
-                className="hidden sm:inline-block font-bold text-xl bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent"
+                className="hidden sm:inline-block font-bold text-xl bg-gradient-to-r from-slate-blue to-electric-cyan bg-clip-text text-transparent font-poppins"
               >
-                Aero Solutions
+                Elevion
               </motion.span>
             </Link>
           </div>
@@ -247,7 +247,7 @@ const Navbar: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-blue-300 hover:border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700"
+                className="border-electric-cyan hover:border-slate-blue bg-light-gray hover:bg-slate-100 text-slate-blue"
                 onClick={handleClientPreview}
               >
                 <Users className="h-4 w-4 mr-1" />
@@ -329,7 +329,7 @@ const Navbar: React.FC = () => {
                 ))}
                 
                 <button
-                  className="w-full text-left block rounded-md px-3 py-2 text-base font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 mt-2"
+                  className="w-full text-left block rounded-md px-3 py-2 text-base font-medium bg-light-gray text-slate-blue hover:bg-slate-100 mt-2"
                   onClick={() => {
                     setIsOpen(false);
                     handleClientPreview();

@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface AeroLogoProps {
+interface ElevionLogoProps {
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
   className?: string;
 }
 
-const AeroLogo: React.FC<AeroLogoProps> = ({ 
+const ElevionLogo: React.FC<ElevionLogoProps> = ({ 
   size = 'md', 
   animated = false,
   className = '' 
@@ -47,43 +47,31 @@ const AeroLogo: React.FC<AeroLogoProps> = ({
         viewBox="0 0 100 100" 
         xmlns="http://www.w3.org/2000/svg" 
         className="w-full h-full"
-        aria-label="Aero Solutions Logo"
+        aria-label="Elevion Logo"
       >
-        {/* Main circular background */}
-        <circle cx="50" cy="50" r="45" fill="#1E40AF" />
+        {/* Main hexagon shape */}
+        <polygon 
+          points="50,10 90,30 90,70 50,90 10,70 10,30" 
+          fill="url(#elevionGradient)" 
+        />
         
-        {/* Inner circular gradient */}
-        <circle cx="50" cy="50" r="40" fill="url(#aeroGradient)" />
-        
-        {/* Airplane silhouette */}
+        {/* Letter E stylized */}
         <path 
-          d="M75 50 L50 25 L25 50 L50 65 Z" 
+          d="M35,30 H65 V38 H43 V46 H60 V54 H43 V62 H65 V70 H35 Z" 
           fill="white" 
-          stroke="#EAB308"
-          strokeWidth="1.5"
         />
         
-        {/* Flight path lines */}
-        <path 
-          d="M30 65 Q50 75 70 65" 
-          fill="none" 
-          stroke="white" 
-          strokeWidth="1.5" 
-          strokeDasharray="2 2"
-        />
-        
-        {/* Winglets */}
-        <path 
-          d="M42 52 L35 58 M58 52 L65 58" 
-          stroke="white" 
-          strokeWidth="1.5"
-        />
+        {/* Decorative dots representing digital/web elements */}
+        <circle cx="25" cy="30" r="3" fill="#00D1D1" />
+        <circle cx="75" cy="30" r="3" fill="#00D1D1" />
+        <circle cx="25" cy="70" r="3" fill="#00D1D1" />
+        <circle cx="75" cy="70" r="3" fill="#00D1D1" />
         
         {/* Define gradient */}
         <defs>
-          <linearGradient id="aeroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1E40AF" />
-            <stop offset="100%" stopColor="#3B82F6" />
+          <linearGradient id="elevionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3B5B9D" /> {/* slate-blue */}
+            <stop offset="100%" stopColor="#00D1D1" /> {/* electric-cyan */}
           </linearGradient>
         </defs>
       </svg>
@@ -91,4 +79,4 @@ const AeroLogo: React.FC<AeroLogoProps> = ({
   );
 };
 
-export default AeroLogo;
+export default ElevionLogo;
