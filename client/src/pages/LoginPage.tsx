@@ -63,12 +63,12 @@ export default function LoginPage() {
       });
       
       // Special case for admin credentials (in a real app this would be handled server-side)
-      if (data.email === 'brandonrollins@aerolink.community' && data.password === '*Rosie2010') {
+      if (data.email === 'admin@elevion.dev' && data.password === '*Rosie2010') {
         // Create a simple JWT-like token with admin role
         const fakeAdminToken = btoa(JSON.stringify({
           id: 1,
-          username: 'Brandon Rollins',
-          email: 'brandonrollins@aerolink.community',
+          username: 'Admin User',
+          email: 'admin@elevion.dev',
           role: 'admin',
           exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
         }));
