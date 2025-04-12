@@ -1,124 +1,178 @@
-import { useState, useEffect } from "react";
-import { Link } from "wouter";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { useState } from 'react';  
+import { Link } from 'wouter';  
+import { Menu, X, ChevronDown } from 'lucide-react';  
 import ClientPreviewModal from "./ClientPreviewModal";
-import AeroLogo from "./AeroLogo";
+import ElevionLogo from "./AeroLogo";
 
-export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export default function Header() {  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);  
+  const [isSolutionsDropdownOpen, setIsSolutionsDropdownOpen] = useState(false);  
+  const [isSupportDropdownOpen, setIsSupportDropdownOpen] = useState(false);  
   const [clientPreviewOpen, setClientPreviewOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
-    };
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);  
+  const toggleSolutionsDropdown = () => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen);  
+  const toggleSupportDropdown = () => setIsSupportDropdownOpen(!isSupportDropdownOpen);  
+  const toggleClientPreview = () => setClientPreviewOpen(!clientPreviewOpen);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const menuItems = [  
+    { label: 'Home', path: '/' },  
+    {  
+      label: 'Solutions',  
+      dropdown: [  
+        { label: 'AI Web Development', path: '/web-development' },  
+        { label: 'Small Business Growth', path: '/growth-solutions' },  
+        { label: 'Competitive Analysis', path: '/competitive-analysis' },  
+      ],  
+    },  
+    { label: 'Pricing', path: '/pricing' },  
+    {  
+      label: 'Support',  
+      dropdown: [  
+        { label: 'Get Started', path: '/get-started' },  
+        { label: 'Resources', path: '/resources' },  
+        { label: 'Contact Us', path: '/contact' },  
+      ],  
+    },  
+    { label: 'About', path: '/about' },  
+  ];  
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const toggleClientPreview = () => {
-    setClientPreviewOpen(!clientPreviewOpen);
-  };
-
-  const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Services", href: "#services" },
-    { name: "Platforms", href: "#platforms" },
-    { name: "About Us", href: "#about" },
-    { name: "Blog", href: "#blog" },
-    { name: "Contact", href: "#contact" },
-  ];
-
-  return (
+  return (  
     <>
-      <header
-        className={`fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-sm shadow-md transition-all duration-300 ${
-          isScrolled ? "py-2" : "py-4"
-        }`}
-        id="header"
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <a 
-              href="#home" 
-              className="flex items-center space-x-2"
-            >
-              <AeroLogo size="md" animated={true} />
-              <span className="text-xl font-bold font-montserrat text-primary">
-                Aero Solutions
-              </span>
-            </a>
+      <header className="bg-slate-blue text-white py-4 px-6 sticky top-0 z-50 shadow-md">  
+        <div className="max-w-7xl mx-auto flex justify-between items-center">  
+          {/* Logo */}  
+          <Link href="/">  
+            <div className="flex items-center space-x-2">
+              <ElevionLogo size="sm" animated={true} />
+              <div className="text-2xl font-poppins text-electric-cyan">elevion</div>  
+            </div>
+          </Link>  
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-700 hover:text-black hover:scale-110 transition-all duration-300 hover:underline decoration-luxury font-medium"
-                >
-                  {link.name}
-                </a>
-              ))}
-              <button
-                onClick={toggleClientPreview}
-                className="px-4 py-2 bg-luxury text-white rounded-lg hover:bg-luxury/90 hover:scale-105 transition-all duration-300 font-semibold"
-              >
-                Client Preview
-              </button>
-            </nav>
-
-            {/* Mobile Menu Button */}
+          {/* Desktop Menu */}  
+          <nav className="hidden md:flex space-x-8 items-center">  
+            {menuItems.map((item) => (  
+              <div key={item.label} className="relative">  
+                {item.dropdown ? (  
+                  <button  
+                    onClick={item.label === 'Solutions' ? toggleSolutionsDropdown : toggleSupportDropdown}  
+                    className="font-inter text-sm uppercase tracking-wide text-light-gray hover:text-sunset-orange flex items-center transition-colors duration-200"  
+                  >  
+                    {item.label}  
+                    <ChevronDown className="ml-1 w-4 h-4" />  
+                  </button>  
+                ) : (  
+                  <Link  
+                    href={item.path}  
+                    className="font-inter text-sm uppercase tracking-wide text-light-gray hover:text-sunset-orange transition-colors duration-200"  
+                  >  
+                    {item.label}  
+                  </Link>  
+                )}  
+                {item.dropdown && (item.label === 'Solutions' ? isSolutionsDropdownOpen : isSupportDropdownOpen) && (  
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-light-gray rounded-lg shadow-lg z-10">  
+                    {item.dropdown.map((subItem) => (  
+                      <Link  
+                        key={subItem.label}  
+                        href={subItem.path}  
+                        className="block px-4 py-2 text-slate-blue hover:bg-electric-cyan hover:text-white transition-colors duration-200"  
+                      >  
+                        {subItem.label}  
+                      </Link>  
+                    ))}  
+                  </div>  
+                )}  
+              </div>  
+            ))}  
             <button
-              onClick={toggleMobileMenu}
-              className="md:hidden text-gray-700 focus:outline-none"
-            >
-              <FaBars className="text-2xl" />
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div
-          className={`md:hidden bg-white border-t border-gray-200 ${
-            mobileMenuOpen ? "" : "hidden"
-          }`}
-        >
-          <div className="container mx-auto px-4 py-3 space-y-3">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="block text-gray-700 hover:text-black py-2 font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.name}
-              </a>
-            ))}
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                toggleClientPreview();
-              }}
-              className="block bg-luxury text-white py-2 px-4 rounded-lg font-semibold w-full text-center mt-2"
+              onClick={toggleClientPreview}
+              className="font-inter text-sm uppercase tracking-wide text-electric-cyan hover:text-sunset-orange transition-colors duration-200 border border-electric-cyan px-3 py-1 rounded-md hover:border-sunset-orange"
             >
               Client Preview
             </button>
-          </div>
-        </div>
-      </header>
+            <Link  
+              href="/login"  
+              className="font-inter text-sm uppercase tracking-wide text-sunset-orange hover:text-electric-cyan transition-colors duration-200"  
+            >  
+              Login  
+            </Link>  
+          </nav>  
+
+          {/* Mobile Menu Toggle */}  
+          <button  
+            className="md:hidden text-light-gray focus:outline-none"  
+            onClick={toggleMobileMenu}  
+          >  
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}  
+          </button>  
+        </div>  
+
+        {/* Mobile Menu */}  
+        {isMobileMenuOpen && (  
+          <nav className="md:hidden bg-slate-blue py-4">  
+            <div className="flex flex-col space-y-4 px-6">  
+              {menuItems.map((item) => (  
+                <div key={item.label}>  
+                  {item.dropdown ? (  
+                    <div>  
+                      <button  
+                        onClick={item.label === 'Solutions' ? toggleSolutionsDropdown : toggleSupportDropdown}  
+                        className="font-inter text-sm uppercase tracking-wide text-light-gray flex items-center"  
+                      >  
+                        {item.label}  
+                        <ChevronDown className="ml-1 w-4 h-4" />  
+                      </button>  
+                      {(item.label === 'Solutions' ? isSolutionsDropdownOpen : isSupportDropdownOpen) && (  
+                        <div className="pl-4 mt-2 space-y-2">  
+                          {item.dropdown.map((subItem) => (  
+                            <Link  
+                              key={subItem.label}  
+                              href={subItem.path}  
+                              onClick={toggleMobileMenu}  
+                              className="block text-light-gray hover:text-sunset-orange"  
+                            >  
+                              {subItem.label}  
+                            </Link>  
+                          ))}  
+                        </div>  
+                      )}  
+                    </div>  
+                  ) : (  
+                    <Link  
+                      href={item.path}  
+                      onClick={toggleMobileMenu}  
+                      className="font-inter text-sm uppercase tracking-wide text-light-gray hover:text-sunset-orange"  
+                    >  
+                      {item.label}  
+                    </Link>  
+                  )}  
+                </div>  
+              ))}
+              <button
+                onClick={() => {
+                  toggleMobileMenu();
+                  toggleClientPreview();
+                }}
+                className="font-inter text-sm uppercase tracking-wide text-electric-cyan hover:text-sunset-orange border border-electric-cyan px-3 py-1 rounded-md hover:border-sunset-orange"
+              >
+                Client Preview
+              </button>
+              <Link  
+                href="/login"  
+                onClick={toggleMobileMenu}  
+                className="font-inter text-sm uppercase tracking-wide text-sunset-orange hover:text-electric-cyan"  
+              >  
+                Login  
+              </Link>  
+            </div>  
+          </nav>  
+        )}  
+      </header>  
 
       <ClientPreviewModal 
         isOpen={clientPreviewOpen} 
         onClose={() => setClientPreviewOpen(false)} 
       />
     </>
-  );
+  );  
 }
