@@ -12,17 +12,17 @@ interface WebConnectPlatformViewProps {
 export default function WebConnectPlatformView({ isOpen, onClose, onBackToLanding }: WebConnectPlatformViewProps) {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [connectedSystems, setConnectedSystems] = useState<{name: string, status: string, type: string}[]>([
-    { name: "Flight Management System", status: "connected", type: "cockpit" },
-    { name: "Maintenance Tracking System", status: "connected", type: "maintenance" },
-    { name: "Crew Scheduling System", status: "connecting", type: "operations" },
-    { name: "Weather Data Provider", status: "connected", type: "external" },
-    { name: "Fuel Management System", status: "error", type: "operations" },
+    { name: "E-commerce Platform", status: "connected", type: "frontend" },
+    { name: "Content Management System", status: "connected", type: "cms" },
+    { name: "CRM System", status: "connecting", type: "crm" },
+    { name: "Analytics Platform", status: "connected", type: "external" },
+    { name: "Payment Gateway", status: "error", type: "payment" },
   ]);
   const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
   const [dataStream, setDataStream] = useState<{timestamp: string, event: string, status: string}[]>([
     { timestamp: "2024-04-09 15:32:45", event: "Data sync completed", status: "success" },
-    { timestamp: "2024-04-09 15:31:22", event: "New flight plan received", status: "info" },
-    { timestamp: "2024-04-09 15:30:18", event: "Weather alert detected", status: "warning" },
+    { timestamp: "2024-04-09 15:31:22", event: "New product data received", status: "info" },
+    { timestamp: "2024-04-09 15:30:18", event: "API rate limit warning", status: "warning" },
   ]);
 
   if (!isOpen) return null;
