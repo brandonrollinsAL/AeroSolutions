@@ -3,13 +3,13 @@ import { FaLink, FaArrowLeft, FaTimes, FaCode, FaServer, FaShieldAlt, FaGlobe, F
          FaPlane, FaCheckCircle, FaExclamationTriangle, FaSync, FaDatabase, FaCogs } from "react-icons/fa";
 import { motion } from "framer-motion";
 
-interface AeroLinkPlatformViewProps {
+interface WebConnectPlatformViewProps {
   isOpen: boolean;
   onClose: () => void;
   onBackToLanding: () => void;
 }
 
-export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding }: AeroLinkPlatformViewProps) {
+export default function WebConnectPlatformView({ isOpen, onClose, onBackToLanding }: WebConnectPlatformViewProps) {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [connectedSystems, setConnectedSystems] = useState<{name: string, status: string, type: string}[]>([
     { name: "Flight Management System", status: "connected", type: "cockpit" },
@@ -267,12 +267,12 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
             {activeTab === "overview" && (
               <div>
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-8">
-                  <h3 className="text-2xl font-bold text-blue-900 mb-4">AeroLink: The Aviation Integration Platform</h3>
+                  <h3 className="text-2xl font-bold text-blue-900 mb-4">WebConnect: The Web Integration Platform</h3>
                   <p className="text-blue-800 mb-4">
-                    AeroLink is the aviation industry's premier connectivity solution, designed to solve the complex challenge of system fragmentation that has plagued the industry for decades. Our platform creates a unified digital ecosystem that enhances operational efficiency, data accuracy, and decision-making capabilities.
+                    WebConnect is the industry's premier connectivity solution, designed to solve the complex challenge of web system fragmentation. Our platform creates a unified digital ecosystem that enhances operational efficiency, data accuracy, and decision-making capabilities.
                   </p>
                   <p className="text-blue-800">
-                    Built from the ground up for aviation's unique requirements, AeroLink seamlessly connects maintenance systems, flight operations, crew management, airport systems, and regulatory reporting into a cohesive, secure environment that empowers aviation professionals at every level.
+                    Built from the ground up for modern business requirements, WebConnect seamlessly connects CMS systems, e-commerce platforms, CRM solutions, marketing tools, and analytics into a cohesive, secure environment that empowers business professionals at every level.
                   </p>
                 </div>
                 
@@ -286,16 +286,16 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
                         </div>
                         <h5 className="font-bold">Universal Connectivity</h5>
                       </div>
-                      <p className="text-gray-600">Connect to any aviation system, regardless of age or technology, with our 200+ pre-built connectors and custom adapter framework.</p>
+                      <p className="text-gray-600">Connect to any web platform or business system, regardless of age or technology, with our 200+ pre-built connectors and custom adapter framework.</p>
                     </div>
                     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center mb-2">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                           <FaShieldAlt className="text-blue-600" />
                         </div>
-                        <h5 className="font-bold">Aviation-Grade Security</h5>
+                        <h5 className="font-bold">Enterprise-Grade Security</h5>
                       </div>
-                      <p className="text-gray-600">Purpose-built security meeting aviation's strict requirements, with end-to-end encryption, role-based access control, and comprehensive audit trails.</p>
+                      <p className="text-gray-600">Purpose-built security meeting the strictest business requirements, with end-to-end encryption, role-based access control, and comprehensive audit trails.</p>
                     </div>
                   </div>
                 </div>
@@ -321,7 +321,7 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
                     </li>
                     <li className="flex items-start">
                       <div className="text-blue-500 mt-1 mr-3">•</div>
-                      <p><span className="font-semibold">Regulatory Compliance:</span> Automated reporting and documentation ensures adherence to FAA, EASA, and other global aviation authorities.</p>
+                      <p><span className="font-semibold">Regulatory Compliance:</span> Automated reporting and documentation ensures adherence to GDPR, CCPA, SOC 2, and other global data privacy regulations.</p>
                     </li>
                   </ul>
                 </div>
@@ -329,10 +329,10 @@ export default function AeroLinkPlatformView({ isOpen, onClose, onBackToLanding 
                 <div>
                   <h4 className="text-xl font-bold text-gray-900 mb-4">Implementation & Support</h4>
                   <p className="text-gray-700 mb-4">
-                    Our team of aviation technology specialists provides comprehensive implementation services, from initial assessment through deployment and continuous optimization. Typical enterprise implementations are completed in 8-12 weeks, with phased approaches available for complex environments.
+                    Our team of web technology specialists provides comprehensive implementation services, from initial assessment through deployment and continuous optimization. Typical enterprise implementations are completed in 4-6 weeks, with phased approaches available for complex environments.
                   </p>
                   <p className="text-gray-700">
-                    AeroLink customers receive 24/7/365 support from our team of aviation experts, with guaranteed response times and regular system health checks to ensure optimal performance.
+                    WebConnect customers receive 24/7/365 support from our team of web development experts, with guaranteed response times and regular system health checks to ensure optimal performance.
                   </p>
                 </div>
               </div>

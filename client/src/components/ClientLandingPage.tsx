@@ -556,9 +556,9 @@ export default function ClientLandingPage({ accessCode }: ClientLandingPageProps
                   className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
                   whileHover={{ y: -5 }}
                   onClick={() => {
-                    // Only show the AeroLink dedicated view for the AeroLink platform
+                    // Only show the WebConnect dedicated view for the AeroLink platform
                     if (platform.id === "aerolink") {
-                      setShowAeroLink(true);
+                      setShowWebConnect(true);
                     } else {
                       setSelectedPlatform(platform);
                     }
