@@ -2,17 +2,45 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function FreeMockupForm() {
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
+    industry: '',
     businessType: '', 
-    message: '' 
+    desiredFeatures: [] as string[],
+    hasExistingWebsite: '',
+    existingWebsiteURL: '',
+    message: '',
+    termsAccepted: false 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+
+  const industryOptions = [
+    "Retail", "Food & Beverage", "Professional Services", "Healthcare", 
+    "Education", "Technology", "Construction", "Real Estate", 
+    "Hospitality", "Manufacturing", "Transportation", "Other"
+  ];
+
+  const featureOptions = [
+    { id: "company-website", label: "Company Website" },
+    { id: "admin-dashboard", label: "Admin Dashboard" },
+    { id: "online-booking", label: "Online Booking System" },
+    { id: "online-purchases", label: "Online Store/E-Commerce" },
+    { id: "analytics-dashboard", label: "Website Analytics Dashboard" },
+    { id: "employee-management", label: "Employee Management Portal" },
+    { id: "payroll-management", label: "Payroll Management System" },
+    { id: "inventory-management", label: "Inventory Management" },
+    { id: "customer-portal", label: "Customer Portal" },
+    { id: "appointment-scheduling", label: "Appointment Scheduling" }
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ 
@@ -21,9 +49,53 @@ export default function FreeMockupForm() {
     });
   };
 
+  const handleSelectChange = (value: string, name: string) => {
+    setFormData({ 
+      ...formData, 
+      [name]: value 
+    });
+  };
+
+  const handleFeatureToggle = (id: string, checked: boolean) => {
+    const updatedFeatures = checked 
+      ? [...formData.desiredFeatures, id]
+      : formData.desiredFeatures.filter(feature => feature !== id);
+    
+    setFormData({
+      ...formData,
+      desiredFeatures: updatedFeatures
+    });
+  };
+
+  const handleExistingWebsiteChange = (value: string) => {
+    setFormData({
+      ...formData,
+      hasExistingWebsite: value,
+      // Reset URL if they select "No"
+      existingWebsiteURL: value === 'no' ? '' : formData.existingWebsiteURL
+    });
+  };
+
+  const handleTermsChange = (checked: boolean) => {
+    setFormData({
+      ...formData,
+      termsAccepted: checked
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (!formData.termsAccepted) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the terms and conditions to proceed.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       await apiRequest('POST', '/api/contact', formData);
@@ -107,7 +179,7 @@ export default function FreeMockupForm() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="John Smith"
-                className="w-full p-3 border border-gray-300 rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg font-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
                 required
               />
             </motion.div>
@@ -121,12 +193,29 @@ export default function FreeMockupForm() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="john@example.com"
-                className="w-full p-3 border border-gray-300 rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg font-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
                 required
               />
             </motion.div>
             
-            <motion.div variants={fadeInUp} custom={5}>
+            <motion.div variants={fadeInUp} custom={5} className="space-y-2">
+              <label className="block text-sm font-medium text-slate-blue mb-1 font-inter">Industry</label>
+              <Select
+                onValueChange={(value) => handleSelectChange(value, 'industry')}
+                value={formData.industry}
+              >
+                <SelectTrigger className="w-full border-gray-300 font-lato text-slate-blue focus:ring-2 focus:ring-electric-cyan focus:border-transparent">
+                  <SelectValue placeholder="Select your industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {industryOptions.map((industry) => (
+                    <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </motion.div>
+            
+            <motion.div variants={fadeInUp} custom={6}>
               <label htmlFor="businessType" className="block text-sm font-medium text-slate-blue mb-1 font-inter">Business Type</label>
               <input
                 id="businessType"
@@ -135,24 +224,98 @@ export default function FreeMockupForm() {
                 value={formData.businessType}
                 onChange={handleChange}
                 placeholder="e.g., Bakery, Retail, Consulting"
-                className="w-full p-3 border border-gray-300 rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg font-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
                 required
               />
             </motion.div>
             
-            <motion.div variants={fadeInUp} custom={6}>
-              <label htmlFor="message" className="block text-sm font-medium text-slate-blue mb-1 font-inter">Tell us about your business and goals</label>
+            <motion.div variants={fadeInUp} custom={7} className="space-y-2">
+              <label className="block text-sm font-medium text-slate-blue font-inter">What features are you interested in?</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {featureOptions.map((feature) => (
+                  <div key={feature.id} className="flex items-start space-x-2">
+                    <Checkbox 
+                      id={feature.id} 
+                      checked={formData.desiredFeatures.includes(feature.id)}
+                      onCheckedChange={(checked) => handleFeatureToggle(feature.id, checked as boolean)}
+                      className="mt-0.5 data-[state=checked]:bg-electric-cyan data-[state=checked]:border-electric-cyan"
+                    />
+                    <Label htmlFor={feature.id} className="font-lato text-slate-blue/90 text-sm cursor-pointer">{feature.label}</Label>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+            
+            <motion.div variants={fadeInUp} custom={8} className="space-y-2">
+              <label className="block text-sm font-medium text-slate-blue mb-1 font-inter">Do you have an existing website?</label>
+              <RadioGroup 
+                value={formData.hasExistingWebsite} 
+                onValueChange={handleExistingWebsiteChange}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    value="yes" 
+                    id="website-yes" 
+                    className="data-[state=checked]:border-electric-cyan data-[state=checked]:text-electric-cyan" 
+                  />
+                  <Label htmlFor="website-yes" className="font-lato text-slate-blue/90">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    value="no" 
+                    id="website-no" 
+                    className="data-[state=checked]:border-electric-cyan data-[state=checked]:text-electric-cyan" 
+                  />
+                  <Label htmlFor="website-no" className="font-lato text-slate-blue/90">No</Label>
+                </div>
+              </RadioGroup>
+            </motion.div>
+            
+            {formData.hasExistingWebsite === 'yes' && (
+              <motion.div variants={fadeInUp} custom={9}>
+                <label htmlFor="existingWebsiteURL" className="block text-sm font-medium text-slate-blue mb-1 font-inter">
+                  Your Current Website URL
+                </label>
+                <input
+                  id="existingWebsiteURL"
+                  type="url"
+                  name="existingWebsiteURL"
+                  value={formData.existingWebsiteURL}
+                  onChange={handleChange}
+                  placeholder="https://yourbusiness.com"
+                  className="w-full p-3 border border-gray-300 rounded-lg font-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent"
+                />
+              </motion.div>
+            )}
+            
+            <motion.div variants={fadeInUp} custom={10}>
+              <label htmlFor="message" className="block text-sm font-medium text-slate-blue mb-1 font-inter">Additional Requirements</label>
               <textarea
                 id="message"
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
-                placeholder="Please share some details about your business and what you're looking to achieve with your new website..."
-                className="w-full p-3 border border-gray-300 rounded-lg text-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent h-32 resize-none"
+                placeholder="Any additional details about your business needs or specific requirements..."
+                className="w-full p-3 border border-gray-300 rounded-lg font-lato text-slate-blue focus:outline-none focus:ring-2 focus:ring-electric-cyan focus:border-transparent h-24 resize-none"
               />
             </motion.div>
             
-            <motion.div variants={fadeInUp} custom={7}>
+            <motion.div variants={fadeInUp} custom={11} className="flex items-start space-x-2 pt-2">
+              <Checkbox 
+                id="terms" 
+                checked={formData.termsAccepted}
+                onCheckedChange={(checked) => handleTermsChange(checked as boolean)}
+                className="mt-1 data-[state=checked]:bg-electric-cyan data-[state=checked]:border-electric-cyan"
+              />
+              <Label htmlFor="terms" className="font-lato text-slate-blue/80 text-sm">
+                I agree to allow Elevion to use my business information and any provided images to create my free mockup. 
+                I understand that mockups will be based on the information provided and any images submitted may be used in the 
+                design process. No payment will be required until I approve the final design.
+              </Label>
+            </motion.div>
+            
+            <motion.div variants={fadeInUp} custom={12}>
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -173,7 +336,7 @@ export default function FreeMockupForm() {
             <motion.p 
               className="text-xs text-center text-slate-blue/60 pt-2 italic font-lato"
               variants={fadeInUp}
-              custom={8}
+              custom={13}
             >
               No credit card required. No obligation to proceed after receiving your mockup.
             </motion.p>

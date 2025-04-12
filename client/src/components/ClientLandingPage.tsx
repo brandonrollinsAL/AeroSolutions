@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink, FaFire } from "react-icons/fa";
+import { FaPlaneDeparture, FaServer, FaUserTie, FaPlane, FaArrowLeft, FaTimes, FaLink, FaFire, FaRocket } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import PlatformPreview from "./PlatformPreview";
 import WebConnectPlatformView from "./WebConnectPlatformView";
