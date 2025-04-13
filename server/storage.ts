@@ -10,8 +10,8 @@ import {
   userSessions, contentViewMetrics, feedback,
   type UserSession, type ContentViewMetric, type Feedback,
   type InsertUserSession, type InsertContentViewMetric, type InsertFeedback,
-  posts, mockupRequests,
-  type MockupRequest, type InsertMockupRequest
+  posts, mockupRequests, mockupEngagement, marketplaceServiceEngagement,
+  type MockupRequest, type InsertMockupRequest, type MarketplaceServiceEngagement
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
@@ -83,6 +83,11 @@ export interface IStorage {
   updateMockupRequest(id: number, data: Partial<MockupRequest>): Promise<MockupRequest>;
   getRecentMockupRequests(limit?: number): Promise<MockupRequest[]>;
   getMockupRequestsByStatus(status: string, limit?: number): Promise<MockupRequest[]>;
+  
+  // Marketplace service engagement methods
+  getMarketplaceServiceEngagement(): Promise<any[]>;
+  trackServiceClick(serviceId: number): Promise<boolean>;
+  trackServiceInquiry(serviceId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -650,6 +655,94 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error getting mockup requests by status ${status}:`, error);
       return [];
+    }
+  }
+
+  // Marketplace Service Engagement methods
+  async getMarketplaceServiceEngagement(): Promise<any[]> {
+    try {
+      const engagementData = await db.select({
+        serviceId: marketplaceServiceEngagement.serviceId,
+        serviceName: marketplaceItems.name,
+        clicks: marketplaceServiceEngagement.clicks,
+        inquiries: marketplaceServiceEngagement.inquiries,
+        conversions: marketplaceServiceEngagement.conversions,
+        viewDuration: marketplaceServiceEngagement.viewDuration,
+        lastEngagedAt: marketplaceServiceEngagement.lastEngagedAt
+      })
+      .from(marketplaceServiceEngagement)
+      .innerJoin(marketplaceItems, eq(marketplaceServiceEngagement.serviceId, marketplaceItems.id));
+      
+      return engagementData;
+    } catch (error) {
+      console.error('Error getting marketplace service engagement:', error);
+      return [];
+    }
+  }
+  
+  async trackServiceClick(serviceId: number): Promise<boolean> {
+    try {
+      // Check if entry exists
+      const [existing] = await db.select()
+        .from(marketplaceServiceEngagement)
+        .where(eq(marketplaceServiceEngagement.serviceId, serviceId));
+      
+      if (existing) {
+        // Update existing record
+        await db.update(marketplaceServiceEngagement)
+          .set({ 
+            clicks: existing.clicks + 1,
+            lastEngagedAt: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(marketplaceServiceEngagement.serviceId, serviceId));
+      } else {
+        // Create new record
+        await db.insert(marketplaceServiceEngagement)
+          .values({
+            serviceId,
+            clicks: 1,
+            lastEngagedAt: new Date()
+          });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error tracking service click:', error);
+      return false;
+    }
+  }
+  
+  async trackServiceInquiry(serviceId: number): Promise<boolean> {
+    try {
+      // Check if entry exists
+      const [existing] = await db.select()
+        .from(marketplaceServiceEngagement)
+        .where(eq(marketplaceServiceEngagement.serviceId, serviceId));
+      
+      if (existing) {
+        // Update existing record
+        await db.update(marketplaceServiceEngagement)
+          .set({ 
+            inquiries: existing.inquiries + 1,
+            lastEngagedAt: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(marketplaceServiceEngagement.serviceId, serviceId));
+      } else {
+        // Create new record
+        await db.insert(marketplaceServiceEngagement)
+          .values({
+            serviceId,
+            inquiries: 1,
+            lastEngagedAt: new Date()
+          });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error tracking service inquiry:', error);
+      return false;
     }
   }
 }

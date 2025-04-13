@@ -183,6 +183,31 @@ export const insertMarketplaceOrderSchema = createInsertSchema(marketplaceOrders
 export type InsertMarketplaceOrder = z.infer<typeof insertMarketplaceOrderSchema>;
 export type MarketplaceOrder = typeof marketplaceOrders.$inferSelect;
 
+// Marketplace Service Engagement schema
+export const marketplaceServiceEngagement = pgTable("marketplace_service_engagement", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull().references(() => marketplaceItems.id),
+  clicks: integer("clicks").default(0).notNull(),
+  inquiries: integer("inquiries").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  viewDuration: integer("view_duration").default(0).notNull(), // in seconds
+  lastEngagedAt: timestamp("last_engaged_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMarketplaceServiceEngagementSchema = createInsertSchema(marketplaceServiceEngagement).pick({
+  serviceId: true,
+  clicks: true, 
+  inquiries: true,
+  conversions: true,
+  viewDuration: true,
+  lastEngagedAt: true,
+});
+
+export type InsertMarketplaceServiceEngagement = z.infer<typeof insertMarketplaceServiceEngagementSchema>;
+export type MarketplaceServiceEngagement = typeof marketplaceServiceEngagement.$inferSelect;
+
 // Advertisements schema
 export const advertisements = pgTable("advertisements", {
   id: serial("id").primaryKey(),
