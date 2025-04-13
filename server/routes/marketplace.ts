@@ -1,13 +1,18 @@
 import { Router, Request, Response } from 'express';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import { validate } from '../utils/validation';
 import { authenticate, authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
 import { insertMarketplaceItemSchema } from '@shared/schema';
 import { z } from 'zod';
+import { grokApi } from '../grok';
+import NodeCache from 'node-cache';
 
 const marketplaceRouter = Router();
+
+// Create a cache for recommendations to avoid unnecessary AI calls
+const recommendationCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 
 // Get all marketplace items
 marketplaceRouter.get('/', async (req: Request, res: Response) => {
@@ -274,6 +279,137 @@ marketplaceRouter.get(
       return res.status(500).json({ 
         success: false, 
         error: 'Error retrieving user orders' 
+      });
+    }
+  }
+);
+
+// AI-powered service recommendations based on user preferences
+marketplaceRouter.get(
+  '/recommend',
+  authenticate,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const cacheKey = `recommendations_${userId}`;
+      
+      // Check cache first
+      const cachedRecommendations = recommendationCache.get(cacheKey);
+      if (cachedRecommendations) {
+        return res.status(200).json({
+          success: true,
+          data: cachedRecommendations,
+          cached: true
+        });
+      }
+      
+      // Get user preferences
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+      
+      // Use default preferences if none specified
+      const preferences = user.preferences || 'web development, small business, digital presence';
+      
+      // Get all marketplace items
+      const items = await storage.getAllMarketplaceItems();
+      
+      if (items.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            recommendations: [],
+            message: 'No marketplace items available for recommendation'
+          }
+        });
+      }
+      
+      // Format marketplace items for AI processing
+      const itemsData = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        tags: item.tags || []
+      }));
+      
+      // Prepare the prompt for xAI
+      const promptContent = `
+        Based on user preferences: "${preferences}", recommend the most suitable services 
+        from the following marketplace items:
+        
+        ${JSON.stringify(itemsData, null, 2)}
+        
+        Return a JSON object with the following structure:
+        {
+          "recommendations": [
+            {
+              "id": number,
+              "reason": string,
+              "suitabilityScore": number (1-10)
+            }
+          ],
+          "topCategories": [string],
+          "suggestedFeatures": [string]
+        }
+      `;
+      
+      try {
+        // Make the AI call with a timeout
+        const aiResponse = await Promise.race([
+          grokApi.generateJson(promptContent, "You are an expert business consultant that helps match users with the right web development services based on their needs."),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('AI recommendation timed out')), 30000)
+          )
+        ]);
+        
+        // Format and cache the response
+        const recommendations = {
+          recommendations: aiResponse.recommendations || [],
+          topCategories: aiResponse.topCategories || [],
+          suggestedFeatures: aiResponse.suggestedFeatures || []
+        };
+        
+        // Cache the successful response
+        recommendationCache.set(cacheKey, recommendations);
+        
+        return res.status(200).json({
+          success: true,
+          data: recommendations,
+          cached: false
+        });
+      } catch (error) {
+        console.error("AI recommendation error:", error);
+        
+        // Fallback: basic recommendation algorithm if AI fails
+        const fallbackRecommendations = items
+          .filter(item => item.isAvailable)
+          .slice(0, 3)
+          .map(item => ({
+            id: item.id,
+            reason: `This service matches your general needs`,
+            suitabilityScore: 7
+          }));
+        
+        return res.status(200).json({
+          success: true,
+          data: {
+            recommendations: fallbackRecommendations,
+            topCategories: ['Web Development', 'Design'],
+            suggestedFeatures: ['Responsive Design', 'SEO Optimization'],
+            fallback: true
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error generating service recommendations'
       });
     }
   }
