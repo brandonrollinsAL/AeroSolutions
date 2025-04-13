@@ -314,3 +314,30 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
+
+// Website Performance Metrics schema
+export const websiteMetrics = pgTable("website_metrics", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  page_load_time: decimal("page_load_time", { precision: 10, scale: 2 }).notNull(),
+  ttfb: decimal("ttfb", { precision: 10, scale: 2 }).notNull(), // Time to First Byte
+  fcp: decimal("fcp", { precision: 10, scale: 2 }), // First Contentful Paint
+  lcp: decimal("lcp", { precision: 10, scale: 2 }), // Largest Contentful Paint
+  cls: decimal("cls", { precision: 10, scale: 4 }), // Cumulative Layout Shift
+  bounce_rate: decimal("bounce_rate", { precision: 10, scale: 2 }), // Percentage
+  collected_at: timestamp("collected_at").defaultNow().notNull(),
+  device_type: text("device_type"), // mobile, desktop, tablet
+  browser: text("browser"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWebsiteMetricSchema = createInsertSchema(websiteMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type WebsiteMetric = typeof websiteMetrics.$inferSelect;
+export type InsertWebsiteMetric = z.infer<typeof insertWebsiteMetricSchema>;

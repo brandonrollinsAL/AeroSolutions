@@ -1,7 +1,7 @@
 import express from 'express';
-import { callXAI } from '../utils/xaiClient';
+import { callXAI, generateJson } from '../utils/xaiClient';
 import { db } from '../db';
-import { posts } from '@shared/schema';
+import { posts, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 
@@ -578,6 +578,76 @@ router.get('/seo-analysis/:postId', async (req, res) => {
     seoAnalysisCache.set(cacheKey, fallbackResult);
     
     res.json(fallbackResult);
+  }
+});
+
+/**
+ * Suggestion 19: Auto-Suggestions for Blog Topics
+ * Suggest blog topics based on user interests
+ */
+router.get('/suggest-blog-topics/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    // Get user from database
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.id, parseInt(userId)));
+    
+    // Parse preferences or use default
+    const preferences = user?.preferences ? JSON.parse(user.preferences) : null;
+    const interests = preferences?.interests || 'small business growth, web development';
+    
+    // Use generateJson helper to ensure proper JSON formatting
+    const topicsResponse = await generateJson<{ topics: string[] }>(
+      `Suggest 10 engaging blog topics for a small business owner with these interests: "${interests}". 
+      Focus on topics that would be valuable for digital marketing, web presence, and business growth.
+      Ensure topics are specific, actionable, and engaging.`,
+      'You are a content strategist for Elevion, a web development company. Generate ONLY a JSON object with a "topics" array containing strings of blog topic suggestions. Each topic should be a complete headline for a blog post.'
+    );
+    
+    // Check if we have topics and handle possible errors
+    if (!topicsResponse || !topicsResponse.topics || !Array.isArray(topicsResponse.topics)) {
+      throw new Error('Invalid response format from xAI API');
+    }
+    
+    // Create a cache key for this user's topics
+    const cacheKey = `user_topics_${userId}`;
+    
+    // Return the suggested topics with user context
+    res.json({
+      success: true,
+      userId,
+      interests,
+      topics: topicsResponse.topics,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Blog topic suggestion failed:', error);
+    
+    // Provide fallback topics to ensure UI always has content
+    const fallbackTopics = [
+      "10 Essential Website Features Every Small Business Needs in 2025",
+      "How to Create a Content Strategy That Drives Traffic and Conversions",
+      "5 Ways to Use AI to Streamline Your Small Business Operations",
+      "The Ultimate Guide to Local SEO for Small Businesses",
+      "Building a Strong Brand Identity Online: A Step-by-Step Guide",
+      "Email Marketing Strategies That Actually Generate Leads",
+      "How to Choose the Right E-commerce Platform for Your Small Business",
+      "Social Media Audit: How to Measure and Improve Your Business Presence",
+      "Affordable Digital Marketing Tactics for Budget-Conscious Businesses",
+      "Case Study: How One Small Business Doubled Their Online Conversion Rate"
+    ];
+    
+    res.json({
+      success: false,
+      userId,
+      interests: 'small business growth, web development',
+      topics: fallbackTopics,
+      timestamp: new Date().toISOString(),
+      fallback: true,
+      error: error.message
+    });
   }
 });
 
