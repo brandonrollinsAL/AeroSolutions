@@ -112,7 +112,9 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     /^\/api\/analytics\/.*/,
     /^\/api\/ai-content\/.*/,
     /^\/api\/recommendations\/.*/,
-    /^\/api\/intelligent-search\/.*/
+    /^\/api\/intelligent-search\/.*/,
+    // Mockup API routes
+    /^\/api\/mockups\/mockup-trends$/
   ];
   
   // Check if route is public
