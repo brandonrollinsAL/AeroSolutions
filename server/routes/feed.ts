@@ -1,8 +1,8 @@
 import express, { Response, Request as ExpressRequest } from "express";
 import { db } from "../db";
 import { callXAI } from "../utils/xaiClient";
-import { posts, users, contentViewMetrics } from "@shared/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { posts, users, contentViewMetrics, articleEngagement } from "@shared/schema";
+import { eq, desc, sql, and, asc } from "drizzle-orm";
 import NodeCache from "node-cache";
 
 // Extended request interface with authentication
