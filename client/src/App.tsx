@@ -41,6 +41,7 @@ import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
 import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
 import SocialMediaPage from "@/pages/SocialMediaPage";
 import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
+import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
 
 export default function App() {
   const { t, i18n } = useTranslation();

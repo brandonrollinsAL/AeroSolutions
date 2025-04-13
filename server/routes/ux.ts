@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { callXAI, generateText } from '../utils/xaiClient';
+import { callXAI, generateText, generateJson } from '../utils/xaiClient';
 import { db } from '../db';
+import { uiElementInteractions, websiteEngagement, websiteMetrics } from '@shared/schema';
+import { sql } from 'drizzle-orm';
 
 const router = Router();
 
@@ -769,5 +771,375 @@ router.post('/generate-persona', [
     });
   }
 });
+
+/**
+ * Suggestion 25: UI Element Interaction Tracking
+ * Tracks detailed user interactions with specific UI elements to identify patterns and issues
+ */
+router.post('/track-ui-interaction', [
+  body('pageUrl').notEmpty().withMessage('Page URL is required'),
+  body('elementId').notEmpty().withMessage('Element ID is required'),
+  body('elementType').notEmpty().withMessage('Element type is required'),
+  body('interactionType').notEmpty().withMessage('Interaction type is required'),
+  body('interactionDuration').optional().isNumeric(),
+  body('wasSuccessful').optional().isBoolean(),
+  body('errorMessage').optional().isString(),
+  body('deviceType').optional().isString(),
+  body('browser').optional().isString()
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      pageUrl,
+      elementId,
+      elementType,
+      interactionType,
+      interactionDuration = 0,
+      wasSuccessful = true,
+      errorMessage,
+      deviceType,
+      browser
+    } = req.body;
+
+    // Get user ID if authenticated
+    const clientId = req.isAuthenticated() && req.user ? req.user.id : null;
+
+    // Insert the UI interaction data
+    await db.insert(uiElementInteractions).values({
+      clientId,
+      pageUrl,
+      elementId,
+      elementType, 
+      interactionType,
+      interactionDuration,
+      wasSuccessful,
+      errorMessage,
+      deviceType,
+      browser,
+      timestamp: new Date()
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'UI interaction tracked successfully'
+    });
+  } catch (error: any) {
+    console.error('Error tracking UI interaction:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to track UI interaction',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Suggestion 26: UI/UX Analysis with Improvement Recommendations
+ * Analyzes user interaction data and provides AI-powered recommendations for UI/UX improvements
+ */
+router.get('/analyze-ui-improvements', async (req: Request, res: Response) => {
+  try {
+    // Get metrics from the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Get UI element interactions
+    const uiInteractions = await db.select().from(uiElementInteractions)
+      .where(sql`timestamp >= ${thirtyDaysAgo.toISOString()}`);
+    
+    // Get website engagement metrics
+    const engagementMetrics = await db.select().from(websiteEngagement)
+      .where(sql`date_collected >= ${thirtyDaysAgo.toISOString()}`);
+    
+    // Get website performance metrics
+    const performanceMetrics = await db.select().from(websiteMetrics)
+      .where(sql`collected_at >= ${thirtyDaysAgo.toISOString()}`);
+
+    // If no data, return empty recommendations
+    if (uiInteractions.length === 0 && engagementMetrics.length === 0 && performanceMetrics.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No data available for analysis',
+        recommendations: []
+      });
+    }
+
+    // Prepare data for analysis
+    const interactionSummary = processUIInteractions(uiInteractions);
+    const engagementSummary = processEngagementMetrics(engagementMetrics);
+    const performanceSummary = processPerformanceMetrics(performanceMetrics);
+
+    // Build the prompt for the XAI API
+    const prompt = `
+    As a UI/UX expert, analyze the following website interaction data and provide specific improvement recommendations for Elevion, a web development company focused on small businesses.
+    
+    UI ELEMENT INTERACTIONS:
+    ${JSON.stringify(interactionSummary, null, 2)}
+    
+    ENGAGEMENT METRICS:
+    ${JSON.stringify(engagementSummary, null, 2)}
+    
+    PERFORMANCE METRICS:
+    ${JSON.stringify(performanceSummary, null, 2)}
+    
+    Based on this data, provide:
+    1. The top 5 highest-impact UI/UX improvements that should be made
+    2. For each recommendation, explain the problem identified and the data that supports this finding
+    3. Provide a specific, actionable solution with an implementation approach using Shadcn/UI components where relevant
+    4. Categorize each recommendation (Critical, High, Medium, Low) based on its potential impact on user experience and conversion rates
+    
+    Format your response as a JSON array where each object has these properties:
+    - title: A short, descriptive title of the issue
+    - category: The severity/impact category
+    - problem: Description of the problem identified
+    - supporting_data: Key metrics or observations that indicate this issue
+    - solution: Specific implementation suggestions using Shadcn/UI where applicable
+    - expected_impact: Expected improvement in metrics if implemented
+    `;
+
+    // Call the XAI API to generate recommendations
+    const response = await generateJson('grok-3-mini', prompt);
+
+    // Return the recommendations
+    return res.status(200).json({
+      success: true,
+      recommendations: response,
+      data_summary: {
+        interactions: interactionSummary,
+        engagement: engagementSummary,
+        performance: performanceSummary
+      }
+    });
+  } catch (error: any) {
+    console.error('Error analyzing UI/UX data:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to analyze UI/UX data',
+      error: error.message
+    });
+  }
+});
+
+// Helper function to process UI interactions
+function processUIInteractions(interactions: any[]) {
+  // Group interactions by element type and interaction type
+  const byElementType: Record<string, number> = {};
+  const byInteractionType: Record<string, number> = {};
+  const byPage: Record<string, number> = {};
+  const errorElements: { elementId: string, count: number }[] = [];
+  const slowInteractions: { elementId: string, avgDuration: number }[] = [];
+  
+  // Calculate averages and counts
+  interactions.forEach(interaction => {
+    // Count by element type
+    byElementType[interaction.elementType] = (byElementType[interaction.elementType] || 0) + 1;
+    
+    // Count by interaction type
+    byInteractionType[interaction.interactionType] = (byInteractionType[interaction.interactionType] || 0) + 1;
+    
+    // Count by page
+    byPage[interaction.pageUrl] = (byPage[interaction.pageUrl] || 0) + 1;
+    
+    // Track errors
+    if (!interaction.wasSuccessful) {
+      const errorElement = errorElements.find(e => e.elementId === interaction.elementId);
+      if (errorElement) {
+        errorElement.count++;
+      } else {
+        errorElements.push({ elementId: interaction.elementId, count: 1 });
+      }
+    }
+    
+    // Track slow interactions (over 1 second)
+    if (interaction.interactionDuration > 1000) {
+      const slowElement = slowInteractions.find(e => e.elementId === interaction.elementId);
+      if (slowElement) {
+        slowElement.avgDuration = (slowElement.avgDuration + interaction.interactionDuration) / 2;
+      } else {
+        slowInteractions.push({ elementId: interaction.elementId, avgDuration: interaction.interactionDuration });
+      }
+    }
+  });
+  
+  // Sort error elements and slow interactions by count/duration
+  errorElements.sort((a, b) => b.count - a.count);
+  slowInteractions.sort((a, b) => b.avgDuration - a.avgDuration);
+  
+  return {
+    total_interactions: interactions.length,
+    by_element_type: byElementType,
+    by_interaction_type: byInteractionType,
+    by_page: byPage,
+    top_error_elements: errorElements.slice(0, 5),
+    slowest_interactions: slowInteractions.slice(0, 5)
+  };
+}
+
+// Helper function to process engagement metrics
+function processEngagementMetrics(metrics: any[]) {
+  // Group metrics by page
+  const pages: Record<string, {
+    avg_time_on_page: number,
+    avg_scroll_depth: number,
+    total_clicks: number,
+    visit_count: number
+  }> = {};
+  
+  // Calculate averages
+  metrics.forEach(metric => {
+    const pageUrl = metric.pageUrl;
+    
+    if (!pages[pageUrl]) {
+      pages[pageUrl] = {
+        avg_time_on_page: 0,
+        avg_scroll_depth: 0,
+        total_clicks: 0,
+        visit_count: 0
+      };
+    }
+    
+    pages[pageUrl].total_clicks += metric.clicks;
+    pages[pageUrl].visit_count++;
+    pages[pageUrl].avg_time_on_page = 
+      (pages[pageUrl].avg_time_on_page * (pages[pageUrl].visit_count - 1) + parseFloat(metric.timeOnPage.toString())) / 
+      pages[pageUrl].visit_count;
+    pages[pageUrl].avg_scroll_depth = 
+      (pages[pageUrl].avg_scroll_depth * (pages[pageUrl].visit_count - 1) + parseFloat(metric.scrollDepth.toString())) / 
+      pages[pageUrl].visit_count;
+  });
+  
+  // Find pages with low engagement
+  const lowEngagementPages = Object.entries(pages)
+    .filter(([_, data]) => data.avg_time_on_page < 30 || data.avg_scroll_depth < 0.5)
+    .map(([page, data]) => ({
+      page,
+      avg_time_on_page: data.avg_time_on_page,
+      avg_scroll_depth: data.avg_scroll_depth,
+      total_clicks: data.total_clicks,
+      visit_count: data.visit_count
+    }))
+    .sort((a, b) => a.avg_time_on_page - b.avg_time_on_page);
+  
+  // Find high-performance pages
+  const highEngagementPages = Object.entries(pages)
+    .filter(([_, data]) => data.avg_time_on_page > 120 && data.avg_scroll_depth > 0.8)
+    .map(([page, data]) => ({
+      page,
+      avg_time_on_page: data.avg_time_on_page,
+      avg_scroll_depth: data.avg_scroll_depth,
+      total_clicks: data.total_clicks,
+      visit_count: data.visit_count
+    }))
+    .sort((a, b) => b.avg_time_on_page - a.avg_time_on_page);
+  
+  return {
+    total_pages_tracked: Object.keys(pages).length,
+    overall_avg_time_on_page: 
+      Object.values(pages).reduce((sum, data) => sum + data.avg_time_on_page, 0) / 
+      (Object.keys(pages).length || 1),
+    overall_avg_scroll_depth: 
+      Object.values(pages).reduce((sum, data) => sum + data.avg_scroll_depth, 0) / 
+      (Object.keys(pages).length || 1),
+    total_clicks_across_site: 
+      Object.values(pages).reduce((sum, data) => sum + data.total_clicks, 0),
+    low_engagement_pages: lowEngagementPages.slice(0, 5),
+    high_engagement_pages: highEngagementPages.slice(0, 5)
+  };
+}
+
+// Helper function to process performance metrics
+function processPerformanceMetrics(metrics: any[]) {
+  if (metrics.length === 0) {
+    return {
+      average_page_load_time: 0,
+      average_ttfb: 0,
+      average_fcp: 0,
+      average_lcp: 0,
+      average_cls: 0,
+      slow_pages: []
+    };
+  }
+  
+  // Calculate averages
+  let totalPageLoadTime = 0;
+  let totalTTFB = 0;
+  let totalFCP = 0;
+  let totalLCP = 0;
+  let totalCLS = 0;
+  let fcpCount = 0;
+  let lcpCount = 0;
+  let clsCount = 0;
+  
+  const pageMetrics: Record<string, {
+    avg_page_load_time: number,
+    count: number,
+    device_types: string[]
+  }> = {};
+  
+  metrics.forEach(metric => {
+    totalPageLoadTime += parseFloat(metric.page_load_time.toString());
+    totalTTFB += parseFloat(metric.ttfb.toString());
+    
+    if (metric.fcp) {
+      totalFCP += parseFloat(metric.fcp.toString());
+      fcpCount++;
+    }
+    
+    if (metric.lcp) {
+      totalLCP += parseFloat(metric.lcp.toString());
+      lcpCount++;
+    }
+    
+    if (metric.cls) {
+      totalCLS += parseFloat(metric.cls.toString());
+      clsCount++;
+    }
+    
+    const url = metric.url;
+    if (!pageMetrics[url]) {
+      pageMetrics[url] = {
+        avg_page_load_time: 0,
+        count: 0,
+        device_types: []
+      };
+    }
+    
+    pageMetrics[url].avg_page_load_time = 
+      (pageMetrics[url].avg_page_load_time * pageMetrics[url].count + parseFloat(metric.page_load_time.toString())) / 
+      (pageMetrics[url].count + 1);
+    pageMetrics[url].count++;
+    
+    if (metric.device_type && !pageMetrics[url].device_types.includes(metric.device_type)) {
+      pageMetrics[url].device_types.push(metric.device_type);
+    }
+  });
+  
+  // Find slow pages
+  const slowPages = Object.entries(pageMetrics)
+    .map(([url, data]) => ({
+      url,
+      avg_page_load_time: data.avg_page_load_time,
+      sample_count: data.count,
+      device_types: data.device_types
+    }))
+    .sort((a, b) => b.avg_page_load_time - a.avg_page_load_time);
+  
+  return {
+    average_page_load_time: totalPageLoadTime / metrics.length,
+    average_ttfb: totalTTFB / metrics.length,
+    average_fcp: fcpCount > 0 ? totalFCP / fcpCount : null,
+    average_lcp: lcpCount > 0 ? totalLCP / lcpCount : null,
+    average_cls: clsCount > 0 ? totalCLS / clsCount : null,
+    slow_pages: slowPages.slice(0, 5)
+  };
+}
 
 export default router;
