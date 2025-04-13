@@ -25,6 +25,7 @@ import aiContentRouter from './routes/ai-content';
 import recommendationsRouter from './routes/recommendations';
 import intelligentSearchRouter from './routes/intelligent-search';
 import searchRouter from './routes/search';
+import feedbackAnalysisRouter from './routes/feedback-analysis';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 
 // Extended request interface with authentication
@@ -127,6 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/intelligent-search', intelligentSearchRouter);
   app.use('/api/search', searchRouter);
+  app.use('/api/feedback', feedbackAnalysisRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

@@ -7,9 +7,9 @@ import {
   marketplaceItems, type MarketplaceItem, type InsertMarketplaceItem,
   marketplaceOrders, type MarketplaceOrder, type InsertMarketplaceOrder,
   advertisements, type Advertisement, type InsertAdvertisement,
-  userSessions, contentViewMetrics, 
-  type UserSession, type ContentViewMetric,
-  type InsertUserSession, type InsertContentViewMetric,
+  userSessions, contentViewMetrics, feedback,
+  type UserSession, type ContentViewMetric, type Feedback,
+  type InsertUserSession, type InsertContentViewMetric, type InsertFeedback,
   posts
 } from "@shared/schema";
 import { db } from "./db";
@@ -524,6 +524,55 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error searching services:", error);
       return [];
+    }
+  }
+  
+  // Feedback methods
+  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    try {
+      const [result] = await db.insert(feedback).values(feedbackData).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      throw error;
+    }
+  }
+  
+  async getFeedback(id: number): Promise<Feedback | undefined> {
+    try {
+      const [result] = await db.select().from(feedback).where(eq(feedback.id, id));
+      return result;
+    } catch (error) {
+      console.error(`Error getting feedback with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getAllFeedback(limit: number = 100, status?: string): Promise<Feedback[]> {
+    try {
+      let query = db.select().from(feedback);
+      
+      if (status) {
+        query = query.where(eq(feedback.status, status));
+      }
+      
+      return await query.orderBy(desc(feedback.createdAt)).limit(limit);
+    } catch (error) {
+      console.error("Error getting all feedback:", error);
+      return [];
+    }
+  }
+  
+  async updateFeedbackStatus(id: number, status: string): Promise<Feedback | undefined> {
+    try {
+      const [result] = await db.update(feedback)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(feedback.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error(`Error updating feedback status for ID ${id}:`, error);
+      return undefined;
     }
   }
 }
