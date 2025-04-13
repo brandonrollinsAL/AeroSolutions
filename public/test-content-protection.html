@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elevion Content Protection Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #3B5B9D;
+      margin-bottom: 1rem;
+    }
+    .test-content {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .test-image {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .protected {
+      background-color: #f9f9f9;
+    }
+    .instructions {
+      background-color: #EDEFF2;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #3B5B9D;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+    .btn:hover {
+      background-color: #2d4573;
+    }
+  </style>
+</head>
+<body>
+  <h1>Elevion Content Protection Test</h1>
+  
+  <div class="instructions">
+    <p><strong>Instructions:</strong> This page demonstrates the content protection features. Try the following:</p>
+    <ol>
+      <li>Right-click on the protected image below (should be prevented)</li>
+      <li>Try to drag the image to your desktop (should be prevented)</li>
+      <li>Try to select and copy large chunks of the protected text (should be limited)</li>
+      <li>Press Ctrl+S or Cmd+S to save the page (should be prevented)</li>
+    </ol>
+  </div>
+  
+  <a href="/" class="btn">Back to Home</a>
+  
+  <h2>Protected Image</h2>
+  <div class="test-content protected">
+    <img src="/images/aviation-tech.jpeg" alt="Protected Aviation Technology Image" class="test-image" 
+         oncontextmenu="return false;" 
+         ondragstart="return false;" 
+         style="user-select: none; -webkit-user-drag: none;"
+    />
+    <p><small>This image has right-click and drag-drop protection applied.</small></p>
+  </div>
+  
+  <h2>Protected Blog Content</h2>
+  <div class="test-content protected">
+    <h3>The Future of Web Development</h3>
+    <p>
+      In today's rapidly evolving digital landscape, web development continues to transform how businesses connect with their audience. Modern websites are no longer static pages but dynamic platforms that create immersive experiences while driving conversions and growth.
+    </p>
+    <p>
+      At Elevion, we understand the pivotal role that your web presence plays in your business success. Our approach combines cutting-edge technology with strategic design to create websites that not only look impressive but also deliver measurable results. From responsive layouts that adapt seamlessly to any device to intuitive user experiences that guide visitors toward conversion, every element serves a purpose.
+    </p>
+    <p>
+      AI-driven development tools have revolutionized how we build websites. By leveraging machine learning algorithms, we can analyze user behavior, optimize conversion paths, and even predict which design elements will resonate most with your specific audience. This data-driven approach eliminates guesswork and ensures that your web presence is continuously refined for maximum performance.
+    </p>
+    <p><small>This content has been watermarked using Elevion's XAI-powered watermarking technology.</small></p>
+  </div>
+  
+  <h2>Unprotected Content for Comparison</h2>
+  <div class="test-content">
+    <p>
+      This content is not protected. You can select it, copy it, right-click on it, and interact with it normally. This demonstrates the difference between protected and unprotected content on the Elevion platform.
+    </p>
+  </div>
+  
+  <script>
+    // Apply additional protection measures to the protected content
+    document.addEventListener('DOMContentLoaded', function() {
+      const protectedElements = document.querySelectorAll('.protected');
+      
+      protectedElements.forEach(el => {
+        // Prevent context menu (right-click)
+        el.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          return false;
+        });
+        
+        // Limit text selection to a maximum of 100 characters
+        el.addEventListener('selectstart', function(e) {
+          const selection = window.getSelection();
+          if (selection && selection.toString().length > 100) {
+            selection.removeAllRanges();
+            e.preventDefault();
+            return false;
+          }
+        });
+      });
+      
+      // Prevent save page shortcut
+      document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
