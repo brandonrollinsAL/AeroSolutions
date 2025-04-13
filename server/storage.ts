@@ -75,6 +75,14 @@ export interface IStorage {
   getFeedback(id: number): Promise<Feedback | undefined>;
   getAllFeedback(limit?: number, status?: string): Promise<Feedback[]>;
   updateFeedbackStatus(id: number, status: string): Promise<Feedback | undefined>;
+  
+  // Mockup requests methods
+  createMockupRequest(request: InsertMockupRequest): Promise<MockupRequest>;
+  getMockupRequest(id: number): Promise<MockupRequest | undefined>;
+  getUserMockupRequests(userId: number): Promise<MockupRequest[]>;
+  updateMockupRequest(id: number, data: Partial<MockupRequest>): Promise<MockupRequest>;
+  getRecentMockupRequests(limit?: number): Promise<MockupRequest[]>;
+  getMockupRequestsByStatus(status: string, limit?: number): Promise<MockupRequest[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -574,6 +582,74 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating feedback status for ID ${id}:`, error);
       return undefined;
+    }
+  }
+
+  // Mockup requests methods
+  async createMockupRequest(request: InsertMockupRequest): Promise<MockupRequest> {
+    try {
+      const [mockupRequest] = await db.insert(mockupRequests).values(request).returning();
+      return mockupRequest;
+    } catch (error) {
+      console.error("Error creating mockup request:", error);
+      throw error;
+    }
+  }
+
+  async getMockupRequest(id: number): Promise<MockupRequest | undefined> {
+    try {
+      const [request] = await db.select().from(mockupRequests).where(eq(mockupRequests.id, id));
+      return request;
+    } catch (error) {
+      console.error(`Error getting mockup request with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async getUserMockupRequests(userId: number): Promise<MockupRequest[]> {
+    try {
+      return await db.select().from(mockupRequests)
+        .where(eq(mockupRequests.userId, userId))
+        .orderBy(desc(mockupRequests.createdAt));
+    } catch (error) {
+      console.error(`Error getting mockup requests for user ID ${userId}:`, error);
+      return [];
+    }
+  }
+
+  async updateMockupRequest(id: number, data: Partial<MockupRequest>): Promise<MockupRequest> {
+    try {
+      const [request] = await db.update(mockupRequests)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(mockupRequests.id, id))
+        .returning();
+      return request;
+    } catch (error) {
+      console.error(`Error updating mockup request with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getRecentMockupRequests(limit: number = 20): Promise<MockupRequest[]> {
+    try {
+      return await db.select().from(mockupRequests)
+        .orderBy(desc(mockupRequests.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error(`Error getting recent mockup requests:`, error);
+      return [];
+    }
+  }
+
+  async getMockupRequestsByStatus(status: string, limit: number = 50): Promise<MockupRequest[]> {
+    try {
+      return await db.select().from(mockupRequests)
+        .where(eq(mockupRequests.status, status))
+        .orderBy(desc(mockupRequests.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error(`Error getting mockup requests by status ${status}:`, error);
+      return [];
     }
   }
 }
