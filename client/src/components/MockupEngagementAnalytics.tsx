@@ -58,12 +58,12 @@ const MockupEngagementAnalytics = () => {
   const { toast } = useToast();
   
   // Fetch mockup engagement data
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+  const { data: apiResponse, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['/api/mockups/mockup-engagement'],
     refetchOnWindowFocus: false
   });
   
-  const analytics: MockupEngagementAnalytics | undefined = data?.data;
+  const analytics: MockupEngagementAnalytics | undefined = apiResponse?.data;
   
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -79,7 +79,7 @@ const MockupEngagementAnalytics = () => {
   
   // Handle refresh button click
   const handleRefresh = () => {
-    refetch({ queryKey: ['/api/mockups/mockup-engagement'] });
+    refetch();
     toast({
       title: "Refreshing analytics",
       description: "Fetching the latest mockup engagement data"

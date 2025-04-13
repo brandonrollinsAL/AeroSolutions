@@ -30,6 +30,7 @@ import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 import SeoTools from "@/pages/SeoTools";
 import MarketplaceAnalyticsPage from "@/pages/MarketplaceAnalyticsPage";
 import ContentAnalyticsPage from "@/pages/ContentAnalyticsPage";
+import MockupAnalyticsPage from "@/pages/MockupAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 
@@ -480,6 +481,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <EmailCampaignsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/mockups/analytics">
+          {() => (
+            <>
+              <Helmet>
+                <title>Mockup Analytics | Elevion</title>
+                <meta name="description" content="Track mockup engagement and performance metrics with AI-powered insights. Analyze client interactions, feedback patterns, and design effectiveness." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/mockups/analytics" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MockupAnalyticsPage />
             </>
           )}
         </Route>
