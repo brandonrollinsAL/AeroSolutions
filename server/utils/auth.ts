@@ -1,203 +1,132 @@
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { User } from '@shared/schema';
 
-// Ensure JWT secret is available
-const JWT_SECRET = process.env.JWT_SECRET || 'aero-solutions-development-jwt-secret';
-const JWT_EXPIRY = '24h'; // Token expiry time
-
-// Token Types
-export interface JwtPayload {
-  id: number;
+interface JwtPayload {
+  userId: number;
   username: string;
   role: string;
   iat?: number;
   exp?: number;
 }
 
-// Error Types
-export class AuthError extends Error {
-  status: number;
-  
-  constructor(message: string, status = 401) {
-    super(message);
-    this.name = 'AuthError';
-    this.status = status;
-  }
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'elevion-dev-secret-key';
+const TOKEN_EXPIRY = '7d'; // 7 days
 
 /**
  * Generate a JWT token for a user
- * @param user The user to generate a token for
+ * @param user The user object
  * @returns JWT token string
  */
-export function generateToken(user: Pick<User, 'id' | 'username'>, role = 'user'): string {
+export function generateToken(user: User): string {
   const payload: JwtPayload = {
-    id: user.id,
+    userId: user.id,
     username: user.username,
-    role
+    role: user.role || 'user'
   };
   
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 }
 
 /**
- * Verify a JWT token
- * @param token The token to verify
- * @returns Decoded token payload
+ * Verify and decode a JWT token
+ * @param token The JWT token string
+ * @returns Decoded payload or null if invalid
  */
-export function verifyToken(token: string): JwtPayload {
+export function verifyToken(token: string): JwtPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return decoded;
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new AuthError('Invalid token');
-    } else if (error instanceof jwt.TokenExpiredError) {
-      throw new AuthError('Token expired');
-    } else {
-      throw new AuthError('Authentication failed');
-    }
-  }
-}
-
-/**
- * Extract token from request headers
- * @param req Express request
- * @returns Token string or null
- */
-export function extractTokenFromRequest(req: Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('Token verification failed:', error);
     return null;
   }
-  
-  return authHeader.substring(7); // Remove 'Bearer ' prefix
 }
 
 /**
- * Middleware to authenticate JWT token
- * Skip authentication for public routes
+ * Generate a random token for email verification, password reset, etc.
+ * @returns Random token string
  */
-export function authenticate(req: Request, res: Response, next: NextFunction) {
-  // Skip authentication for public routes
-  const publicRoutes = [
-    // Static routes and client-side routes
-    /^(?!\/api).*/,  // All routes that don't start with /api/
-    /^\/$/,         // Root route
-    /^\/static/,     
-    /^\/images/,
-    /^\/assets/,
-    /^\/@/,
-    /^\/src/,
-    /^\/node_modules/,
-    // Public pages
-    /^\/privacy-policy/,
-    /^\/terms/,
-    /^\/security/,
-    /^\/client-preview/,
-    // Auth routes
-    /^\/api\/auth\/login/,
-    /^\/api\/auth\/register/,
-    // Public API routes
-    /^\/api\/contact$/,
-    /^\/api\/copilot$/,
-    /^\/api\/preview\/validate$/,
-    /^\/api\/test-xai$/,
-    /^\/api\/test-ai-content$/,
-    // xAI integration API routes
-    /^\/api\/debug\/.*/,
-    /^\/api\/content\/.*/,
-    /^\/api\/ux\/.*/,
-    /^\/api\/intelligence\/.*/,
-    /^\/api\/analytics\/.*/,
-    /^\/api\/ai-content\/.*/,
-    /^\/api\/recommendations\/.*/,
-    /^\/api\/intelligent-search\/.*/,
-    // Mockup API routes
-    /^\/api\/mockups\/mockup-trends$/,
-    /^\/api\/mockups\/suggest-onboarding$/,
-    /^\/api\/mockups\/suggest-website-copy$/,
-    /^\/api\/mockups\/suggest-blog-content$/,
-    /^\/api\/mockups\/suggest-website-features$/,
-    /^\/api\/mockups\/mockup-engagement$/,
-    // ElevateBot analytics routes
-    /^\/api\/elevatebot\/elevatebot-usage$/,
-    // Website performance analytics routes
-    /^\/api\/analytics\/website-performance\/\d+$/,
-    // Content marketing suggestions route (for testing)
-    /^\/api\/marketplace\/content-marketing-suggestions$/
-  ];
+export function generateRandomToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Generate a hash for a password with salt
+ * @param password Plain password text
+ * @returns {string} Hashed password with salt
+ */
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString('hex');
+  const hashedPassword = scryptSync(password, salt, 64).toString('hex');
+  return `${hashedPassword}.${salt}`;
+}
+
+/**
+ * Verify a password against a hashed version
+ * @param password Plain password text
+ * @param hashedPassword Stored hashed password with salt
+ * @returns {boolean} Whether the password matches
+ */
+export function verifyPassword(password: string, hashedPassword: string): boolean {
+  const [hash, salt] = hashedPassword.split('.');
+  const inputHash = scryptSync(password, salt, 64).toString('hex');
+  return hash === inputHash;
+}
+
+/**
+ * Middleware to verify JWT token in authorization header
+ */
+export function authMiddleware(req: any, res: any, next: any) {
+  // Get token from Authorization header
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
   
-  // Check if route is public
-  const isPublicRoute = publicRoutes.some(pattern => 
-    pattern instanceof RegExp 
-      ? pattern.test(req.path) 
-      : req.path === pattern
-  );
-  
-  if (isPublicRoute) {
-    return next();
-  }
-  
-  // Extract token
-  const token = extractTokenFromRequest(req);
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required',
-      error: 'No token provided'
-    });
+    return res.status(401).json({ message: 'Authentication required' });
   }
   
-  try {
-    // Verify token
-    const decoded = verifyToken(token);
-    
-    // Add user info to request
-    req.user = decoded;
-    
-    next();
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return res.status(error.status).json({
-        success: false,
-        message: 'Authentication failed',
-        error: error.message
-      });
-    }
-    
-    return res.status(500).json({
-      success: false,
-      message: 'Authentication error',
-      error: 'Internal server error'
-    });
+  // Verify the token
+  const decoded = verifyToken(token);
+  
+  if (!decoded) {
+    return res.status(401).json({ message: 'Authentication failed' });
   }
+  
+  // Add user info to the request
+  req.user = {
+    userId: decoded.userId,
+    username: decoded.username,
+    role: decoded.role
+  };
+  
+  next();
 }
 
 /**
- * Middleware to check if user has required role
- * @param roles Array of roles allowed to access the route
+ * Middleware to check if user has required roles
  */
-export function authorize(roles: string[] = ['admin']) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized',
-        error: 'Authentication required'
+export function adminMiddleware(allowedRoles: string[] = ['admin']) {
+  return (req: any, res: any, next: any) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `Access denied. Required role(s): ${allowedRoles.join(', ')}`
       });
     }
-    
-    const userRole = (req.user as JwtPayload).role;
-    
-    if (!roles.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Forbidden',
-        error: 'Insufficient permissions'
-      });
-    }
-    
     next();
   };
+}
+
+/**
+ * Generate a secure verification link for email verification
+ */
+export function generateVerificationLink(userId: number, token: string, baseUrl: string): string {
+  return `${baseUrl}/verify-email?uid=${userId}&token=${token}`;
+}
+
+/**
+ * Generate a secure reset password link
+ */
+export function generatePasswordResetLink(userId: number, token: string, baseUrl: string): string {
+  return `${baseUrl}/reset-password?uid=${userId}&token=${token}`;
 }

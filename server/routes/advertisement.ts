@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../utils/validation';
-import { authenticate, authorize } from '../utils/auth';
+import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { insertAdvertisementSchema } from '@shared/schema';
 import { z } from 'zod';

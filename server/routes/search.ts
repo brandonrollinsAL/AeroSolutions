@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { param } from 'express-validator';
 import { validate } from '../utils/validation';
-import { authenticate } from '../utils/auth';
+import { authMiddleware as authenticate } from '../utils/auth';
 import { storage } from '../storage';
 import { grokApi } from '../grok';
 import NodeCache from 'node-cache';

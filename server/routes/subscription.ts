@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../utils/validation';
-import { authenticate, authorize } from '../utils/auth';
+import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
 import { insertSubscriptionPlanSchema } from '@shared/schema';

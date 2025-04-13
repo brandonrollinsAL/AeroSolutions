@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import helmet from "helmet";
-import { authenticate } from "./utils/auth";
+import { authMiddleware } from "./utils/auth";
 import { cachingMiddleware, conditionalRequestMiddleware } from "./utils/caching";
 import { apiRateLimiter, authRateLimiter, defaultRateLimiter } from "./utils/rate-limiting";
 import compression from "express-compression";
@@ -90,7 +90,7 @@ app.use((req: TimedRequest, res: Response, next: NextFunction) => {
 });
 
 // JWT Authentication middleware
-app.use(authenticate);
+app.use(authMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();

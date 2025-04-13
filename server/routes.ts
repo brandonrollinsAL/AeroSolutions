@@ -7,7 +7,7 @@ import { z } from "zod";
 import { generateCopilotResponse } from "./utils/grokai";
 import NodeCache from 'node-cache';
 import { body, query, param, validationResult } from 'express-validator';
-import { generateToken, authorize } from './utils/auth';
+import { generateToken, authMiddleware } from './utils/auth';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription, handleWebhookEvent } from './utils/stripe';
 import { callXAI, generateText, analyzeImage, generateJson } from './utils/xaiClient';
 import { grokApi } from './grok';
@@ -30,6 +30,7 @@ import mockupsRouter from './routes/mockups';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
+import authRouter from './routes/auth';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -111,6 +112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Apply rate limiting to all API routes
   app.use('/api', rateLimiter.middleware);
+  
+  // Mount authentication routes
+  app.use('/api/auth', authRouter);
   
   // Mount revenue-generation routes
   app.use('/api/subscriptions', subscriptionRouter);

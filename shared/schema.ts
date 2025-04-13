@@ -31,6 +31,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   role: true,
+  businessType: true,
+  preferences: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -446,6 +448,31 @@ export const insertWebsiteConversionSchema = createInsertSchema(websiteConversio
 
 export type WebsiteConversion = typeof websiteConversions.$inferSelect;
 export type InsertWebsiteConversion = z.infer<typeof insertWebsiteConversionSchema>;
+
+// User onboarding schema for XAI-enhanced personalized onboarding
+export const userOnboarding = pgTable("user_onboarding", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  onboardingStep: integer("onboarding_step").default(1).notNull(), // Current step in the onboarding process
+  completedSteps: json("completed_steps").$type<number[]>().default([]).notNull(),
+  businessType: text("business_type"), // Type of business or industry
+  businessGoals: text("business_goals"), // Marketing, growth, etc.
+  personalizedTips: text("personalized_tips"), // AI-generated tips
+  preferenceTags: json("preference_tags").$type<string[]>().default([]),
+  aiGeneratedProfile: json("ai_generated_profile").$type<Record<string, any>>().default({}),
+  lastEngagedAt: timestamp("last_engaged_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserOnboardingSchema = createInsertSchema(userOnboarding).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type UserOnboarding = typeof userOnboarding.$inferSelect;
+export type InsertUserOnboarding = z.infer<typeof insertUserOnboardingSchema>;
 
 // Mockup request schema for tracking client mockup generation requests
 export const mockupRequests = pgTable("mockup_requests", {

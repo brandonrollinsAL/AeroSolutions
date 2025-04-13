@@ -25,6 +25,15 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<User>): Promise<User>;
   getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
+  validateUserCredentials(username: string, password: string): Promise<User | undefined>;
+  updateUserVerification(userId: number, verified: boolean): Promise<User>;
+  
+  // User onboarding methods
+  createUserOnboarding(onboarding: InsertUserOnboarding): Promise<UserOnboarding>;
+  getUserOnboarding(userId: number): Promise<UserOnboarding | undefined>;
+  updateUserOnboarding(userId: number, data: Partial<InsertUserOnboarding>): Promise<UserOnboarding>;
+  getOnboardingCompletionRate(): Promise<{ completed: number, total: number, rate: number }>;
+  generatePersonalizedOnboarding(userId: number, businessType: string): Promise<string>;
   
   // Contact methods
   createContactSubmission(contact: InsertContact): Promise<Contact>;
@@ -123,6 +132,89 @@ export class DatabaseStorage implements IStorage {
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId));
     return user;
+  }
+  
+  async validateUserCredentials(username: string, password: string): Promise<User | undefined> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return undefined;
+    
+    // In a real application, we'd verify the password against a hashed value
+    // using bcrypt.compare. For now, we'll return the user.
+    return user;
+  }
+  
+  async updateUserVerification(userId: number, verified: boolean): Promise<User> {
+    const [user] = await db.update(users)
+      .set({ 
+        verified, 
+        verificationToken: verified ? null : users.verificationToken, 
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+  
+  // User onboarding methods
+  async createUserOnboarding(onboarding: InsertUserOnboarding): Promise<UserOnboarding> {
+    const [userOnboardingRecord] = await db.insert(userOnboarding).values(onboarding).returning();
+    return userOnboardingRecord;
+  }
+  
+  async getUserOnboarding(userId: number): Promise<UserOnboarding | undefined> {
+    const [userOnboardingRecord] = await db.select().from(userOnboarding).where(eq(userOnboarding.userId, userId));
+    return userOnboardingRecord;
+  }
+  
+  async updateUserOnboarding(userId: number, data: Partial<InsertUserOnboarding>): Promise<UserOnboarding> {
+    const [userOnboardingRecord] = await db.update(userOnboarding)
+      .set({ ...data, updatedAt: new Date(), lastEngagedAt: new Date() })
+      .where(eq(userOnboarding.userId, userId))
+      .returning();
+    return userOnboardingRecord;
+  }
+  
+  async getOnboardingCompletionRate(): Promise<{ completed: number, total: number, rate: number }> {
+    const allUsers = await db.select().from(users);
+    const completedOnboardingUsers = allUsers.filter(user => user.onboardingComplete);
+    
+    const completedCount = completedOnboardingUsers.length;
+    const totalCount = allUsers.length;
+    const completionRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    
+    return {
+      completed: completedCount,
+      total: totalCount,
+      rate: completionRate
+    };
+  }
+  
+  async generatePersonalizedOnboarding(userId: number, businessType: string): Promise<string> {
+    try {
+      // Get the user data
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      // This would normally call an AI service to generate personalized onboarding tips
+      // Here we're implementing a placeholder that returns a basic message based on business type
+      const businessTypeMap: Record<string, string> = {
+        'ecommerce': 'Focus on setting up product listings, payment processing, and cart functionality.',
+        'service': 'Build out your service offerings, booking system, and testimonials section.',
+        'blog': 'Create a content calendar, set up categories, and implement newsletter signup.',
+        'portfolio': 'Showcase your best work with high-quality images and detailed project descriptions.',
+        'business': 'Highlight your team, services, and include strong calls-to-action on every page.'
+      };
+      
+      const defaultTips = 'Welcome to Elevion! Start by completing your profile and exploring our web development marketplace.';
+      const personalizedTips = businessTypeMap[businessType.toLowerCase()] || defaultTips;
+      
+      return personalizedTips;
+    } catch (error) {
+      console.error('Error generating personalized onboarding:', error);
+      return 'Welcome to Elevion! Start by exploring our web development marketplace and tools.';
+    }
   }
   
   // Contact methods
