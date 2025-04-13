@@ -116,6 +116,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     // Mockup API routes
     /^\/api\/mockups\/mockup-trends$/,
     /^\/api\/mockups\/suggest-onboarding$/,
+    /^\/api\/mockups\/suggest-website-copy$/,
     // ElevateBot analytics routes
     /^\/api\/elevatebot\/elevatebot-usage$/,
     // Website performance analytics routes

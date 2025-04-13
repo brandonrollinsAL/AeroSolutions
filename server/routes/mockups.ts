@@ -11,6 +11,8 @@ const router = Router();
 const mockupSuggestionsCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
 // Cache for onboarding suggestions with 2-hour TTL
 const onboardingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website copy suggestions with 2-hour TTL
+const websiteCopySuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -600,6 +602,116 @@ Recommend 2-3 post-launch services or support options particularly valuable for 
       success: false,
       message: "Failed to generate onboarding suggestions",
       fallbackOnboarding,
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 29: Auto-Suggestions for Client Website Copy
+ * Suggest website copy for clients based on their business type
+ */
+router.post('/suggest-website-copy', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `website_copy_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedCopy = websiteCopySuggestionsCache.get(cacheKey);
+    if (cachedCopy) {
+      console.log(`[Website Copy API] Returning cached copy for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        copy: cachedCopy,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`[Website Copy API] Generating new website copy for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (15 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 15 seconds')), 15000);
+    });
+    
+    // Generate website copy using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3', // Using standard model for better quality copy
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional copywriter specializing in creating compelling website copy for various business types. Provide clear, concise, and persuasive website copy that converts visitors into customers.'
+        },
+        { 
+          role: 'user', 
+          content: `Create compelling website copy for a ${businessType} business. Include:
+
+1. Headline (attention-grabbing main headline)
+2. Subheadline (supporting the main headline)
+3. About Us section (1-2 paragraphs)
+4. Services/Products section (with 3-4 key offerings)
+5. Unique Value Proposition (what makes this business special)
+6. Call to Action statements (2-3 variations)
+7. Customer testimonial templates (2 examples)
+8. Contact section copy
+
+Make the copy professional, concise, and optimized for conversion. Use language that resonates with the target audience of this business type.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const websiteCopy = response.choices[0].message.content;
+    
+    // Cache the successful response
+    websiteCopySuggestionsCache.set(cacheKey, websiteCopy);
+    
+    console.log(`[Website Copy API] Successfully generated website copy for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      copy: websiteCopy,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("[Website Copy API] Error generating website copy:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 15 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate website copy",
       error: error.message || "Unknown error"
     });
   }
