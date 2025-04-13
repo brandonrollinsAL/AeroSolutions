@@ -19,6 +19,8 @@ const brandingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 
 const navigationSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for performance optimization suggestions with 2-hour TTL
 const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website layout suggestions with 2-hour TTL
+const websiteLayoutSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for blog content suggestions with 2-hour TTL
 const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website feature suggestions with 2-hour TTL
@@ -1747,6 +1749,134 @@ router.post('/suggest-website-colors', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to generate website color suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 44: Auto-Suggestions for Client Website Layouts
+ * Suggest website layouts for clients based on their business type
+ */
+router.post('/suggest-website-layout', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `website_layout_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedLayout = websiteLayoutSuggestionsCache.get(cacheKey);
+    if (cachedLayout) {
+      console.log(`Returning cached website layout for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        layout: cachedLayout,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new website layout for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    // Generate layout suggestion using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional web designer specializing in creating optimal website layouts for various business types. Provide detailed, practical layout recommendations.'
+        },
+        { 
+          role: 'user', 
+          content: `Suggest a comprehensive website layout for a ${normalizedBusinessType} business. Include information about:
+          
+1. Page Structure
+   - Required pages and their purpose
+   - Information hierarchy
+   - Content organization
+
+2. Navigation System
+   - Menu structure
+   - User flow optimization
+   - Mobile navigation considerations
+
+3. Key Components
+   - Header/footer elements
+   - Essential sections for homepage
+   - Call-to-action placements
+   - Contact/conversion elements
+
+4. Layout Patterns
+   - Recommended grid system
+   - Content blocks arrangement
+   - Visual hierarchy
+   - Whitespace usage
+
+5. Responsive Considerations
+   - Mobile-first recommendations
+   - Breakpoint suggestions
+   - Content adaptation for different devices
+
+Format the response with clear sections, bullet points, and specific recommendations relevant to this business type.`
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const layout = response.choices[0].message.content;
+    
+    // Cache the successful response
+    websiteLayoutSuggestionsCache.set(cacheKey, layout);
+    
+    console.log(`Successfully generated website layout for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      layout,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating website layout suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate website layout suggestions",
       error: error.message || "Unknown error"
     });
   }
