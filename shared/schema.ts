@@ -328,6 +328,37 @@ export const insertArticleEngagementSchema = createInsertSchema(articleEngagemen
   createdAt: true
 });
 
+// User data change logs for compliance and audit
+export const userDataChangeLogs = pgTable("user_data_change_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  changedByUserId: integer("changed_by_user_id").references(() => users.id),
+  changeType: text("change_type").notNull(), // profile-update, email-change, preference-update, etc.
+  previousData: json("previous_data").$type<Record<string, any>>(),
+  newData: json("new_data").$type<Record<string, any>>().notNull(),
+  changeCategory: text("change_category"), // AI-categorized change type
+  privacyImpact: text("privacy_impact"), // none, low, medium, high
+  riskLevel: text("risk_level"), // low, medium, high
+  securityFlags: json("security_flags").$type<string[]>().default([]),
+  aiAnalysisNotes: text("ai_analysis_notes"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  regulatoryNotes: text("regulatory_notes"),
+  requiresReview: boolean("requires_review").default(false),
+  reviewStatus: text("review_status").default("pending"), // pending, approved, rejected
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserDataChangeLogSchema = createInsertSchema(userDataChangeLogs).omit({
+  id: true,
+  createdAt: true
+});
+
+export type UserDataChangeLog = typeof userDataChangeLogs.$inferSelect;
+export type InsertUserDataChangeLog = z.infer<typeof insertUserDataChangeLogSchema>;
+
 // Export types
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;

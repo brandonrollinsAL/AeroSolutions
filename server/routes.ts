@@ -31,6 +31,7 @@ import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/ele
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
 import authRouter from './routes/auth';
+import userRouter from './routes/users';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -115,6 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount authentication routes
   app.use('/api/auth', authRouter);
+  app.use('/api/users', userRouter);
   
   // Mount revenue-generation routes
   app.use('/api/subscriptions', subscriptionRouter);

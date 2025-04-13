@@ -57,14 +57,15 @@ subscriptionRouter.post(
   '/plans',
   authenticate,
   authorize(['admin']),
-  validate([
+  [
     body('name').isString().notEmpty(),
     body('description').isString().notEmpty(),
     body('price').isNumeric(),
     body('interval').isIn(['month', 'year']),
     body('features').isArray(),
     body('isActive').isBoolean().optional(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const planData = insertSubscriptionPlanSchema.parse(req.body);
@@ -105,9 +106,10 @@ subscriptionRouter.post(
 subscriptionRouter.post(
   '/subscribe',
   authenticate,
-  validate([
+  [
     body('planId').isNumeric().toInt(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const { planId } = req.body;
@@ -229,9 +231,10 @@ subscriptionRouter.post(
 subscriptionRouter.post(
   '/cancel',
   authenticate,
-  validate([
+  [
     body('subscriptionId').isNumeric().toInt(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const { subscriptionId } = req.body;

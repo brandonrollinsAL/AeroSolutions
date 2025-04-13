@@ -309,6 +309,162 @@ export async function generateBusinessDescription(
   });
 }
 
+/**
+ * Validate user profile changes for compliance and potential security risks
+ * @param userId The user's ID
+ * @param currentData The current user data
+ * @param proposedChanges The proposed changes to validate
+ * @returns Validation results with risk assessment
+ */
+export async function validateUserProfileChanges(
+  userId: number,
+  currentData: any,
+  proposedChanges: any
+): Promise<{
+  isValid: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  riskDetails: string;
+  recommendations: string[];
+  canProceed: boolean;
+  validationTimestamp: string;
+}> {
+  const prompt = `
+    Analyze and validate the following user profile changes for compliance and security risks:
+    
+    Current User Data:
+    ${JSON.stringify(currentData, null, 2)}
+    
+    Proposed Changes:
+    ${JSON.stringify(proposedChanges, null, 2)}
+    
+    User ID: ${userId}
+    
+    Consider the following in your analysis:
+    1. Check for suspicious patterns that could indicate account takeover
+    2. Verify that data changes comply with standard privacy regulations
+    3. Identify any information that shouldn't be stored (PII/sensitive data)
+    4. Flag any changes that appear to be attempting to circumvent system rules
+    
+    Respond with a JSON object containing:
+    {
+      "isValid": true/false,
+      "riskLevel": "low", "medium", or "high",
+      "riskDetails": "detailed explanation of risks identified",
+      "recommendations": ["array", "of", "recommendations"],
+      "canProceed": true/false,
+      "validationTimestamp": "ISO-formatted current time"
+    }
+  `;
+
+  const systemPrompt = `
+    You are a security and compliance expert specializing in data protection and privacy regulations.
+    Your task is to analyze user profile changes and identify potential security risks, compliance issues, 
+    or suspicious patterns. Be thorough but balanced in your analysis - identify real risks without being 
+    overly restrictive on legitimate changes.
+  `;
+
+  try {
+    const result = await generateJson<{
+      isValid: boolean;
+      riskLevel: 'low' | 'medium' | 'high';
+      riskDetails: string;
+      recommendations: string[];
+      canProceed: boolean;
+      validationTimestamp: string;
+    }>(prompt, systemPrompt);
+    
+    // Ensure timestamp is properly set if not provided by API
+    if (!result.validationTimestamp) {
+      result.validationTimestamp = new Date().toISOString();
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error validating user profile changes:", error);
+    // Return a safe default that requires manual review
+    return {
+      isValid: false,
+      riskLevel: 'medium',
+      riskDetails: "Automatic validation failed - manual review required",
+      recommendations: ["Perform manual review of changes", "Verify user identity through secondary means"],
+      canProceed: false,
+      validationTimestamp: new Date().toISOString()
+    };
+  }
+}
+
+/**
+ * Log and analyze sensitive user data changes for compliance and audit purposes
+ * @param userId User ID
+ * @param changeType Type of change made
+ * @param changes The changes that were made
+ * @param adminId Optional admin ID if changes were made by an admin
+ * @returns Analysis of the changes for audit logs
+ */
+export async function analyzeUserDataChanges(
+  userId: number,
+  changeType: string,
+  changes: any,
+  adminId?: number
+): Promise<{
+  changeCategory: string;
+  privacyImpact: 'none' | 'low' | 'medium' | 'high';
+  securityFlags: string[];
+  auditRecommendation: string;
+  regulatoryNotes: string;
+}> {
+  const prompt = `
+    Analyze the following user data changes for audit and compliance purposes:
+    
+    User ID: ${userId}
+    Change Type: ${changeType}
+    Changes Made: ${JSON.stringify(changes, null, 2)}
+    ${adminId ? `Admin ID: ${adminId}` : 'Changed by: User themselves'}
+    
+    Provide an analysis that includes:
+    1. Categorization of the change type
+    2. Privacy impact assessment
+    3. Any security flags that should be noted
+    4. Recommendations for audit purposes
+    5. Notes on regulatory considerations (GDPR, CCPA, etc.)
+    
+    Respond in JSON format with these fields:
+    {
+      "changeCategory": "category name",
+      "privacyImpact": "none", "low", "medium", or "high",
+      "securityFlags": ["array", "of", "flags"],
+      "auditRecommendation": "text recommendation",
+      "regulatoryNotes": "notes about regulatory implications"
+    }
+  `;
+
+  const systemPrompt = `
+    You are a privacy compliance and security audit specialist. Your task is to analyze user data changes
+    and provide insights for audit logs and compliance documentation. Focus on practical, actionable analysis
+    that helps maintain regulatory compliance and security best practices.
+  `;
+
+  try {
+    return await generateJson<{
+      changeCategory: string;
+      privacyImpact: 'none' | 'low' | 'medium' | 'high';
+      securityFlags: string[];
+      auditRecommendation: string;
+      regulatoryNotes: string;
+    }>(prompt, systemPrompt, 'grok-2-1212');
+  } catch (error) {
+    console.error("Error analyzing user data changes:", error);
+    // Return a conservative default
+    return {
+      changeCategory: "Uncategorized",
+      privacyImpact: 'medium',
+      securityFlags: ["Analysis failed", "Manual review recommended"],
+      auditRecommendation: "Perform manual audit review due to automated analysis failure",
+      regulatoryNotes: "Unable to determine regulatory implications - review manually"
+    };
+  }
+}
+
 // Export specific functions for use in the application
 export default {
   callXAI,
@@ -316,5 +472,7 @@ export default {
   analyzeFeedback,
   generateMarketingContent,
   analyzeData,
-  generateBusinessDescription
+  generateBusinessDescription,
+  validateUserProfileChanges,
+  analyzeUserDataChanges
 };
