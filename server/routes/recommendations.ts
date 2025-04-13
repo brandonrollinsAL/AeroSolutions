@@ -131,28 +131,36 @@ router.post('/features', async (req, res) => {
   }
   
   try {
-    const prompt = `Recommend essential website features and functionality for a ${businessType} 
-      in the ${industry || 'general'} industry. Their main business objectives are: ${objectives.join(', ')}.
-      Their target audience is: ${target_audience || 'general consumers'}.
+    // Create a simpler, more focused prompt to reduce response time
+    const prompt = `Recommend top 10 essential website features for a ${businessType} 
+      in the ${industry || 'general'} industry with these objectives: ${objectives.slice(0, 3).join(', ')}.
       
-      Provide recommendations in these categories:
-      1. Must-have features
-      2. Recommended features
-      3. Nice-to-have features
-      4. Innovative differentiators
-      
-      For each feature, include a brief explanation of its benefit and relative implementation complexity.
-      Format the response as JSON.`;
+      Format as JSON with this structure:
+      {
+        "core_features": [
+          {
+            "name": "Feature name",
+            "benefit": "Brief benefit explanation",
+            "priority": "high/medium/low"
+          }
+        ],
+        "additional_features": [
+          {
+            "name": "Feature name", 
+            "benefit": "Brief benefit explanation"
+          }
+        ]
+      }`;
     
     // Create a promise that rejects after the timeout
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
     
-    // Race the API call against the timeout
+    // Use a smaller model for faster response time
     const response = await Promise.race([
       callXAI('/chat/completions', {
-        model: 'grok-3-latest',
+        model: 'grok-3-mini', // Use mini model for faster response
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' }
       }),
@@ -161,17 +169,97 @@ router.post('/features', async (req, res) => {
     
     const content = JSON.parse(response.choices[0].message.content);
     
+    // Transform the simpler response format into the expected format
+    const transformedResponse = {
+      must_have_features: content.core_features
+        .filter(f => f.priority === 'high')
+        .map(f => ({
+          name: f.name,
+          benefit: f.benefit,
+          complexity: "Low to Medium"
+        })),
+      recommended_features: content.core_features
+        .filter(f => f.priority === 'medium')
+        .map(f => ({
+          name: f.name,
+          benefit: f.benefit,
+          complexity: "Medium"
+        })),
+      nice_to_have_features: content.core_features
+        .filter(f => f.priority === 'low')
+        .map(f => ({
+          name: f.name,
+          benefit: f.benefit,
+          complexity: "Medium"
+        })),
+      innovative_differentiators: content.additional_features
+        .map(f => ({
+          name: f.name,
+          benefit: f.benefit,
+          complexity: "Medium to High"
+        }))
+    };
+    
     res.json({ 
       success: true, 
-      features: content
+      features: transformedResponse
     });
   } catch (error: any) {
     console.error('Feature recommendations failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Feature recommendations failed', 
-      error: error.message,
-      fallback: {
+    
+    // Industry-specific fallback data for better user experience
+    const industrySpecificFeatures = {
+      'food & beverage': {
+        must_have_features: [
+          {
+            name: "Online Ordering System",
+            benefit: "Allows customers to place orders directly from your website, increasing convenience and sales",
+            complexity: "Medium"
+          },
+          {
+            name: "Mobile-Responsive Menu",
+            benefit: "Ensures your menu is easily viewable on all devices, critical for on-the-go diners",
+            complexity: "Low to Medium"
+          },
+          {
+            name: "Reservation System",
+            benefit: "Enables customers to book tables online, reducing phone calls and improving table management",
+            complexity: "Medium"
+          }
+        ],
+        recommended_features: [
+          {
+            name: "Local SEO Optimization",
+            benefit: "Improves visibility in local search results to help nearby customers find your restaurant",
+            complexity: "Medium"
+          },
+          {
+            name: "Customer Reviews Integration",
+            benefit: "Showcases positive experiences to build trust with potential new customers",
+            complexity: "Low"
+          }
+        ],
+        nice_to_have_features: [
+          {
+            name: "Loyalty Program Portal",
+            benefit: "Encourages repeat visits through rewards and special offers",
+            complexity: "Medium to High"
+          }
+        ],
+        innovative_differentiators: [
+          {
+            name: "Virtual Restaurant Tour",
+            benefit: "Gives potential customers a feel for your atmosphere before they visit",
+            complexity: "Medium to High"
+          }
+        ]
+      }
+    };
+    
+    // Use industry-specific fallback if available, otherwise use generic
+    const fallback = industry && industrySpecificFeatures[industry.toLowerCase()] ? 
+      industrySpecificFeatures[industry.toLowerCase()] : 
+      {
         must_have_features: [
           {
             name: "Mobile-Responsive Design",
@@ -215,7 +303,13 @@ router.post('/features', async (req, res) => {
             complexity: "High"
           }
         ]
-      }
+      };
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Feature recommendations failed', 
+      error: error.message,
+      fallback: fallback
     });
   }
 });
@@ -242,28 +336,39 @@ router.post('/tech-stack', async (req, res) => {
   }
   
   try {
-    const prompt = `Recommend an optimal technology stack for a ${project_type} project with the 
-      following requirements: ${requirements.join(', ')}.
+    // Create a simpler, more focused prompt to reduce response time
+    const prompt = `Recommend core tech stack components for a ${project_type} project with requirements: ${requirements.slice(0, 3).join(', ')}.
+      Budget level: ${budget_level || 'Moderate'}.
       
-      Additional considerations:
-      Scale: ${scale || 'Medium'}
-      Budget Level: ${budget_level || 'Moderate'}
-      Maintenance Preference: ${maintenance_preference || 'Balanced'}
-      Future Scalability Needs: ${future_scalability || 'Moderate growth expected'}
-      
-      For each technology component, explain why it's recommended and provide alternatives.
-      Components should include frontend, backend, database, hosting, and any additional services.
-      Format the response as JSON.`;
+      Format as JSON with this structure:
+      {
+        "frontend": {
+          "name": "technology name",
+          "reason": "brief reason"
+        },
+        "backend": {
+          "name": "technology name",
+          "reason": "brief reason"
+        },
+        "database": {
+          "name": "technology name",
+          "reason": "brief reason"
+        },
+        "hosting": {
+          "name": "technology name",
+          "reason": "brief reason"
+        }
+      }`;
     
     // Create a promise that rejects after the timeout
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
     
-    // Race the API call against the timeout
+    // Use a smaller model for faster response time
     const response = await Promise.race([
       callXAI('/chat/completions', {
-        model: 'grok-3-latest',
+        model: 'grok-3-mini', // Use mini model for faster response
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' }
       }),
@@ -272,17 +377,74 @@ router.post('/tech-stack', async (req, res) => {
     
     const content = JSON.parse(response.choices[0].message.content);
     
+    // Transform the simpler response format into the expected format
+    const transformedResponse = {
+      frontend: {
+        primary: content.frontend.name,
+        reason: content.frontend.reason,
+        alternatives: getAlternativesFor(content.frontend.name)
+      },
+      backend: {
+        primary: content.backend.name,
+        reason: content.backend.reason,
+        alternatives: getAlternativesFor(content.backend.name)
+      },
+      database: {
+        primary: content.database.name,
+        reason: content.database.reason,
+        alternatives: getAlternativesFor(content.database.name)
+      },
+      hosting: {
+        primary: content.hosting.name,
+        reason: content.hosting.reason,
+        alternatives: getAlternativesFor(content.hosting.name)
+      },
+      additional_services: getAdditionalServices(project_type, requirements)
+    };
+    
     res.json({ 
       success: true, 
-      tech_stack: content
+      tech_stack: transformedResponse
     });
   } catch (error: any) {
     console.error('Tech stack recommendations failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Tech stack recommendations failed', 
-      error: error.message,
-      fallback: {
+    
+    // Project-type specific fallback data for better user experience
+    const projectSpecificStacks = {
+      'ecommerce': {
+        frontend: {
+          primary: "React.js with Next.js",
+          reason: "Provides excellent performance with server-side rendering for better SEO, which is crucial for ecommerce",
+          alternatives: ["Vue.js with Nuxt", "Angular"]
+        },
+        backend: {
+          primary: "Node.js with Express",
+          reason: "Fast API response times and excellent integration with payment gateways",
+          alternatives: ["Python with Django", "PHP with Laravel"]
+        },
+        database: {
+          primary: "PostgreSQL",
+          reason: "Robust relational database with excellent support for complex product relationships and inventory management",
+          alternatives: ["MongoDB", "MySQL"]
+        },
+        hosting: {
+          primary: "AWS",
+          reason: "Scalable infrastructure that can handle traffic spikes during sales events",
+          alternatives: ["Shopify", "Vercel with AWS"]
+        },
+        additional_services: {
+          caching: "Redis",
+          search: "Elasticsearch",
+          payment: "Stripe",
+          cdn: "Cloudflare"
+        }
+      }
+    };
+    
+    // Use project-specific fallback if available, otherwise use generic
+    const fallback = project_type && projectSpecificStacks[project_type.toLowerCase()] ? 
+      projectSpecificStacks[project_type.toLowerCase()] : 
+      {
         frontend: {
           primary: "React.js",
           reason: "Offers excellent performance, component reusability, and has a large ecosystem of libraries",
@@ -308,10 +470,96 @@ router.post('/tech-stack', async (req, res) => {
           search: "Elasticsearch",
           media_storage: "AWS S3"
         }
-      }
+      };
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Tech stack recommendations failed', 
+      error: error.message,
+      fallback: fallback
     });
   }
 });
+
+/**
+ * Helper function to get alternative technologies based on primary choice
+ */
+function getAlternativesFor(technology: string): string[] {
+  const alternativesMap: Record<string, string[]> = {
+    'React': ['Vue.js', 'Angular', 'Svelte'],
+    'React.js': ['Vue.js', 'Angular', 'Svelte'],
+    'Next.js': ['Nuxt.js', 'Gatsby', 'Remix'],
+    'Vue': ['React', 'Angular', 'Svelte'],
+    'Vue.js': ['React', 'Angular', 'Svelte'],
+    'Angular': ['React', 'Vue.js', 'Svelte'],
+    'Node': ['Python', 'PHP', 'Ruby', 'Java'],
+    'Node.js': ['Python', 'PHP', 'Ruby', 'Java'],
+    'Express': ['Fastify', 'Koa', 'NestJS'],
+    'Django': ['Flask', 'FastAPI', 'Laravel'],
+    'Laravel': ['Django', 'Ruby on Rails', 'ASP.NET'],
+    'PostgreSQL': ['MySQL', 'MongoDB', 'Microsoft SQL Server'],
+    'MySQL': ['PostgreSQL', 'MariaDB', 'SQLite'],
+    'MongoDB': ['PostgreSQL', 'MySQL', 'Firestore'],
+    'AWS': ['Google Cloud Platform', 'Microsoft Azure', 'Digital Ocean'],
+    'Vercel': ['Netlify', 'Heroku', 'AWS Amplify'],
+    'Heroku': ['Render', 'Railway', 'DigitalOcean App Platform']
+  };
+  
+  // Check for exact match first
+  if (alternativesMap[technology]) {
+    return alternativesMap[technology];
+  }
+  
+  // Look for partial matches
+  const matchingKey = Object.keys(alternativesMap).find(key => 
+    technology.toLowerCase().includes(key.toLowerCase())
+  );
+  
+  return matchingKey ? 
+    alternativesMap[matchingKey] : 
+    ['Alternative option 1', 'Alternative option 2'];
+}
+
+/**
+ * Helper function to suggest additional services based on project type and requirements
+ */
+function getAdditionalServices(projectType: string, requirements: string[]): Record<string, string> {
+  const req = requirements.map(r => r.toLowerCase());
+  
+  const services: Record<string, string> = {
+    caching: "Redis"
+  };
+  
+  // Add services based on project type
+  if (projectType.toLowerCase().includes('ecommerce')) {
+    services.payment = "Stripe";
+    services.search = "Elasticsearch";
+    services.inventory = "Custom inventory management system";
+  } else if (projectType.toLowerCase().includes('blog') || projectType.toLowerCase().includes('content')) {
+    services.cms = "Contentful";
+    services.analytics = "Google Analytics";
+  } else if (projectType.toLowerCase().includes('social') || projectType.toLowerCase().includes('community')) {
+    services.realtime = "Socket.io";
+    services.storage = "AWS S3";
+    services.analytics = "Mixpanel";
+  }
+  
+  // Add services based on requirements
+  if (req.some(r => r.includes('search') || r.includes('find'))) {
+    services.search = "Elasticsearch";
+  }
+  if (req.some(r => r.includes('image') || r.includes('media') || r.includes('upload'))) {
+    services.storage = "AWS S3";
+  }
+  if (req.some(r => r.includes('mail') || r.includes('email') || r.includes('newsletter'))) {
+    services.email = "SendGrid";
+  }
+  if (req.some(r => r.includes('auth') || r.includes('login') || r.includes('user'))) {
+    services.authentication = "Auth0";
+  }
+  
+  return services;
+}
 
 /**
  * Content plan recommendations endpoint
@@ -334,27 +582,33 @@ router.post('/content-plan', async (req, res) => {
   }
   
   try {
-    const prompt = `Create a strategic content plan for a ${business_type} in the ${industry || 'general'} 
-      industry. Their business goals are: ${goals.join(', ')}. Their target audience is: ${target_audience}.
+    // Create a simpler, more focused prompt to reduce response time
+    const prompt = `Create a content plan for a ${business_type} in the ${industry || 'general'} 
+      industry with these top goals: ${goals.slice(0, 2).join(', ')}. 
+      Target audience: ${target_audience}.
+      Timeline: ${timeline}.
       
-      The content plan should cover a ${timeline} period and include:
-      1. Content themes and topics
-      2. Content types (blog posts, videos, infographics, etc.)
-      3. Publishing frequency
-      4. Distribution channels
-      5. KPIs to track success
-      
-      Format the response as JSON with clear sections for each component of the plan.`;
+      Format as JSON with this structure:
+      {
+        "themes": [
+          {"name": "theme name", "topics": ["topic1", "topic2"]}
+        ],
+        "content_formats": [
+          {"type": "format name", "frequency": "how often"}
+        ],
+        "channels": ["channel1", "channel2"],
+        "metrics": ["metric1", "metric2"]
+      }`;
     
     // Create a promise that rejects after the timeout
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
     
-    // Race the API call against the timeout
+    // Use a smaller model for faster response time
     const response = await Promise.race([
       callXAI('/chat/completions', {
-        model: 'grok-3-latest',
+        model: 'grok-3-mini', // Use mini model for faster response
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' }
       }),
@@ -363,17 +617,132 @@ router.post('/content-plan', async (req, res) => {
     
     const content = JSON.parse(response.choices[0].message.content);
     
+    // Transform the simpler response format into the expected format
+    const transformedResponse = {
+      content_themes: content.themes.map((theme: any) => ({
+        theme: theme.name,
+        topics: theme.topics
+      })),
+      content_types: content.content_formats.map((format: any) => ({
+        type: format.type,
+        frequency: format.frequency,
+        length: format.type.toLowerCase().includes('blog') ? "800-1500 words" : 
+                format.type.toLowerCase().includes('video') ? "2-5 minutes" : 
+                format.type.toLowerCase().includes('social') ? "Short-form" : "Variable"
+      })),
+      distribution_channels: content.channels,
+      success_metrics: content.metrics
+    };
+    
     res.json({ 
       success: true, 
-      content_plan: content
+      content_plan: transformedResponse
     });
   } catch (error: any) {
     console.error('Content plan recommendations failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Content plan recommendations failed', 
-      error: error.message,
-      fallback: {
+    
+    // Industry-specific fallback data for better user experience
+    const industrySpecificPlans: Record<string, any> = {
+      'food & beverage': {
+        content_themes: [
+          {
+            theme: "Culinary Expertise",
+            topics: ["Signature dishes", "Cooking techniques", "Ingredient spotlights"]
+          },
+          {
+            theme: "Customer Experience",
+            topics: ["Dining atmosphere", "Service highlights", "Customer stories"]
+          },
+          {
+            theme: "Local Food Culture",
+            topics: ["Local ingredients", "Food events", "Community partnerships"]
+          }
+        ],
+        content_types: [
+          {
+            type: "Food photography posts",
+            frequency: "3-4 times per week",
+            length: "Visual with short descriptions"
+          },
+          {
+            type: "Recipe blogs",
+            frequency: "Weekly",
+            length: "800-1200 words with photos"
+          },
+          {
+            type: "Chef/Staff spotlights",
+            frequency: "Monthly",
+            length: "Short-form videos and stories"
+          }
+        ],
+        distribution_channels: [
+          "Instagram",
+          "Facebook",
+          "Restaurant website",
+          "Email newsletter",
+          "Local food apps"
+        ],
+        success_metrics: [
+          "Social media engagement",
+          "Website traffic",
+          "Online reservations",
+          "Email click-through rates",
+          "Customer mentions and tags"
+        ]
+      },
+      'web development': {
+        content_themes: [
+          {
+            theme: "Technical Expertise",
+            topics: ["Development best practices", "Technology trends", "Case studies"]
+          },
+          {
+            theme: "Business Value",
+            topics: ["ROI of web development", "Digital transformation", "Success stories"]
+          },
+          {
+            theme: "Educational Content",
+            topics: ["How-to guides", "Technology comparisons", "Industry reports"]
+          }
+        ],
+        content_types: [
+          {
+            type: "Blog posts",
+            frequency: "Weekly",
+            length: "1000-1500 words with code examples"
+          },
+          {
+            type: "Case study articles",
+            frequency: "Monthly",
+            length: "1500-2000 words with visuals"
+          },
+          {
+            type: "Technical newsletters",
+            frequency: "Bi-weekly",
+            length: "5-7 minute read with links"
+          }
+        ],
+        distribution_channels: [
+          "Company website/blog",
+          "LinkedIn",
+          "Twitter/X",
+          "Developer forums",
+          "Email newsletter"
+        ],
+        success_metrics: [
+          "Website traffic",
+          "Time on page",
+          "Lead form submissions",
+          "Content downloads",
+          "Social shares"
+        ]
+      }
+    };
+    
+    // Use industry-specific fallback if available, otherwise use generic
+    const fallback = industry && industrySpecificPlans[industry.toLowerCase()] ? 
+      industrySpecificPlans[industry.toLowerCase()] : 
+      {
         content_themes: [
           {
             theme: "Industry Expertise",
@@ -397,7 +766,7 @@ router.post('/content-plan', async (req, res) => {
           {
             type: "Social media posts",
             frequency: "3-5 times per week",
-            platforms: ["LinkedIn", "Twitter", "Facebook"]
+            platforms: ["LinkedIn", "Twitter/X", "Facebook"]
           },
           {
             type: "Email newsletter",
@@ -418,7 +787,13 @@ router.post('/content-plan', async (req, res) => {
           "Email open and click rates",
           "Lead generation"
         ]
-      }
+      };
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Content plan recommendations failed', 
+      error: error.message,
+      fallback: fallback
     });
   }
 });

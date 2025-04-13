@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   role: text("role").default("user").notNull(), // user, admin
   stripeCustomerId: text("stripe_customer_id"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -211,3 +212,53 @@ export const insertAdvertisementSchema = createInsertSchema(advertisements).pick
 
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
 export type Advertisement = typeof advertisements.$inferSelect;
+
+// User Sessions Table for Analytics
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionDuration: decimal("session_duration", { precision: 10, scale: 2 }).notNull().default("0"),
+  startTime: timestamp("start_time").defaultNow().notNull(),
+  endTime: timestamp("end_time"),
+  device: text("device"),
+  browser: text("browser"),
+  ipAddress: text("ip_address"),
+  referrer: text("referrer"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Content View Metrics Table for Analytics
+export const contentViewMetrics = pgTable("content_view_metrics", {
+  id: serial("id").primaryKey(),
+  contentId: integer("content_id").notNull(),
+  contentType: text("content_type").notNull(), // blog, page, product, etc.
+  contentTitle: text("content_title").notNull(),
+  views: integer("views").notNull().default(0),
+  uniqueViews: integer("unique_views").notNull().default(0),
+  avgTimeOnPage: decimal("avg_time_on_page", { precision: 10, scale: 2 }).notNull().default("0"),
+  bounceRate: decimal("bounce_rate", { precision: 10, scale: 2 }).notNull().default("0"),
+  conversionRate: decimal("conversion_rate", { precision: 10, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Create the insert schemas
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertContentViewMetricSchema = createInsertSchema(contentViewMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Export types
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+
+export type ContentViewMetric = typeof contentViewMetrics.$inferSelect;
+export type InsertContentViewMetric = z.infer<typeof insertContentViewMetricSchema>;

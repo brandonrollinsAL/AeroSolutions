@@ -1,0 +1,70 @@
+Suggestion 3: Data Analytics for User Engagement
+
+Analyze user engagement metrics (e.g., time spent on platform).
+
+Create server/routes/analytics.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const express = require('express');  
+const router = express.Router();  
+const pool = require('../db');  
+const { callXAI } = require('../utils/xaiClient');  
+
+router.get('/user-engagement', async (req, res) => {  
+  try {  
+    const metrics = await pool.query('SELECT user_id, session_duration FROM user_sessions');  
+    const metricData = metrics.rows.map(m => `User ${m.user_id}: ${m.session_duration} minutes`).join('\n');  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3-mini',  
+      messages: [{ role: 'user', content: `Analyze user engagement metrics:\n${metricData}` }],  
+    });  
+    res.json({ analysis: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'User engagement analysis failed', error: error.message });  
+  }  
+});  
+
+module.exports = router;  
+Add to server/index.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const analyticsRoutes = require('./routes/analytics');  
+app.use('/api/analytics', analyticsRoutes);  
+Suggestion 4: Predictive Analytics for User Retention
+
+Predict user churn using xAI.
+
+Add to server/routes/analytics.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.get('/predict-churn', async (req, res) => {  
+  try {  
+    const userData = await pool.query('SELECT user_id, last_login, activity_count FROM users');  
+    const dataString = userData.rows.map(u => `User ${u.user_id}: Last login ${u.last_login}, Activity ${u.activity_count}`).join('\n');  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Predict user churn based on this data:\n${dataString}` }],  
+    });  
+    res.json({ predictions: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Churn prediction failed', error: error.message });  
+  }  
+});
