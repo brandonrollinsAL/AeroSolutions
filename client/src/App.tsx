@@ -32,6 +32,7 @@ import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 import SeoTools from "@/pages/SeoTools";
 import MarketplaceAnalyticsPage from "@/pages/MarketplaceAnalyticsPage";
 import ContentAnalyticsPage from "@/pages/ContentAnalyticsPage";
+import AchievementsPage from "@/pages/achievements-page";
 import MockupAnalyticsPage from "@/pages/MockupAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
@@ -546,6 +547,20 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <MockupAnalyticsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/achievements">
+          {() => (
+            <>
+              <Helmet>
+                <title>Your Achievements | Elevion</title>
+                <meta name="description" content="Track your achievements, milestones and progress with Elevion. View rewards for completing key actions and engaging with our platform." />
+                <meta name="robots" content="noindex, follow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <AchievementsPage />
             </>
           )}
         </Route>

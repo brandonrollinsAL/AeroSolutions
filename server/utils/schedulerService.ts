@@ -1,102 +1,65 @@
 import { db } from '../db';
-import { users } from '@shared/schema';
-import { achievementService, AchievementType } from './achievementService';
+import { grokApi } from '../grok';
+import * as achievementService from './achievementService';
 
 /**
  * Scheduler Service
- * Handles periodic tasks like checking for user achievements
+ * Handles scheduled tasks for checking achievements and milestones
  */
-export class SchedulerService {
-  private static instance: SchedulerService;
-  private achievementCheckIntervalHours = 24; // Check for achievements daily
-  private achievementIntervalId: NodeJS.Timeout | null = null;
+
+// Export the service as an object
+export const schedulerService = {
+  startScheduledTasks,
+  runAchievementCheck
+};
+
+// Schedule daily milestone checks
+function startScheduledTasks() {
+  console.log('Starting achievement scheduling service...');
   
-  private constructor() {}
+  // Run achievement check immediately at startup
+  setTimeout(runAchievementCheck, 5000);
 
-  public static getInstance(): SchedulerService {
-    if (!SchedulerService.instance) {
-      SchedulerService.instance = new SchedulerService();
-    }
-    return SchedulerService.instance;
-  }
+  // Set up a daily check for achievements at 00:05 AM
+  const now = new Date();
+  const targetTime = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1, // Tomorrow
+    0, // Hour: 00
+    5, // Minute: 05
+    0 // Second: 00
+  );
 
-  /**
-   * Start all scheduled tasks
-   */
-  startScheduledTasks(): void {
-    this.startAchievementChecks();
-    console.log('Scheduled tasks started');
-  }
+  let timeUntilTargetTime = targetTime.getTime() - now.getTime();
+  
+  // Schedule the first run
+  setTimeout(() => {
+    runAchievementCheck();
+    // Then run it every 24 hours
+    setInterval(runAchievementCheck, 24 * 60 * 60 * 1000);
+  }, timeUntilTargetTime);
+  
+  console.log(`Achievement checks scheduled to run daily at 12:05 AM (next run in ${Math.round(timeUntilTargetTime / (60 * 60 * 1000))} hours)`);
+}
 
-  /**
-   * Stop all scheduled tasks
-   */
-  stopScheduledTasks(): void {
-    if (this.achievementIntervalId) {
-      clearInterval(this.achievementIntervalId);
-      this.achievementIntervalId = null;
-    }
-    console.log('Scheduled tasks stopped');
-  }
-
-  /**
-   * Start periodic achievement checks
-   */
-  private startAchievementChecks(): void {
-    // Run once at startup
-    this.checkAllUserAchievements();
-    
-    // Set up interval
-    const intervalMs = this.achievementCheckIntervalHours * 60 * 60 * 1000;
-    this.achievementIntervalId = setInterval(() => {
-      this.checkAllUserAchievements();
-    }, intervalMs);
-    
-    console.log(`Achievement checks scheduled every ${this.achievementCheckIntervalHours} hours`);
-  }
-
-  /**
-   * Check achievements for all users
-   */
-  private async checkAllUserAchievements(): Promise<void> {
-    try {
-      console.log('Running scheduled achievement check for all users...');
-      
-      // Get all active users
-      const allUsers = await db.select().from(users);
-      let achievementsDetected = 0;
-      
-      // Check achievements for each user
-      for (const user of allUsers) {
-        try {
-          const achievements = await achievementService.checkAchievements(user.id);
-          if (achievements.length > 0) {
-            achievementsDetected += achievements.length;
-            console.log(`Detected ${achievements.length} achievements for user ${user.id}: ${achievements.join(', ')}`);
-          }
-        } catch (error) {
-          console.error(`Error checking achievements for user ${user.id}:`, error);
-        }
-      }
-      
-      console.log(`Achievement check complete. Detected ${achievementsDetected} achievements across ${allUsers.length} users.`);
-    } catch (error) {
-      console.error('Error in scheduled achievement check:', error);
-    }
+// Check for any achievements
+async function runAchievementCheck() {
+  console.log('Running scheduled achievement check...');
+  
+  try {
+    const newAchievementsCount = await achievementService.checkForNewAchievements();
+    console.log(`Achievement check completed. Found ${newAchievementsCount} new achievements.`);
+  } catch (error) {
+    console.error('Error running achievement check:', error);
   }
   
-  /**
-   * Manually check achievements for a specific user
-   * This can be called on specific user actions
-   */
-  async checkUserAchievements(userId: number): Promise<AchievementType[]> {
-    try {
-      return await achievementService.checkAchievements(userId);
-    } catch (error) {
-      console.error(`Error checking achievements for user ${userId}:`, error);
-      return [];
-    }
+  try {
+    const specialDayAchievements = await achievementService.checkForSpecialDays();
+    console.log(`Special day achievements check completed. Found ${specialDayAchievements} special day achievements.`);
+  } catch (error) {
+    console.error('Error running special day achievement check:', error);
   }
 }
 
-export const schedulerService = SchedulerService.getInstance();
+// Add more scheduled tasks as needed

@@ -14,29 +14,31 @@ const MarketplaceAdGeneratorPage: React.FC = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Breadcrumb>
-            <BreadcrumbList>
+          <Breadcrumb separator="/">
               <BreadcrumbItem>
                 <BreadcrumbLink href="/">
-                  <Home className="h-4 w-4 mr-1" />
-                  Home
+                  <span className="flex items-center">
+                    <Home className="h-4 w-4 mr-1" />
+                    Home
+                  </span>
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink href="/marketplace">
-                  <ShoppingBag className="h-4 w-4 mr-1" />
-                  Marketplace
+                  <span className="flex items-center">
+                    <ShoppingBag className="h-4 w-4 mr-1" />
+                    Marketplace
+                  </span>
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink href="/marketplace/ad-generator">
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  Ad Generator
+                  <span className="flex items-center">
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Ad Generator
+                  </span>
                 </BreadcrumbLink>
               </BreadcrumbItem>
-            </BreadcrumbList>
           </Breadcrumb>
         </div>
 

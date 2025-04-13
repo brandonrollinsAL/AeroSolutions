@@ -1,40 +1,69 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 
-export function PageHeader({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  children: React.ReactNode;
+}
+
+export function PageHeader({ className, children, ...props }: PageHeaderProps) {
   return (
-    <div
-      className={`flex flex-col items-start gap-2 ${className || ""}`}
-      {...props}
-    >
+    <div className={cn("grid gap-1", className)} {...props}>
       {children}
     </div>
   );
 }
 
-export function PageHeaderHeading({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+interface PageHeaderHeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  className?: string;
+  children: React.ReactNode;
+}
+
+export function PageHeaderHeading({ className, children, ...props }: PageHeaderHeadingProps) {
   return (
     <h1
-      className={`text-4xl font-bold tracking-tight text-slate-800 ${className || ""}`}
+      className={cn(
+        "text-3xl font-bold tracking-tight text-foreground md:text-4xl",
+        className
+      )}
       {...props}
-    />
+    >
+      {children}
+    </h1>
   );
 }
 
-export function PageHeaderDescription({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
+interface PageHeaderDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  className?: string;
+  children: React.ReactNode;
+}
+
+export function PageHeaderDescription({ className, children, ...props }: PageHeaderDescriptionProps) {
   return (
     <p
-      className={`text-lg text-slate-600 ${className || ""}`}
+      className={cn("text-lg text-muted-foreground", className)}
       {...props}
-    />
+    >
+      {children}
+    </p>
+  );
+}
+
+interface PageHeaderActionsProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  children: React.ReactNode;
+}
+
+export function PageHeaderActions({ className, children, ...props }: PageHeaderActionsProps) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 pt-2 md:pt-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
   );
 }

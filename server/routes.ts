@@ -28,9 +28,9 @@ import searchRouter from './routes/search';
 import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
 import moderationRouter from './routes/moderation';
+import achievementsRouter from './routes/achievements';
 import twitterRouter from './routes/twitter';
 import retentionRouter from './routes/retention';
-import achievementsRouter from './routes/achievements';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
@@ -38,6 +38,7 @@ import contentProtectionRouter from './routes/content-protection';
 import complianceRouter from './routes/compliance';
 import authRouter from './routes/auth';
 import userRouter from './routes/users';
+import achievementsRouter from './routes/achievements';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
@@ -856,6 +857,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`User retention system scheduled to run daily at 2 AM (next run in ${Math.round(timeUntilNextRun / (60 * 60 * 1000))} hours)`);
   } catch (error) {
     console.error('Failed to set up user retention system:', error);
+  }
+  
+  // Initialize achievement tracking system with XAI
+  // Track user achievements and send personalized milestone messages
+  try {
+    console.log('Initializing user achievement tracking system...');
+    schedulerService.startScheduledTasks();
+    console.log('Achievement tracking system initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize achievement tracking system:', error);
   }
   
   return httpServer;

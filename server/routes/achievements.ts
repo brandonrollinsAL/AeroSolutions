@@ -1,121 +1,191 @@
 import express, { Request, Response } from 'express';
 import { db } from '../db';
-import { notifications } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
-import { schedulerService } from '../utils/schedulerService';
-import * as authUtils from '../utils/auth';
+import { userAchievements, achievements } from '@shared/schema';
+import { grokApi } from '../grok';
+import * as achievementService from '../utils/achievementService';
 
 const router = express.Router();
 
 /**
- * Get all achievement notifications for the current user
+ * Get all achievements
  */
-router.get('/', authUtils.authMiddleware, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    // Get all achievement notifications for this user
-    const achievements = await db
-      .select()
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, req.user.id),
-          eq(notifications.type, 'achievement')
-        )
-      )
-      .orderBy(desc(notifications.createdAt));
-
-    return res.json({
-      success: true,
-      data: achievements
-    });
+    const result = await db.select().from(achievements);
+    return res.json(result);
   } catch (error) {
     console.error('Error fetching achievements:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch achievements'
-    });
+    return res.status(500).json({ error: 'Failed to fetch achievements' });
   }
 });
 
 /**
- * Mark an achievement notification as read
+ * Get achievement by id
  */
-router.patch('/:id/read', authUtils.authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    const result = await db.select().from(achievements).where(eq(achievements.id, Number(id)));
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Achievement not found' });
     }
+    
+    return res.json(result[0]);
+  } catch (error) {
+    console.error(`Error fetching achievement ${id}:`, error);
+    return res.status(500).json({ error: 'Failed to fetch achievement' });
+  }
+});
 
-    const notificationId = parseInt(req.params.id);
-    if (isNaN(notificationId)) {
-      return res.status(400).json({ success: false, message: 'Invalid notification ID' });
-    }
+/**
+ * Get current user's achievements
+ */
+router.get('/user', async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  try {
+    const userId = req.user?.id;
+    
+    const result = await db.select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId))
+      .orderBy(desc(userAchievements.createdAt));
+    
+    return res.json(result);
+  } catch (error) {
+    console.error('Error fetching user achievements:', error);
+    return res.status(500).json({ error: 'Failed to fetch user achievements' });
+  }
+});
 
-    // Verify the notification belongs to this user
-    const [notification] = await db
-      .select()
-      .from(notifications)
+/**
+ * Get user achievements by user ID (admin only)
+ */
+router.get('/user/:userId', async (req: Request, res: Response) => {
+  if (!req.isAuthenticated() || !req.user?.isAdmin) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  
+  const { userId } = req.params;
+  
+  try {
+    const result = await db.select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, Number(userId)))
+      .orderBy(desc(userAchievements.createdAt));
+    
+    return res.json(result);
+  } catch (error) {
+    console.error(`Error fetching achievements for user ${userId}:`, error);
+    return res.status(500).json({ error: 'Failed to fetch user achievements' });
+  }
+});
+
+/**
+ * Mark achievement as read
+ */
+router.patch('/:id/read', async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { id } = req.params;
+  const userId = req.user?.id;
+  
+  try {
+    // Check if the achievement belongs to the user
+    const achievement = await db.select()
+      .from(userAchievements)
       .where(
         and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, req.user.id)
+          eq(userAchievements.id, Number(id)),
+          eq(userAchievements.userId, userId)
         )
       );
-
-    if (!notification) {
-      return res.status(404).json({ success: false, message: 'Notification not found' });
+    
+    if (achievement.length === 0) {
+      return res.status(404).json({ error: 'Achievement not found' });
     }
-
-    // Update the notification's status
-    await db
-      .update(notifications)
+    
+    // Update the achievement status
+    await db.update(userAchievements)
       .set({ 
         status: 'read',
         readAt: new Date()
       })
-      .where(eq(notifications.id, notificationId));
-
-    return res.json({
-      success: true,
-      message: 'Notification marked as read'
-    });
+      .where(eq(userAchievements.id, Number(id)));
+    
+    return res.json({ success: true });
   } catch (error) {
-    console.error('Error updating notification:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update notification'
-    });
+    console.error(`Error marking achievement ${id} as read:`, error);
+    return res.status(500).json({ error: 'Failed to update achievement' });
   }
 });
 
 /**
- * Manually check for new achievements (can be used after important user actions)
+ * Dismiss achievement
  */
-router.post('/check', authUtils.authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/dismiss', async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { id } = req.params;
+  const userId = req.user?.id;
+  
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    // Check if the achievement belongs to the user
+    const achievement = await db.select()
+      .from(userAchievements)
+      .where(
+        and(
+          eq(userAchievements.id, Number(id)),
+          eq(userAchievements.userId, userId)
+        )
+      );
+    
+    if (achievement.length === 0) {
+      return res.status(404).json({ error: 'Achievement not found' });
     }
+    
+    // Update the achievement status
+    await db.update(userAchievements)
+      .set({ status: 'dismissed' })
+      .where(eq(userAchievements.id, Number(id)));
+    
+    return res.json({ success: true });
+  } catch (error) {
+    console.error(`Error dismissing achievement ${id}:`, error);
+    return res.status(500).json({ error: 'Failed to update achievement' });
+  }
+});
 
-    const newAchievements = await schedulerService.checkUserAchievements(req.user.id);
-
+/**
+ * Manually run achievement check (admin only)
+ */
+router.post('/check', async (req: Request, res: Response) => {
+  if (!req.isAuthenticated() || !req.user?.isAdmin) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  
+  try {
+    const newAchievements = await achievementService.checkForNewAchievements();
+    const specialDayAchievements = await achievementService.checkForSpecialDays();
+    
     return res.json({
       success: true,
-      data: {
-        newAchievements,
-        count: newAchievements.length
-      }
+      newAchievements,
+      specialDayAchievements,
+      total: newAchievements + specialDayAchievements
     });
   } catch (error) {
-    console.error('Error checking achievements:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to check achievements'
-    });
+    console.error('Error running achievement check:', error);
+    return res.status(500).json({ error: 'Failed to run achievement check' });
   }
 });
 

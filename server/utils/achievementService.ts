@@ -1,514 +1,343 @@
-import { sql, eq, and, or, gte, lte, desc, count } from 'drizzle-orm';
 import { db } from '../db';
-import { 
-  users,
-  userActivity,
-  mockupRequests,
-  mockupEngagement,
-  userRetentionMessages,
-  notifications
-} from '@shared/schema';
-import { generateText, generateJson } from './xaiClient';
-import { sendEmail } from './emailService';
+import { eq, and, sql, desc, gte } from 'drizzle-orm';
+import { users, userAchievements, achievements, insertUserAchievementSchema } from '@shared/schema';
+import { grokApi } from '../grok';
 
 /**
- * Types of user achievements that can be tracked
+ * Achievement Service
+ * Handles checking and granting achievements to users
  */
-export type AchievementType = 
-  | 'first_mockup_created'
-  | 'first_mockup_viewed'
-  | 'profile_completed'
-  | 'account_anniversary'
-  | 'birthday'
-  | 'first_project_completed'
-  | 'five_mockups_created'
-  | 'ten_mockups_created'
-  | 'high_engagement'
-  | 'first_feedback_given';
 
-/**
- * Achievement metadata for notification generation
- */
-interface AchievementMetadata {
-  id: AchievementType;
-  title: string;
-  description: string;
-  congratsMessage: string;
-  icon?: string;
-  points?: number;
+// Check for new user achievements
+export async function checkForNewAchievements(): Promise<number> {
+  let newAchievementsCount = 0;
+
+  try {
+    // Get all achievements
+    const achievementDefinitions = await db.select().from(achievements);
+    
+    // Get users
+    const allUsers = await db.select().from(users);
+    
+    // Process each user
+    for (const user of allUsers) {
+      // Process each achievement type
+      for (const achievement of achievementDefinitions) {
+        // Check if user already has this achievement
+        const existing = await db.select().from(userAchievements)
+          .where(
+            and(
+              eq(userAchievements.userId, user.id),
+              eq(userAchievements.type, achievement.type)
+            )
+          );
+        
+        // Skip if already earned
+        if (existing.length > 0) {
+          continue;
+        }
+        
+        // Check achievement criteria
+        const achievementEarned = await checkAchievementCriteria(user, achievement);
+        
+        if (achievementEarned) {
+          // Award achievement with AI-generated personalized message
+          await awardAchievement(user, achievement);
+          newAchievementsCount++;
+        }
+      }
+    }
+    
+    return newAchievementsCount;
+  } catch (error) {
+    console.error('Error in checkForNewAchievements:', error);
+    return 0;
+  }
 }
 
-/**
- * User Achievement Service
- * Tracks, detects and rewards user achievements
- */
-export class AchievementService {
-  private static instance: AchievementService;
+// Check for special day achievements (birthdays, anniversaries)
+export async function checkForSpecialDays(): Promise<number> {
+  let specialDayAchievementsCount = 0;
   
-  // Achievement definitions with templates for notifications
-  private achievementTemplates: Record<AchievementType, AchievementMetadata> = {
-    first_mockup_created: {
-      id: 'first_mockup_created',
-      title: 'First Mockup Created',
-      description: 'You created your first website mockup!',
-      congratsMessage: 'Congratulations on creating your first website mockup! Your journey to an amazing website has begun.',
-      icon: '🎨',
-      points: 100
-    },
-    first_mockup_viewed: {
-      id: 'first_mockup_viewed',
-      title: 'First Mockup Viewed',
-      description: 'You viewed your first website mockup!',
-      congratsMessage: 'Great job checking out your first website mockup! We hope you enjoyed the design.',
-      icon: '👀',
-      points: 50
-    },
-    profile_completed: {
-      id: 'profile_completed',
-      title: 'Profile Completed',
-      description: 'You completed your user profile!',
-      congratsMessage: 'Thanks for completing your profile! This helps us personalize your experience.',
-      icon: '✅',
-      points: 75
-    },
-    account_anniversary: {
-      id: 'account_anniversary',
-      title: 'Account Anniversary',
-      description: 'Happy anniversary with Elevion!',
-      congratsMessage: 'Happy anniversary! Thank you for being with us for another year.',
-      icon: '🎂',
-      points: 150
-    },
-    birthday: {
-      id: 'birthday',
-      title: 'Birthday Celebration',
-      description: 'Happy birthday from Elevion!',
-      congratsMessage: 'Happy birthday! We hope you have a fantastic day!',
-      icon: '🎉',
-      points: 200
-    },
-    first_project_completed: {
-      id: 'first_project_completed',
-      title: 'First Project Completed',
-      description: 'You completed your first project!',
-      congratsMessage: 'Congratulations on completing your first project! We can\'t wait to see what you\'ll build next.',
-      icon: '🏆',
-      points: 250
-    },
-    five_mockups_created: {
-      id: 'five_mockups_created',
-      title: 'Five Mockups Created',
-      description: 'You\'ve created five mockups!',
-      congratsMessage: 'You\'ve created 5 mockups! You\'re becoming a design expert!',
-      icon: '⭐',
-      points: 300
-    },
-    ten_mockups_created: {
-      id: 'ten_mockups_created',
-      title: 'Ten Mockups Created',
-      description: 'You\'ve created ten mockups!',
-      congratsMessage: 'Wow! You\'ve created 10 mockups! You\'re a mockup master!',
-      icon: '🌟',
-      points: 500
-    },
-    high_engagement: {
-      id: 'high_engagement',
-      title: 'High Engagement',
-      description: 'You\'re a highly engaged user!',
-      congratsMessage: 'Your engagement with our platform is impressive! Thank you for your active participation.',
-      icon: '💯',
-      points: 350
-    },
-    first_feedback_given: {
-      id: 'first_feedback_given',
-      title: 'First Feedback Given',
-      description: 'You gave your first feedback!',
-      congratsMessage: 'Thank you for providing your first feedback! Your insights help us improve.',
-      icon: '💬',
-      points: 75
-    }
-  };
-
-  private constructor() {}
-
-  public static getInstance(): AchievementService {
-    if (!AchievementService.instance) {
-      AchievementService.instance = new AchievementService();
-    }
-    return AchievementService.instance;
-  }
-
-  /**
-   * Check for and process new user achievements
-   * @param userId The user ID to check for achievements
-   * @returns Array of detected achievements
-   */
-  async checkAchievements(userId: number): Promise<AchievementType[]> {
-    try {
-      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      if (!user || user.length === 0) return [];
-
-      const userRecord = user[0];
-      const achievementsToNotify: AchievementType[] = [];
-
-      // Check each achievement type
-      const checkFunctions: Array<() => Promise<AchievementType | null>> = [
-        () => this.checkFirstMockupCreated(userId),
-        () => this.checkFirstMockupViewed(userId),
-        () => this.checkProfileCompleted(userRecord),
-        () => this.checkAccountAnniversary(userRecord),
-        () => this.checkBirthday(userRecord),
-        () => this.checkFirstProjectCompleted(userId),
-        () => this.checkMockupMilestone(userId, 5),
-        () => this.checkMockupMilestone(userId, 10),
-        () => this.checkHighEngagement(userId),
-        () => this.checkFirstFeedbackGiven(userId)
-      ];
-
-      // Run all checks in parallel
-      const achievementResults = await Promise.all(checkFunctions.map(fn => fn()));
-      
-      // Filter out null results and send notifications for new achievements
-      for (const achievement of achievementResults) {
-        if (achievement) {
-          // Check if we've already notified the user about this achievement
-          const alreadyNotified = await this.hasAchievementBeenNotified(userId, achievement);
-          
-          if (!alreadyNotified) {
-            await this.sendAchievementNotification(userId, achievement);
-            achievementsToNotify.push(achievement);
-          }
-        }
-      }
-
-      return achievementsToNotify;
-    } catch (error) {
-      console.error(`Error checking achievements for user ${userId}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Checks if a user has been notified about an achievement already
-   */
-  private async hasAchievementBeenNotified(userId: number, achievementType: AchievementType): Promise<boolean> {
-    const existingNotifications = await db.select()
-      .from(notifications)
+  try {
+    // Get users with birthdays or anniversaries today
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+    const todayDay = today.getDate();
+    
+    // Find users with birthdays today (if they have a birthday set)
+    const birthdayUsers = await db.select()
+      .from(users)
       .where(
         and(
-          eq(notifications.userId, userId),
-          eq(notifications.type, 'achievement'),
-          sql`metadata->>'achievementType' = ${achievementType}`
+          sql`EXTRACT(MONTH FROM "birthdate") = ${todayMonth}`,
+          sql`EXTRACT(DAY FROM "birthdate") = ${todayDay}`
         )
-      )
-      .limit(1);
+      );
     
-    return existingNotifications.length > 0;
-  }
-
-  /**
-   * Sends an achievement notification to the user
-   */
-  private async sendAchievementNotification(userId: number, achievementType: AchievementType): Promise<void> {
-    const template = this.achievementTemplates[achievementType];
-    if (!template) return;
-
-    try {
-      // Create personalized message with XAI
-      const personalizedMessage = await this.generatePersonalizedAchievementMessage(userId, achievementType);
-      
-      // Create in-app notification
-      await db.insert(notifications).values({
-        userId,
-        type: 'achievement',
-        title: template.title,
-        content: personalizedMessage || template.congratsMessage,
-        status: 'unread',
-        metadata: {
-          achievementType,
-          icon: template.icon,
-          points: template.points,
-          timestamp: new Date().toISOString()
-        }
-      });
-      
-      // Get user email for sending email notification
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-      
-      if (user && user.email) {
-        // Send email notification
-        await sendEmail({
-          to: user.email,
-          from: process.env.EMAIL_FROM || 'info@elevion.dev',
-          subject: `Achievement Unlocked: ${template.title}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-              <h2 style="color: #3B5B9D;">Achievement Unlocked! ${template.icon || '🏆'}</h2>
-              <h3 style="color: #00D1D1;">${template.title}</h3>
-              <p style="font-size: 16px; line-height: 1.5;">${personalizedMessage || template.congratsMessage}</p>
-              <p style="font-size: 14px; margin-top: 30px; color: #666;">
-                Keep up the great work!<br>
-                The Elevion Team
-              </p>
-            </div>
-          `
-        });
-      }
-    } catch (error) {
-      console.error(`Error sending achievement notification for user ${userId}:`, error);
-    }
-  }
-
-  /**
-   * Generate a personalized achievement message using XAI
-   */
-  private async generatePersonalizedAchievementMessage(userId: number, achievementType: AchievementType): Promise<string | null> {
-    try {
-      const template = this.achievementTemplates[achievementType];
-      
-      // Get user data for personalization
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-      if (!user) return null;
-      
-      const firstName = user.firstName || user.username.split(' ')[0];
-      const businessType = user.businessType || "business";
-      
-      // Create prompt for XAI
-      const systemPrompt = `You are Elevion's user success assistant. You craft friendly, personalized celebration messages for user achievements.`;
-      
-      const prompt = `
-        Write a personalized congratulatory message for the following achievement:
-        - Achievement: ${template.title} (${template.description})
-        - User's first name: ${firstName}
-        - User's business type: ${businessType}
-        
-        Make the message friendly, upbeat, and specific to this particular achievement.
-        Keep it brief (3 sentences max) but authentic and engaging.
-        Avoid generic language and overly formal tone.
-        Don't use "Congratulations on..." at the start of every message.
-        Vary your message style.
-      `;
-      
-      // Call XAI API
-      const message = await generateText(prompt, systemPrompt, {
-        model: 'grok-2-1212',
-        temperature: 0.7,
-        max_tokens: 120
-      });
-      
-      return message;
-    } catch (error) {
-      console.error("Error generating personalized achievement message:", error);
-      return null;
-    }
-  }
-
-  /* Achievement detection methods */
-
-  /**
-   * Check if a user has created their first mockup
-   */
-  private async checkFirstMockupCreated(userId: number): Promise<AchievementType | null> {
-    const mockups = await db
-      .select({ count: count() })
-      .from(mockupRequests)
-      .where(eq(mockupRequests.userId, userId))
-      .limit(1);
+    // Find users with account anniversary today
+    const anniversaryUsers = await db.select()
+      .from(users)
+      .where(
+        and(
+          sql`EXTRACT(MONTH FROM "created_at") = ${todayMonth}`,
+          sql`EXTRACT(DAY FROM "created_at") = ${todayDay}`,
+          // Only include if it's at least the 1 year anniversary
+          sql`EXTRACT(YEAR FROM AGE(CURRENT_DATE, "created_at")) >= 1`
+        )
+      );
     
-    if (mockups.length > 0 && mockups[0].count === 1) {
-      return 'first_mockup_created';
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if a user has viewed their first mockup
-   */
-  private async checkFirstMockupViewed(userId: number): Promise<AchievementType | null> {
-    // First, find mockups created by this user
-    const userMockups = await db
-      .select()
-      .from(mockupRequests)
-      .where(eq(mockupRequests.userId, userId));
-    
-    if (userMockups.length === 0) return null;
-    
-    // Check if any of these mockups have been viewed
-    for (const mockup of userMockups) {
-      const [engagement] = await db
-        .select()
-        .from(mockupEngagement)
+    // Process birthday achievements
+    for (const user of birthdayUsers) {
+      // Check if already awarded birthday achievement this year
+      const currentYear = today.getFullYear();
+      const existingBirthday = await db.select()
+        .from(userAchievements)
         .where(
           and(
-            eq(mockupEngagement.mockupId, mockup.id),
-            gte(mockupEngagement.views, 1)
+            eq(userAchievements.userId, user.id),
+            eq(userAchievements.type, 'birthday'),
+            gte(userAchievements.createdAt, new Date(currentYear, 0, 1)) // Start of current year
           )
-        )
-        .limit(1);
+        );
       
-      if (engagement) {
-        return 'first_mockup_viewed';
-      }
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if a user has completed their profile
-   */
-  private async checkProfileCompleted(user: any): Promise<AchievementType | null> {
-    // Consider a profile complete if they have firstName, lastName, and businessType
-    if (user.firstName && user.lastName && user.businessType) {
-      return 'profile_completed';
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if today is the user's account anniversary
-   */
-  private async checkAccountAnniversary(user: any): Promise<AchievementType | null> {
-    if (!user.createdAt) return null;
-    
-    const today = new Date();
-    const createdAt = new Date(user.createdAt);
-    
-    // Check if it's the anniversary of account creation (same month and day)
-    if (today.getMonth() === createdAt.getMonth() && 
-        today.getDate() === createdAt.getDate() && 
-        today.getFullYear() > createdAt.getFullYear()) {
-      return 'account_anniversary';
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if today is the user's birthday
-   * Note: Would need a birthdate field in the user model
-   */
-  private async checkBirthday(user: any): Promise<AchievementType | null> {
-    // Check if user has birthdate information
-    // This would require a schema change - for now we'll check if it's in the preferences
-    if (user.preferences) {
-      try {
-        const preferences = typeof user.preferences === 'string' 
-          ? JSON.parse(user.preferences) 
-          : user.preferences;
+      if (existingBirthday.length === 0) {
+        // Find or create birthday achievement type
+        let birthdayAchievement = await db.select()
+          .from(achievements)
+          .where(eq(achievements.type, 'birthday'))
+          .then(rows => rows[0]);
         
-        if (preferences.birthdate) {
-          const birthdate = new Date(preferences.birthdate);
-          const today = new Date();
+        if (!birthdayAchievement) {
+          // Create birthday achievement definition if it doesn't exist
+          const [newAchievement] = await db.insert(achievements)
+            .values({
+              type: 'birthday',
+              title: 'Happy Birthday!',
+              description: 'Celebrating another year with you',
+              icon: 'cake',
+              points: 25,
+              criteria: { type: 'special_day', day: 'birthday' }
+            })
+            .returning();
           
-          // Check if today is the user's birthday (same month and day)
-          if (today.getMonth() === birthdate.getMonth() && 
-              today.getDate() === birthdate.getDate()) {
-            return 'birthday';
-          }
+          birthdayAchievement = newAchievement;
         }
-      } catch (e) {
-        console.error("Error parsing user preferences:", e);
+        
+        // Award achievement with personalized message
+        await awardAchievement(user, birthdayAchievement);
+        specialDayAchievementsCount++;
       }
     }
     
-    return null;
-  }
-  
-  /**
-   * Check if a user has completed their first project
-   */
-  private async checkFirstProjectCompleted(userId: number): Promise<AchievementType | null> {
-    const completedMockups = await db
-      .select({ count: count() })
-      .from(mockupRequests)
-      .where(
-        and(
-          eq(mockupRequests.userId, userId),
-          eq(mockupRequests.status, 'completed')
-        )
-      );
-    
-    if (completedMockups.length > 0 && completedMockups[0].count >= 1) {
-      return 'first_project_completed';
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if a user has created a specific number of mockups
-   */
-  private async checkMockupMilestone(userId: number, milestone: number): Promise<AchievementType | null> {
-    const mockupCount = await db
-      .select({ count: count() })
-      .from(mockupRequests)
-      .where(eq(mockupRequests.userId, userId));
-    
-    if (mockupCount.length > 0) {
-      const count = Number(mockupCount[0].count);
+    // Process anniversary achievements
+    for (const user of anniversaryUsers) {
+      // Check how many years as a member
+      const joinDate = new Date(user.createdAt);
+      const years = today.getFullYear() - joinDate.getFullYear();
       
-      if (milestone === 5 && count === 5) {
-        return 'five_mockups_created';
-      } else if (milestone === 10 && count === 10) {
-        return 'ten_mockups_created';
+      // Check if already awarded anniversary achievement this year
+      const currentYear = today.getFullYear();
+      const existingAnniversary = await db.select()
+        .from(userAchievements)
+        .where(
+          and(
+            eq(userAchievements.userId, user.id),
+            eq(userAchievements.type, 'anniversary'),
+            gte(userAchievements.createdAt, new Date(currentYear, 0, 1)) // Start of current year
+          )
+        );
+      
+      if (existingAnniversary.length === 0) {
+        // Find or create anniversary achievement type
+        let anniversaryAchievement = await db.select()
+          .from(achievements)
+          .where(eq(achievements.type, 'anniversary'))
+          .then(rows => rows[0]);
+        
+        if (!anniversaryAchievement) {
+          // Create anniversary achievement definition if it doesn't exist
+          const [newAchievement] = await db.insert(achievements)
+            .values({
+              type: 'anniversary',
+              title: 'Membership Anniversary',
+              description: 'Celebrating your continued membership',
+              icon: 'sparkles',
+              points: 50,
+              criteria: { type: 'special_day', day: 'anniversary' }
+            })
+            .returning();
+          
+          anniversaryAchievement = newAchievement;
+        }
+        
+        // Award achievement with personalized message
+        await awardAchievement(user, anniversaryAchievement, { years });
+        specialDayAchievementsCount++;
       }
     }
     
-    return null;
-  }
-  
-  /**
-   * Check if a user has high engagement based on activity
-   */
-  private async checkHighEngagement(userId: number): Promise<AchievementType | null> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    // Count user activities in the last 30 days
-    const activityCount = await db
-      .select({ count: count() })
-      .from(userActivity)
-      .where(
-        and(
-          eq(userActivity.userId, userId),
-          gte(userActivity.timestamp, thirtyDaysAgo)
-        )
-      );
-    
-    // Consider high engagement if they have more than 20 activities in 30 days
-    if (activityCount.length > 0 && activityCount[0].count > 20) {
-      return 'high_engagement';
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if a user has given their first feedback
-   */
-  private async checkFirstFeedbackGiven(userId: number): Promise<AchievementType | null> {
-    // Check if user has given feedback on any mockup
-    const feedback = await db
-      .select()
-      .from(mockupEngagement)
-      .innerJoin(mockupRequests, eq(mockupEngagement.mockupId, mockupRequests.id))
-      .where(
-        and(
-          eq(mockupRequests.userId, userId),
-          sql`${mockupEngagement.feedback} IS NOT NULL`
-        )
-      )
-      .limit(1);
-    
-    if (feedback.length > 0) {
-      return 'first_feedback_given';
-    }
-    
-    return null;
+    return specialDayAchievementsCount;
+  } catch (error) {
+    console.error('Error in checkForSpecialDays:', error);
+    return 0;
   }
 }
 
-export const achievementService = AchievementService.getInstance();
+// Check achievement criteria for a specific user
+async function checkAchievementCriteria(user: any, achievement: any): Promise<boolean> {
+  const criteria = achievement.criteria;
+  
+  if (!criteria || typeof criteria !== 'object') {
+    return false;
+  }
+  
+  try {
+    switch (criteria.type) {
+      case 'profile_completion':
+        // Check if profile is complete
+        return user.profileCompleted || (
+          user.firstName && 
+          user.lastName && 
+          user.email &&
+          user.bio &&
+          user.profileImage
+        );
+        
+      case 'mockup_viewed':
+        // Check if user has viewed any mockups
+        const mockupViews = await db.execute(
+          sql`SELECT COUNT(*) FROM mockup_engagement WHERE user_id = ${user.id} AND action = 'view'`
+        );
+        return mockupViews[0]?.count > 0;
+        
+      case 'first_payment':
+        // Check if user has made any payments
+        const payments = await db.execute(
+          sql`SELECT COUNT(*) FROM marketplace_orders WHERE user_id = ${user.id} AND status = 'completed'`
+        );
+        return payments[0]?.count > 0;
+        
+      case 'high_engagement':
+        // Check for high engagement metrics
+        const engagement = await db.execute(
+          sql`SELECT COUNT(*) FROM website_engagement WHERE user_id = ${user.id}`
+        );
+        return Number(engagement[0]?.count) >= 50;
+        
+      case 'feedback_provided':
+        // Check if user has provided feedback
+        const feedback = await db.execute(
+          sql`SELECT COUNT(*) FROM feedback WHERE user_id = ${user.id}`
+        );
+        return feedback[0]?.count > 0;
+        
+      case 'referrals':
+        // Check if user has referred others
+        return user.referralCount >= criteria.count;
+        
+      default:
+        return false;
+    }
+  } catch (error) {
+    console.error(`Error checking achievement criteria for type ${criteria.type}:`, error);
+    return false;
+  }
+}
+
+// Award achievement to user with personalized message
+export async function awardAchievement(user: any, achievement: any, extraData: any = {}): Promise<boolean> {
+  try {
+    // Generate personalized message using Grok
+    let personalizedContent = '';
+    try {
+      // Use Grok to generate a personalized message
+      const grokPrompt = getPersonalizedMessagePrompt(user, achievement, extraData);
+      
+      const response = await grokApi.generateText(grokPrompt);
+      personalizedContent = response || '';
+      
+      if (!personalizedContent) {
+        // Fallback content if Grok fails
+        personalizedContent = `Congratulations on earning the ${achievement.title} achievement! You've earned ${achievement.points} points.`;
+      }
+    } catch (error) {
+      console.error('Error generating personalized achievement message:', error);
+      personalizedContent = `Congratulations on earning the ${achievement.title} achievement! You've earned ${achievement.points} points.`;
+    }
+    
+    // Create user achievement record
+    const userAchievement = insertUserAchievementSchema.parse({
+      userId: user.id,
+      type: achievement.type,
+      title: achievement.title,
+      content: personalizedContent,
+      status: 'unread',
+      metadata: {
+        achievementType: achievement.type,
+        icon: achievement.icon || 'award',
+        points: achievement.points,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+    // Insert into database
+    await db.insert(userAchievements).values(userAchievement);
+    
+    console.log(`Achievement awarded: ${achievement.type} to user ${user.id}`);
+    return true;
+  } catch (error) {
+    console.error('Error awarding achievement:', error);
+    return false;
+  }
+}
+
+// Get prompt for generating personalized achievement message
+function getPersonalizedMessagePrompt(user: any, achievement: any, extraData: any = {}): string {
+  const userName = user.firstName || user.username || 'valued user';
+  
+  // Base prompt with user details
+  let prompt = `Write a personalized, friendly, and engaging achievement notification message for ${userName}. `;
+  
+  // Add achievement-specific context
+  prompt += `They just earned the "${achievement.title}" achievement on Elevion, a web development platform. `;
+  prompt += `The achievement description is: "${achievement.description}". `;
+  prompt += `They received ${achievement.points} points for this achievement. `;
+  
+  // Add extra context based on achievement type
+  switch (achievement.type) {
+    case 'birthday':
+      prompt += `This is a birthday achievement to celebrate their special day. Make it warm and celebratory. `;
+      break;
+      
+    case 'anniversary':
+      const years = extraData.years || 'multiple';
+      prompt += `This celebrates their ${years} year(s) as a member of our platform. Express appreciation for their loyalty. `;
+      break;
+      
+    case 'profile_completion':
+      prompt += `This is for completing their profile with all required information. Recognize their commitment to our community. `;
+      break;
+      
+    case 'mockup_viewed':
+      prompt += `This recognizes their first time viewing a website mockup. Highlight the value of exploring our design options. `;
+      break;
+      
+    case 'first_payment':
+      prompt += `This celebrates their first purchase or payment on our platform. Express gratitude for their business. `;
+      break;
+      
+    case 'high_engagement':
+      prompt += `This achievement recognizes their high level of engagement with our platform. Acknowledge their active participation. `;
+      break;
+      
+    case 'feedback_provided':
+      prompt += `This is for providing valuable feedback to help improve our platform. Thank them for their input. `;
+      break;
+  }
+  
+  // Final instructions for formatting
+  prompt += `Keep the message concise (max 3-4 sentences), positive, motivational, and personalized. Don't use generic expressions.`;
+  
+  return prompt;
+}
