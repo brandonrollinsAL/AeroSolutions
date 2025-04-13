@@ -40,6 +40,7 @@ import DesignTools from "@/pages/DesignTools";
 import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
 import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
 import SocialMediaPage from "@/pages/SocialMediaPage";
+import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();

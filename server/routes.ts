@@ -40,6 +40,7 @@ import authRouter from './routes/auth';
 import userRouter from './routes/users';
 import achievementsRouter from './routes/achievements';
 import socialMediaRouter from './routes/socialMedia';
+import marketingCampaignsRouter from './routes/marketingCampaigns';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
@@ -160,6 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/retention', retentionRouter);
   app.use('/api/achievements', achievementsRouter);
   app.use('/api/social', socialMediaRouter);
+  app.use('/api/marketing', marketingCampaignsRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

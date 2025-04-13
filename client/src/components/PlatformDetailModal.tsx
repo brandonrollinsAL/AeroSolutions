@@ -105,6 +105,11 @@ const getPlatformRecommendations = (platformName: string) => {
 };
 
 export function PlatformDetailModal({ platform, children }: PlatformDetailModalProps) {
+  // Add null check to prevent errors
+  if (!platform) {
+    return null;
+  }
+  
   const characterLimit = platform.apiConfig?.characterLimit 
     ? `${platform.apiConfig.characterLimit} characters` 
     : 'No specific limit';

@@ -140,3 +140,6 @@ export function SocialShareButtons({
     </div>
   );
 }
+
+// Add default export to maintain compatibility with components that import this
+export default SocialShareButtons;
