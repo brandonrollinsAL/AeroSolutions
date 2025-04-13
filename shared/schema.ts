@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, foreignKey, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, foreignKey, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -450,6 +450,35 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
 export type ArticleEngagement = typeof articleEngagement.$inferSelect;
 export type InsertArticleEngagement = z.infer<typeof insertArticleEngagementSchema>;
+
+// Generated content schema for blog posts, industry insights, and email templates
+export const contents = pgTable("contents", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // blog_post, industry_insight, email_template
+  status: text("status").notNull().default("draft"), // draft, published, archived
+  wordCount: integer("word_count").notNull().default(0),
+  tags: json("tags").$type<string[]>().default([]),
+  authorId: integer("author_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  publishedAt: timestamp("published_at"),
+  featuredImage: text("featured_image"),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoKeywords: text("seo_keywords"),
+});
+
+export const insertContentSchema = createInsertSchema(contents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  publishedAt: true,
+});
+
+export type InsertContent = z.infer<typeof insertContentSchema>;
+export type Content = typeof contents.$inferSelect;
 
 // Posts schema for feed content
 export const posts = pgTable("posts", {

@@ -1,177 +1,264 @@
-import { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, { useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { useQuery } from '@tanstack/react-query';
+import ContentGenerator from '@/components/ContentGenerator';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import MainLayout from '@/layouts/MainLayout';
-import BusinessContentFeed from '@/components/BusinessContentFeed';
-import TrendingTopics from '@/components/TrendingTopics';
-import PublishContentForm from '@/components/PublishContentForm';
-import SEOHead from '@/components/SEOHead';
-import { Newspaper, TrendingUp, Lightbulb, Zap, FileText } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import {
+  Search,
+  Filter,
+  FileText,
+  Mail,
+  Lightbulb,
+  MoreVertical,
+  Download,
+  Copy,
+  Pen,
+  Trash2,
+  Eye,
+} from 'lucide-react';
 
-const ContentHubPage = () => {
-  const [activeTab, setActiveTab] = useState('insights');
-  const [publishedArticles, setPublishedArticles] = useState<any[]>([]);
-  
-  const handlePublishedArticle = (article: any) => {
-    setPublishedArticles((prev) => [article, ...prev]);
+// Content item type
+interface ContentItem {
+  id: string;
+  title: string;
+  type: 'blog_post' | 'industry_insight' | 'email_template';
+  createdAt: string;
+  updatedAt: string;
+  wordCount: number;
+  status: 'draft' | 'published' | 'archived';
+}
+
+const ContentHubPage: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('generator');
+
+  // Fetch content list
+  const { data: contentList, isLoading } = useQuery<ContentItem[]>({
+    queryKey: ['/api/content/list'],
+    enabled: activeTab === 'library',
+  });
+
+  // Get content type icon
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'blog_post':
+        return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'industry_insight':
+        return <Lightbulb className="h-4 w-4 text-amber-600" />;
+      case 'email_template':
+        return <Mail className="h-4 w-4 text-green-600" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
   };
-  
+
+  // Format content type for display
+  const formatContentType = (type: string): string => {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  // Filter content based on search query
+  const filteredContent = contentList?.filter(item => 
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    formatContentType(item.type).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <MainLayout>
-      <SEOHead
-        title="Content Hub | Elevion - Smart Business Content"
-        description="Access AI-powered business insights, trending topics, and personalized content recommendations for small business owners."
-        keywords="business content, AI insights, trending topics, small business, content recommendations"
-      />
-      
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
-              Elevion Content Hub
-            </h1>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-              Access real-time business insights, trending topics, and content recommendations powered by advanced AI analysis.
-            </p>
-          </div>
-          
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <Tabs 
-                defaultValue="insights" 
-                value={activeTab} 
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className="grid grid-cols-4 mb-8">
-                  <TabsTrigger value="insights" className="flex items-center gap-2">
-                    <Newspaper className="h-4 w-4" />
-                    <span>Business Insights</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="trending" className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Trending Topics</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="publish" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span>Publish Content</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="recommendations" className="flex items-center gap-2">
-                    <Lightbulb className="h-4 w-4" />
-                    <span>Recommendations</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="insights" className="mt-0">
-                  <BusinessContentFeed title="Latest Business Insights" />
-                </TabsContent>
-                
-                <TabsContent value="trending" className="mt-0">
-                  <TrendingTopics />
-                </TabsContent>
-                
-                <TabsContent value="publish" className="mt-0">
-                  <PublishContentForm onPublish={handlePublishedArticle} />
-                </TabsContent>
-                
-                <TabsContent value="recommendations" className="mt-0">
-                  <div className="text-center py-12">
-                    <Zap className="h-16 w-16 mx-auto text-primary mb-4" />
-                    <h3 className="text-2xl font-bold mb-3">Personalized Recommendations</h3>
-                    <p className="text-slate-600 mb-6 max-w-lg mx-auto">
-                      Get content tailored to your specific business needs. Sign in to view your personalized recommendations.
-                    </p>
-                    <Button size="lg" className="gap-2">
-                      <Lightbulb className="h-4 w-4" />
-                      Sign in for Recommendations
-                    </Button>
+    <div className="container mx-auto py-8">
+      <Helmet>
+        <title>Content Hub | Elevion</title>
+        <meta name="description" content="Generate and manage website content with AI assistance" />
+      </Helmet>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight font-poppins">Content Hub</h1>
+          <p className="text-gray-500 mt-1 font-lato">
+            Generate, manage, and optimize your website content
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList>
+          <TabsTrigger value="generator">AI Content Generator</TabsTrigger>
+          <TabsTrigger value="library">Content Library</TabsTrigger>
+          <TabsTrigger value="analytics">Content Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="generator" className="mt-6">
+          <ContentGenerator />
+        </TabsContent>
+
+        <TabsContent value="library" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle>Content Library</CardTitle>
+                  <CardDescription>
+                    Manage your generated content
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="relative flex-grow sm:flex-grow-0">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="search"
+                      placeholder="Search content..."
+                      className="pl-9 w-full sm:w-auto min-w-[200px]"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
-                </TabsContent>
-              </Tabs>
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                </div>
+              ) : filteredContent && filteredContent.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Words</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredContent.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.title}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {getContentTypeIcon(item.type)}
+                              <span>{formatContentType(item.type)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{item.wordCount}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                item.status === 'published'
+                                  ? 'default'
+                                  : item.status === 'draft'
+                                  ? 'outline'
+                                  : 'secondary'
+                              }
+                            >
+                              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Eye className="h-4 w-4 mr-2" /> View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Pen className="h-4 w-4 mr-2" /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Copy className="h-4 w-4 mr-2" /> Copy
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Download className="h-4 w-4 mr-2" /> Download
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600">
+                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No content found</h3>
+                  <p className="text-gray-500 mb-4">
+                    {searchQuery
+                      ? `No content matching "${searchQuery}"`
+                      : "You haven't created any content yet"}
+                  </p>
+                  <Button onClick={() => setActiveTab('generator')}>
+                    Generate New Content
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
-          
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Newspaper className="h-5 w-5 text-primary" />
-                  Business Insights
-                </CardTitle>
-                <CardDescription>
-                  AI-filtered content from various sources
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-slate-600">
-                <p>Our AI analyzes and filters content to bring you the most relevant business insights, filtering out noise and highlighting what matters.</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Trending Topics
-                </CardTitle>
-                <CardDescription>
-                  Generate topics based on keywords
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-slate-600">
-                <p>Get ahead of the curve with AI-generated trending topics tailored to your industry and interests. Perfect for planning your content strategy.</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Publish Content
-                </CardTitle>
-                <CardDescription>
-                  Generate full articles from brief notes
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-slate-600">
-                <p>Transform your ideas, bullet points, or rough drafts into polished blog articles using our AI content expansion and publishing tools.</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                  Smart Recommendations
-                </CardTitle>
-                <CardDescription>
-                  Personalized content for your business
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-slate-600">
-                <p>Our recommendation engine analyzes your preferences and behavior to suggest content that aligns with your business goals and interests.</p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold mb-2">Unlock the Full Power of AI Content</h3>
-                  <p className="text-slate-600">
-                    Upgrade to our premium plan to access unlimited content generation, advanced topic research, and personalized business recommendations.
-                  </p>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Analytics</CardTitle>
+              <CardDescription>
+                Track performance and engagement of your content
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <div className="bg-blue-50 p-4 rounded-md inline-block mb-4">
+                  <span className="text-blue-600">Coming soon!</span>
                 </div>
-                <Button size="lg" className="whitespace-nowrap">
-                  Upgrade Now
-                </Button>
+                <h3 className="text-lg font-medium mb-2">Analytics Dashboard</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  Content analytics will be available in the next update.
+                  Track engagement, readability scores, and SEO performance.
+                </p>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </MainLayout>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
