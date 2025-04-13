@@ -14,6 +14,10 @@ import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
 import quoteRouter from './routes/quote';
+import debugRouter from './routes/debug';
+import contentRouter from './routes/content';
+import uxRouter from './routes/ux';
+import intelligenceRouter from './routes/intelligence';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
