@@ -590,4 +590,139 @@ marketplaceRouter.post('/suggest-listing', async (req: Request, res: Response) =
   }
 });
 
+/**
+ * Suggestion 20: Auto-Suggestions for Marketing Strategies
+ * Suggest marketing strategies for small businesses based on their industry
+ */
+marketplaceRouter.get(
+  '/suggest-marketing/:userId',
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      // Create cache key for this user's marketing strategies
+      const cacheKey = `marketing_strategies_${userId}`;
+      
+      // Check cache first for faster response times
+      const cachedResult = recommendationCache.get(cacheKey);
+      if (cachedResult) {
+        console.log(`[Cache Hit] Returning cached marketing strategies for user ${userId}`);
+        return res.json(cachedResult);
+      }
+      
+      // Get user from database
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.id, parseInt(userId)));
+      
+      // Parse preferences or use default
+      const preferences = user?.preferences ? JSON.parse(user.preferences) : null;
+      const businessType = preferences?.businessType || preferences?.industry || 'small business';
+      
+      // Generate marketing strategies using grok-3 for more comprehensive responses
+      const response = await grokApi.generateJson<{
+        strategies: {
+          title: string;
+          description: string;
+          estimatedCost: string;
+          timeToImplement: string;
+          difficulty: 'Easy' | 'Medium' | 'Hard';
+          potentialROI: 'Low' | 'Medium' | 'High';
+        }[];
+        industry: string;
+        overview: string;
+      }>(
+        `Based on a ${businessType} business, suggest 5 effective marketing strategies that would help grow their customer base and increase sales.
+        For each strategy, provide:
+        1. A clear title
+        2. A concise description (2-3 sentences)
+        3. Estimated cost range
+        4. Time to implement
+        5. Difficulty level (Easy/Medium/Hard)
+        6. Potential ROI (Low/Medium/High)
+        
+        Also include an "overview" field with general marketing advice for this specific business type.`,
+        `You are a marketing expert for Elevion, a web development company. Generate a JSON object with:
+        1. "strategies" array containing objects with title, description, estimatedCost, timeToImplement, difficulty, and potentialROI fields.
+        2. "industry" string showing what business type these strategies are for.
+        3. "overview" string with a brief paragraph of general marketing advice for this industry.`
+      );
+      
+      // Create the result
+      const result = {
+        success: true,
+        userId,
+        businessType,
+        marketingStrategies: response,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Cache the result
+      recommendationCache.set(cacheKey, result);
+      
+      return res.json(result);
+    } catch (error: any) {
+      console.error('Marketing strategy suggestion failed:', error);
+      
+      // Provide fallback strategies to ensure UI always has content
+      const fallbackStrategies = {
+        strategies: [
+          {
+            title: "Content Marketing Campaign",
+            description: "Create valuable blog posts, videos, and guides targeted at your industry audience. Establishes your business as an authority and drives organic traffic.",
+            estimatedCost: "$500-$2,000/month",
+            timeToImplement: "1-3 months",
+            difficulty: "Medium",
+            potentialROI: "High"
+          },
+          {
+            title: "Local SEO Optimization",
+            description: "Optimize your Google Business profile and website for local search. Makes your business more visible to nearby customers searching for your services.",
+            estimatedCost: "$300-$1,000/month",
+            timeToImplement: "1-2 months",
+            difficulty: "Easy",
+            potentialROI: "Medium"
+          },
+          {
+            title: "Email Marketing Automation",
+            description: "Set up automated email sequences for nurturing leads and maintaining customer relationships. Helps convert prospects and encourages repeat business.",
+            estimatedCost: "$200-$500/month",
+            timeToImplement: "2-4 weeks",
+            difficulty: "Medium",
+            potentialROI: "High"
+          },
+          {
+            title: "Social Media Advertising",
+            description: "Run targeted ad campaigns on platforms where your audience is most active. Reaches potential customers with precise demographic and interest targeting.",
+            estimatedCost: "$500-$2,000/month",
+            timeToImplement: "1-2 weeks",
+            difficulty: "Medium",
+            potentialROI: "Medium"
+          },
+          {
+            title: "Referral Program",
+            description: "Implement a system that rewards existing customers for referring new business. Leverages word-of-mouth marketing through incentives.",
+            estimatedCost: "$300-$1,000 to set up + rewards",
+            timeToImplement: "2-4 weeks",
+            difficulty: "Easy",
+            potentialROI: "High"
+          }
+        ],
+        industry: "small business",
+        overview: "For small businesses, the most effective marketing strategies focus on targeted local efforts, building strong customer relationships, and maximizing return on minimal investment. Digital marketing offers the best balance of affordability and reach, while strategic networking helps establish your local presence."
+      };
+      
+      return res.json({
+        success: false,
+        userId,
+        businessType: "small business",
+        marketingStrategies: fallbackStrategies,
+        timestamp: new Date().toISOString(),
+        fallback: true,
+        error: error.message
+      });
+    }
+  }
+);
+
 export default marketplaceRouter;
