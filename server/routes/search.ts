@@ -1,135 +1,125 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { eq, ilike, or, desc } from 'drizzle-orm';
-import { grokApi } from '../grok';
+import { param } from 'express-validator';
+import { validate } from '../utils/validation';
 import { authenticate } from '../utils/auth';
 import { storage } from '../storage';
+import { grokApi } from '../grok';
 import NodeCache from 'node-cache';
-import { posts, marketplaceItems, users } from '@shared/schema';
+import { db } from '../db';
+import { SQL, and, asc, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 const searchRouter = Router();
-const searchCache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // 10 minute cache
 
-// Search endpoint for general site content
-searchRouter.get('/content/:query', async (req: Request, res: Response) => {
-  try {
-    const { query } = req.params;
-    const cacheKey = `content_search_${query}`;
-    
-    // Check cache first
-    const cachedResults = searchCache.get(cacheKey);
-    if (cachedResults) {
-      return res.status(200).json({
-        success: true,
-        data: cachedResults,
-        cached: true
-      });
-    }
-    
-    // Search in posts (content, title)
-    const postResults = await db.select()
-      .from(posts)
-      .where(or(
-        ilike(posts.title, `%${query}%`),
-        ilike(posts.content, `%${query}%`)
-      ))
-      .orderBy(desc(posts.createdAt))
-      .limit(10);
-    
-    // Search in marketplace items (name, description)
-    const marketplaceResults = await db.select()
-      .from(marketplaceItems)
-      .where(or(
-        ilike(marketplaceItems.name, `%${query}%`),
-        ilike(marketplaceItems.description, `%${query}%`),
-        ilike(marketplaceItems.category, `%${query}%`)
-      ))
-      .limit(10);
-    
-    // Combine raw search results
-    const rawResults = {
-      posts: postResults,
-      marketplace: marketplaceResults
-    };
-    
-    // Format data for AI ranking
-    const searchData = {
-      posts: postResults.map(p => ({
-        id: p.id,
-        type: 'post',
-        title: p.title,
-        content: p.content?.substring(0, 200) + '...',
-      })),
-      marketplace: marketplaceResults.map(m => ({
-        id: m.id,
-        type: 'marketplace',
-        title: m.name,
-        content: m.description,
-        category: m.category
-      }))
-    };
-    
-    // Combine all items for ranking
-    const allItems = [
-      ...searchData.posts,
-      ...searchData.marketplace
-    ];
-    
-    if (allItems.length === 0) {
-      // No results found
-      const emptyResults = {
-        ranked_results: [],
-        suggestions: ["Try using more general keywords", "Check for spelling errors"],
-        query_analyzed: query
-      };
-      
-      // Cache empty results for a shorter time
-      searchCache.set(cacheKey, emptyResults, 300); // 5 minute cache for empty results
-      
-      return res.status(200).json({
-        success: true,
-        data: emptyResults
-      });
-    }
-    
-    // Use xAI to analyze and rank search results
-    const prompt = `Analyze and rank these search results for relevance to the query "${query}". 
-    Each item has an id, type, title, and content.
-    
-    ${JSON.stringify(allItems, null, 2)}
-    
-    Return a JSON response with:
-    1. ranked_results: The items ranked by relevance, including their id, type, title, and relevance_score (0-1)
-    2. suggestions: 2-3 related search terms the user might try
-    3. query_analyzed: Analysis of the search query
-    
-    Only include items that are actually relevant to the query.`;
-    
-    const response = await grokApi.generateJson(prompt);
-    
-    // Cache the results
-    searchCache.set(cacheKey, response);
-    
-    return res.status(200).json({
-      success: true,
-      data: response
-    });
-  } catch (error: any) {
-    console.error('Search failed:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Search failed',
-      error: error.message,
-      fallback: {
-        ranked_results: [],
-        suggestions: ["Try again later", "Contact support if this persists"],
-        query_analyzed: "Error processing query"
-      }
-    });
-  }
+// Create a cache to improve performance and reduce AI API calls
+const searchCache = new NodeCache({ 
+  stdTTL: 1800, // 30 minutes
+  checkperiod: 300, // 5 minutes
+  maxKeys: 100 
 });
 
-// AI-powered feature suggestions based on user's business type
+// Content search endpoint with AI-enhanced results
+searchRouter.get('/content/:query', 
+  validate([
+    param('query')
+      .isString()
+      .notEmpty()
+      .withMessage('Search query is required')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Search query must be between 2 and 100 characters')
+      .trim()
+  ]), 
+  async (req: Request, res: Response) => {
+    try {
+      const { query } = req.params;
+      
+      // Cache key based on the query
+      const cacheKey = `search_${query.toLowerCase()}`;
+      
+      // Check cache first
+      const cachedResults = searchCache.get(cacheKey);
+      if (cachedResults) {
+        console.log(`Returning cached search results for: "${query}"`);
+        return res.status(200).json({
+          success: true,
+          data: cachedResults,
+          cached: true
+        });
+      }
+      
+      console.log(`Performing search for: "${query}"`);
+      
+      // First, get basic search results from DB using SQL search
+      const basicResults = await getBasicSearchResults(query);
+      
+      if (basicResults.length === 0) {
+        // If no basic results, generate AI-enhanced search response
+        try {
+          const enhancedResults = await enhanceSearchResultsWithAI(query, []);
+          
+          // Cache the results
+          searchCache.set(cacheKey, enhancedResults);
+          
+          return res.status(200).json({
+            success: true,
+            data: enhancedResults,
+            enhanced: true
+          });
+        } catch (aiError) {
+          console.error("AI search enhancement failed:", aiError);
+          
+          // Return empty results with suggestions
+          const fallbackResponse = {
+            ranked_results: [],
+            suggestions: generateFallbackSuggestions(query),
+            query_analyzed: query
+          };
+          
+          return res.status(200).json({
+            success: true,
+            data: fallbackResponse,
+            fallback: true
+          });
+        }
+      }
+      
+      // Enhance results with AI if available
+      let finalResults;
+      try {
+        // Use xAI (Grok) to enhance the search results
+        finalResults = await enhanceSearchResultsWithAI(query, basicResults);
+      } catch (aiError) {
+        console.error("AI search enhancement failed:", aiError);
+        
+        // Fallback to basic relevance sorting and suggestions
+        finalResults = {
+          ranked_results: basicResults.slice(0, 10).map(result => ({
+            ...result,
+            relevance_score: 0.7 // Default relevance score
+          })),
+          suggestions: generateFallbackSuggestions(query),
+          query_analyzed: query
+        };
+      }
+      
+      // Cache the results
+      searchCache.set(cacheKey, finalResults);
+      
+      return res.status(200).json({
+        success: true,
+        data: finalResults
+      });
+    } catch (error) {
+      console.error("Search error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error performing search",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }
+);
+
+// Suggest features based on user's business type - authenticated route
 searchRouter.get('/suggest-features/:userId', authenticate, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -154,57 +144,212 @@ searchRouter.get('/suggest-features/:userId', authenticate, async (req: Request,
       });
     }
     
-    // Get user preferences or use defaults
+    // Get user business type from preferences or use default
     const preferences = user.preferences ? JSON.parse(user.preferences) : {};
     const businessType = preferences.businessType || 'small business';
-    const industry = preferences.industry || 'general';
-    const size = preferences.size || 'small';
-    const goals = preferences.goals || ['online presence', 'customer engagement'];
     
-    const prompt = `Suggest website features for a ${size} ${businessType} in the ${industry} industry.
-    Their business goals include: ${goals.join(', ')}
-    
+    // Use xAI to suggest website features based on business type
+    const prompt = `Suggest website features for a ${businessType}. 
     Return a JSON object with:
-    1. essential_features: Array of must-have features with name, description, and priority (1-5)
-    2. recommended_features: Array of recommended features with name, description, and priority (1-5)
-    3. innovative_features: Array of innovative/differentiating features with name, description
-    4. industry_specific: Industry-specific recommendations
-    5. budget_considerations: Budget considerations for implementing these features
+    1. essential_features: Array of must-have website features with name, description, and benefit
+    2. recommended_features: Array of recommended features with name, description, and benefit
+    3. innovative_features: Array of innovative/differentiating features with name, description, and benefit
+    4. budget_estimate: Rough estimate of costs for implementing these features
     `;
     
-    const response = await grokApi.generateJson(prompt);
-    
-    // Cache the results
-    searchCache.set(cacheKey, response, 3600); // 1 hour cache
-    
-    return res.status(200).json({
-      success: true,
-      data: response
-    });
-  } catch (error: any) {
+    try {
+      // Make the AI call with a timeout
+      const aiResponse = await Promise.race([
+        grokApi.generateJson(prompt, "You are an expert web consultant that helps businesses identify the most effective website features for their specific business type."),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('AI feature suggestion timed out')), 30000)
+        )
+      ]);
+      
+      // Cache the successful response
+      searchCache.set(cacheKey, aiResponse, 7200); // 2-hour cache
+      
+      return res.status(200).json({
+        success: true,
+        data: aiResponse,
+        cached: false
+      });
+    } catch (error) {
+      console.error("AI feature suggestion error:", error);
+      
+      // Fallback response if AI fails
+      const fallbackSuggestions = {
+        essential_features: [
+          { name: "Responsive Design", description: "Mobile-friendly website layout", benefit: "Reach customers on all devices" },
+          { name: "Contact Form", description: "Easy way for customers to reach you", benefit: "Increase customer inquiries" },
+          { name: "About Page", description: "Information about your business", benefit: "Build trust with potential customers" }
+        ],
+        recommended_features: [
+          { name: "Blog/News Section", description: "Share updates and industry insights", benefit: "Improve SEO and demonstrate expertise" },
+          { name: "Social Media Integration", description: "Connect with customers on social platforms", benefit: "Expand reach and engagement" }
+        ],
+        innovative_features: [
+          { name: "Live Chat", description: "Real-time customer support", benefit: "Improve conversion rates" }
+        ],
+        budget_estimate: "Basic features: $3,000-5,000; All recommended features: $7,000-10,000"
+      };
+      
+      return res.status(200).json({
+        success: true,
+        data: fallbackSuggestions,
+        fallback: true
+      });
+    }
+  } catch (error) {
     console.error('Feature suggestion failed:', error);
     return res.status(500).json({
       success: false,
       message: 'Feature suggestion failed',
-      error: error.message,
-      fallback: {
-        essential_features: [
-          { name: "Responsive Design", description: "Mobile-friendly website layout", priority: 5 },
-          { name: "Contact Form", description: "Easy way for customers to reach you", priority: 5 },
-          { name: "About Page", description: "Information about your business", priority: 4 }
-        ],
-        recommended_features: [
-          { name: "Blog/News Section", description: "Share updates and industry insights", priority: 3 },
-          { name: "Social Media Integration", description: "Connect with customers on social platforms", priority: 3 }
-        ],
-        innovative_features: [
-          { name: "Live Chat", description: "Real-time customer support" }
-        ],
-        industry_specific: "Generic business website features",
-        budget_considerations: "Focus on essential features first"
-      }
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
+
+// Helper function to get basic search results from database
+async function getBasicSearchResults(query: string) {
+  try {
+    // Sanitize the query for SQL search
+    const sanitizedQuery = `%${query.replace(/[%_]/g, '\\$&')}%`;
+    
+    // Collection of all search results
+    const results: any[] = [];
+    
+    // Search posts
+    try {
+      const posts = await storage.searchPosts(sanitizedQuery);
+      results.push(...posts.map(post => ({
+        id: post.id,
+        type: 'post',
+        title: post.title,
+        content: post.content,
+      })));
+    } catch (err) {
+      console.warn("Post search error:", err);
+    }
+    
+    // Search marketplace items
+    try {
+      const marketplaceItems = await storage.searchMarketplaceItems(sanitizedQuery);
+      results.push(...marketplaceItems.map(item => ({
+        id: item.id,
+        type: 'service',
+        title: item.name,
+        content: item.description,
+      })));
+    } catch (err) {
+      console.warn("Marketplace search error:", err);
+    }
+    
+    // Search service offerings
+    try {
+      const services = await storage.searchServices(sanitizedQuery);
+      results.push(...services.map(service => ({
+        id: service.id,
+        type: 'service',
+        title: service.name,
+        content: service.description,
+      })));
+    } catch (err) {
+      console.warn("Services search error:", err);
+    }
+    
+    return results;
+  } catch (error) {
+    console.error("Basic search error:", error);
+    return [];
+  }
+}
+
+// Helper function to enhance search results with AI
+async function enhanceSearchResultsWithAI(query: string, basicResults: any[]) {
+  // If no AI API key or no basic results, return unmodified results
+  if (basicResults.length === 0) {
+    return {
+      ranked_results: [],
+      suggestions: generateAlternativeSearchTerms(query),
+      query_analyzed: query
+    };
+  }
+  
+  // Prepare the prompt for xAI
+  const promptContent = `
+    Analyze this search query: "${query}"
+    
+    For the following search results, rank them by relevance to the search query,
+    add a relevance score (0.0 to 1.0), and suggest alternative search terms.
+    
+    Search results:
+    ${JSON.stringify(basicResults, null, 2)}
+    
+    Return a JSON object with:
+    1. ranked_results: Array of results ranked by relevance with added relevance_score
+    2. suggestions: Array of 3-5 alternative search terms related to the query
+    3. query_analyzed: A corrected or expanded version of the query for better results
+  `;
+  
+  const systemPrompt = 
+    "You are an advanced search algorithm that provides relevant search results and suggestions. " +
+    "Always provide a relevance_score between 0.0 and 1.0 for each result. " +
+    "Ensure your suggestions are relevant to the original query and potential business needs.";
+  
+  // Call xAI API to enhance search results
+  const enhancedResults = await grokApi.generateJson(
+    promptContent,
+    systemPrompt
+  );
+  
+  // Ensure the response has the expected format
+  const finalResults = {
+    ranked_results: enhancedResults.ranked_results || basicResults.slice(0, 10),
+    suggestions: enhancedResults.suggestions || generateAlternativeSearchTerms(query),
+    query_analyzed: enhancedResults.query_analyzed || query
+  };
+  
+  return finalResults;
+}
+
+// Helper function to generate alternative search terms if AI is unavailable
+function generateAlternativeSearchTerms(query: string) {
+  // Basic logic to suggest alternatives based on the query
+  const queryLower = query.toLowerCase();
+  
+  if (queryLower.includes('website')) {
+    return ['web development', 'web design', 'website builder', 'website templates', 'responsive design'];
+  } else if (queryLower.includes('design')) {
+    return ['UI design', 'graphic design', 'logo design', 'branding', 'website mockups'];
+  } else if (queryLower.includes('marketing')) {
+    return ['digital marketing', 'SEO', 'social media marketing', 'content marketing', 'email campaigns'];
+  } else if (queryLower.includes('e-commerce') || queryLower.includes('ecommerce')) {
+    return ['online store', 'shopping cart', 'product catalog', 'payment processing', 'inventory management'];
+  } else if (queryLower.includes('mobile')) {
+    return ['responsive design', 'mobile apps', 'progressive web apps', 'mobile optimization', 'mobile UX'];
+  } else {
+    // General web development related terms
+    return ['web development', 'web design', 'digital marketing', 'SEO optimization', 'business website'];
+  }
+}
+
+// Helper function to generate suggestions when search returns no results
+function generateFallbackSuggestions(query: string) {
+  // Generate some context-aware suggestions
+  const alternatives = generateAlternativeSearchTerms(query);
+  
+  // Add some general suggestions
+  const generalSuggestions = [
+    'website development',
+    'business website',
+    'affordable web design',
+    'website maintenance',
+    'professional web services'
+  ];
+  
+  // Combine and return unique suggestions
+  return [...new Set([...alternatives, ...generalSuggestions.slice(0, 3)])].slice(0, 5);
+}
 
 export default searchRouter;

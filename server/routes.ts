@@ -126,6 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/ai-content', aiContentRouter);
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/intelligent-search', intelligentSearchRouter);
+  app.use('/api/search', searchRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

@@ -9,10 +9,11 @@ import {
   advertisements, type Advertisement, type InsertAdvertisement,
   userSessions, contentViewMetrics, 
   type UserSession, type ContentViewMetric,
-  type InsertUserSession, type InsertContentViewMetric
+  type InsertUserSession, type InsertContentViewMetric,
+  posts, services
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, lt, sql, desc, asc } from "drizzle-orm";
+import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
 
 // Extend the interface with needed CRUD methods
 export interface IStorage {
@@ -62,6 +63,11 @@ export interface IStorage {
   updateAdvertisement(id: number, data: Partial<InsertAdvertisement>): Promise<Advertisement>;
   incrementAdImpressions(id: number): Promise<void>;
   incrementAdClicks(id: number): Promise<void>;
+  
+  // Search methods
+  searchPosts(query: string): Promise<any[]>;
+  searchMarketplaceItems(query: string): Promise<any[]>;
+  searchServices(query: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
