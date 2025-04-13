@@ -1,8 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaTwitter, FaFacebookF, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
+import { TbNews } from 'react-icons/tb';
+import { HiTrendingUp, HiOutlineBookmark, HiOutlineHeart, HiOutlineShare } from 'react-icons/hi';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
+import SocialShareButtons from './SocialShareButtons';
+
+interface Post {
+  id: number;
+  title?: string;
+  content: string;
+  author?: string;
+  authorId?: number;
+  tags?: string[];
+  category?: string;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface FeedResponse {
+  success: boolean;
+  feed?: Post[];
+  rankedPosts?: Post[];
+  trending?: Post[];
+  similarPosts?: Post[];
+  reasoning?: string;
+  preferences?: string;
+  message?: string;
+  cached?: boolean;
+  fallback?: boolean;
+}
 
 interface SocialFeedProps {
   className?: string;
@@ -11,19 +46,79 @@ interface SocialFeedProps {
   username?: string;
   limit?: number;
   height?: number;
+  userId?: number;
 }
 
 const SocialFeed: React.FC<SocialFeedProps> = ({ 
   className = '',
-  initialTab = 'twitter',
+  initialTab = 'personalized',
   type,
-  username = 'aerosolutions',
+  username = 'elevion',
   limit = 5,
   height = 500,
+  userId,
 }) => {
   const [activeTab, setActiveTab] = useState(type || initialTab);
   const [isLoading, setIsLoading] = useState(true);
   const feedHeight = `${height}px`;
+  const { toast } = useToast();
+  
+  // Fetch personalized feed data
+  const { data: personalizedData, isLoading: isPersonalizedLoading } = useQuery({
+    queryKey: ['/api/feed/personalized'],
+    enabled: activeTab === 'personalized',
+  });
+
+  // Fetch trending feed data
+  const { data: trendingData, isLoading: isTrendingLoading } = useQuery({
+    queryKey: ['/api/feed/trending'],
+    enabled: activeTab === 'trending',
+  });
+
+  // Record user engagement with the content
+  const recordEngagement = async (postId: number, action: string) => {
+    try {
+      await fetch('/api/feed/record-engagement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId,
+          action,
+        }),
+      });
+      
+      // Show success notification for engagement
+      if (action === 'like') {
+        toast({
+          title: "Post liked",
+          description: "Your preferences have been updated.",
+          duration: 3000,
+        });
+      } else if (action === 'share') {
+        toast({
+          title: "Post shared",
+          description: "Thank you for sharing!",
+          duration: 3000,
+        });
+      } else if (action === 'bookmark') {
+        toast({
+          title: "Post saved",
+          description: "Added to your bookmarks.",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error recording engagement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record your interaction.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   // Simulating load time for embedded content
   useEffect(() => {
@@ -43,7 +138,15 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       <Card className="overflow-hidden">
         {!type ? (
           <Tabs defaultValue={initialTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 h-14">
+            <TabsList className="grid grid-cols-6 h-14">
+              <TabsTrigger value="personalized" className="flex items-center space-x-2">
+                <TbNews className="h-4 w-4" />
+                <span className="hidden sm:inline">For You</span>
+              </TabsTrigger>
+              <TabsTrigger value="trending" className="flex items-center space-x-2">
+                <HiTrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Trending</span>
+              </TabsTrigger>
               <TabsTrigger value="twitter" className="flex items-center space-x-2">
                 <FaTwitter className="h-4 w-4" />
                 <span className="hidden sm:inline">Twitter</span>
@@ -63,6 +166,65 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
             </TabsList>
             
             <CardContent className="p-0">
+              <TabsContent value="personalized" className="m-0">
+                {isPersonalizedLoading ? (
+                  <FeedSkeleton height={height} />
+                ) : (
+                  <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
+                    {personalizedData?.feed && personalizedData.feed.length > 0 ? (
+                      <>
+                        {personalizedData.feed.map((post, index) => (
+                          <PostCard 
+                            key={post.id || index} 
+                            post={post} 
+                            onAction={(action) => recordEngagement(post.id, action)}
+                          />
+                        ))}
+                        
+                        {personalizedData.reasoning && (
+                          <div className="p-4 bg-muted/30 text-xs text-muted-foreground">
+                            <p className="font-semibold mb-1">Content recommendation reasoning:</p>
+                            <p>{personalizedData.reasoning}</p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8 h-full text-muted-foreground">
+                        <TbNews className="h-12 w-12 mb-4 opacity-30" />
+                        <p className="text-center">No personalized content available yet.</p>
+                        <p className="text-center text-sm mt-2">Interact with more content to improve your recommendations.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="trending" className="m-0">
+                {isTrendingLoading ? (
+                  <FeedSkeleton height={height} />
+                ) : (
+                  <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
+                    {trendingData?.trending && trendingData.trending.length > 0 ? (
+                      <>
+                        {trendingData.trending.map((post, index) => (
+                          <PostCard 
+                            key={post.id || index} 
+                            post={post} 
+                            onAction={(action) => recordEngagement(post.id, action)}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8 h-full text-muted-foreground">
+                        <HiTrendingUp className="h-12 w-12 mb-4 opacity-30" />
+                        <p className="text-center">No trending content available right now.</p>
+                        <p className="text-center text-sm mt-2">Check back soon for the latest popular posts.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
               <TabsContent value="twitter" className="m-0">
                 {isLoading ? (
                   <FeedSkeleton height={height} />
@@ -195,6 +357,93 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
         Follow us on social media to stay updated with our latest aviation technology solutions and industry insights.
       </div>
     </div>
+  );
+};
+
+interface PostCardProps {
+  post: Post;
+  onAction: (action: string) => void;
+}
+
+const PostCard: React.FC<PostCardProps> = ({ post, onAction }) => {
+  const { title, content, author, category, imageUrl, tags, createdAt } = post;
+  const formattedDate = createdAt ? formatDistanceToNow(new Date(createdAt), { addSuffix: true }) : '';
+
+  return (
+    <Card className="mb-4 overflow-hidden">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            {title && <CardTitle className="text-lg mb-1">{title}</CardTitle>}
+            <div className="flex items-center text-sm text-muted-foreground">
+              {author && <span className="mr-2">{author}</span>}
+              {formattedDate && <span className="text-xs">{formattedDate}</span>}
+            </div>
+          </div>
+          {category && (
+            <Badge variant="outline" className="text-xs">
+              {category}
+            </Badge>
+          )}
+        </div>
+        
+        <CardContent className="p-0 mb-3">
+          <p className="text-sm mt-2">{content}</p>
+        </CardContent>
+        
+        {imageUrl && (
+          <div className="mb-4 rounded-md overflow-hidden">
+            <img
+              src={imageUrl}
+              alt={title || "Post image"}
+              className="w-full h-48 object-cover"
+            />
+          </div>
+        )}
+        
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {tags.map((tag, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+        
+        <CardFooter className="flex justify-between items-center p-0 pt-2 border-t">
+          <div className="flex space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground"
+              onClick={() => onAction('like')}
+            >
+              <HiOutlineHeart className="mr-1 h-4 w-4" />
+              <span className="text-xs">Like</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-muted-foreground"
+              onClick={() => onAction('bookmark')}
+            >
+              <HiOutlineBookmark className="mr-1 h-4 w-4" />
+              <span className="text-xs">Save</span>
+            </Button>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-muted-foreground"
+            onClick={() => onAction('share')}
+          >
+            <HiOutlineShare className="mr-1 h-4 w-4" />
+            <span className="text-xs">Share</span>
+          </Button>
+        </CardFooter>
+      </div>
+    </Card>
   );
 };
 
