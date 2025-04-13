@@ -2,18 +2,24 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, fore
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User schema with Stripe integration
+// User schema with Stripe integration and enhanced security
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password").notNull(), // Will be stored as a hashed value
   firstName: text("first_name"),
   lastName: text("last_name"),
   role: text("role").default("user").notNull(), // user, admin
   stripeCustomerId: text("stripe_customer_id"),
+  businessType: text("business_type"), // Type of business the user is running
   preferences: text("preferences"), // User content preferences for feed personalization
   lastLoginAt: timestamp("last_login_at"),
+  verified: boolean("verified").default(false), // Email verification status
+  verificationToken: text("verification_token"), // For email verification process
+  resetPasswordToken: text("reset_password_token"), // For password reset process
+  resetPasswordExpires: timestamp("reset_password_expires"), // Expiry for password reset token
+  onboardingComplete: boolean("onboarding_complete").default(false), // Track onboarding completion
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
