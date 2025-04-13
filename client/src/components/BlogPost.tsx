@@ -69,10 +69,11 @@ export default function BlogPostComponent({ post, displayMode = 'card' }: BlogPo
       >
         <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow duration-200">
           <div className="relative h-48 overflow-hidden">
-            <img 
+            <ProtectedImage 
               src={post.image || '/images/placeholder-blog.jpg'} 
               alt={post.title}
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+              watermark={true}
             />
             <div className="absolute top-3 right-3 flex gap-2">
               <PostSentimentIndicator postId={typeof post.id === 'number' ? post.id.toString() : post.id} />
@@ -123,20 +124,27 @@ export default function BlogPostComponent({ post, displayMode = 'card' }: BlogPo
         <div className="flex items-center gap-3 ml-auto">
           <PostSentimentIndicator postId={post.id.toString()} />
           <BlogSeoAnalysis postId={post.id.toString()} displayMode="icon" />
+          {isContentProtected && (
+            <div className="flex items-center text-emerald-600 dark:text-emerald-400" title="Content is protected">
+              <Shield size={16} className="mr-1" />
+              <span className="text-xs">Protected</span>
+            </div>
+          )}
         </div>
       </div>
       
       {post.image && (
         <div className="mb-8 rounded-lg overflow-hidden">
-          <img 
+          <ProtectedImage 
             src={post.image} 
             alt={post.title}
             className="w-full h-auto object-cover max-h-[500px]"
+            watermark={true}
           />
         </div>
       )}
       
-      <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.content || '' }}></div>
+      <div className="blog-content" dangerouslySetInnerHTML={{ __html: watermarkedContent || post.content || '' }}></div>
     </div>
   );
 }

@@ -1,80 +1,74 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 /**
- * Component that provides global content protection features
- * - Disables right-click on the entire page
- * - Disables keyboard shortcuts for saving content
- * - Adds custom message when attempting to copy content
+ * ContentProtection component
+ * 
+ * Prevents right-click context menu and other content theft methods
+ * across the entire site. Include this component once at the app root.
  */
-export default function ContentProtection() {
+const ContentProtection: React.FC = () => {
   useEffect(() => {
-    // Disable right-click on the entire document
     const handleContextMenu = (e: MouseEvent) => {
-      // Allow right-click on form elements
+      // Allow right-click on form inputs and links for accessibility
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || 
-          target.tagName === 'TEXTAREA' || 
-          target.tagName === 'SELECT' ||
-          target.isContentEditable) {
-        return true;
-      }
+      const isFormElement = target.tagName === 'INPUT' || 
+                           target.tagName === 'TEXTAREA' || 
+                           target.tagName === 'SELECT' ||
+                           target.isContentEditable;
       
+      // Allow right-click for form elements for accessibility
+      if (isFormElement) return;
+      
+      // Prevent right-click for other elements
       e.preventDefault();
       return false;
     };
-
-    // Disable keyboard shortcuts for saving (Ctrl+S, Command+S)
+    
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Ctrl+S (save), Ctrl+P (print) and other hotkeys
       if ((e.ctrlKey || e.metaKey) && 
-          (e.key === 's' || e.key === 'S')) {
+          (e.key === 's' || e.key === 'p' || e.key === 'u')) {
         e.preventDefault();
         return false;
       }
     };
-
-    // Add custom copy message when text is selected
-    const handleCopy = (e: ClipboardEvent) => {
-      // Only add the custom message if text is actually selected
+    
+    const handleSelectStart = (e: Event) => {
+      // Allow selection of form inputs and links for accessibility
+      const target = e.target as HTMLElement;
+      const isFormElement = target.tagName === 'INPUT' || 
+                           target.tagName === 'TEXTAREA' || 
+                           target.tagName === 'SELECT' ||
+                           target.isContentEditable;
+      
+      // Allow selection for form elements for accessibility
+      if (isFormElement) return;
+      
+      // Limit selection for other elements to 100 characters
       const selection = window.getSelection();
-      if (selection && selection.toString().length > 0) {
-        // Get the selected text
-        const selectedText = selection.toString();
-        
-        // Add a custom citation to copied content
-        const copyrightText = `\n\n© ${new Date().getFullYear()} Elevion. Learn more at www.elevion.dev`;
-        
-        // Create a new clipboard data
-        e.clipboardData?.setData('text/plain', selectedText + copyrightText);
-        
-        // Prevent the default copy behavior
-        e.preventDefault();
-      }
-    };
-
-    // Disable print
-    const handlePrint = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && 
-          (e.key === 'p' || e.key === 'P')) {
+      if (selection && selection.toString().length > 100) {
+        // If selection too long, clear it
+        selection.removeAllRanges();
         e.preventDefault();
         return false;
       }
     };
-
+    
     // Add event listeners
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keydown', handlePrint);
-    document.addEventListener('copy', handleCopy);
-
-    // Clean up event listeners on component unmount
+    document.addEventListener('selectstart', handleSelectStart);
+    
+    // Cleanup on unmount
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keydown', handlePrint);
-      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('selectstart', handleSelectStart);
     };
   }, []);
-
-  // This component doesn't render anything visible
+  
+  // This component doesn't render anything
   return null;
-}
+};
+
+export default ContentProtection;

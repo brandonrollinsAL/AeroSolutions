@@ -30,6 +30,7 @@ import mockupsRouter from './routes/mockups';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
+import contentProtectionRouter from './routes/content-protection';
 import authRouter from './routes/auth';
 import userRouter from './routes/users';
 
@@ -141,6 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/mockups', mockupsRouter);
   app.use('/api/elevatebot', elevateBotAnalyticsRouter);
   app.use('/api/email-campaigns', emailCampaignsRouter);
+  app.use('/api/content', contentProtectionRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

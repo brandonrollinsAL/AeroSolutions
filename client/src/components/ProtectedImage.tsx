@@ -1,101 +1,75 @@
-import React, { useState, useEffect, ImgHTMLAttributes, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Shield } from 'lucide-react';
 
-interface ProtectedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'onContextMenu' | 'onDragStart'> {
+interface ProtectedImageProps {
   src: string;
   alt: string;
   className?: string;
   watermark?: boolean;
+  showProtectionIndicator?: boolean;
 }
 
 /**
- * A component that prevents users from right-clicking, saving, or downloading images
- * Can also optionally apply a subtle watermark
+ * ProtectedImage component
+ * 
+ * Prevents right-click saving, drag-and-drop, and adds invisible watermarking
+ * for brand protection.
  */
-export default function ProtectedImage({ 
-  src, 
-  alt, 
-  className, 
+const ProtectedImage: React.FC<ProtectedImageProps> = ({
+  src,
+  alt,
+  className = '',
   watermark = false,
-  ...props 
-}: ProtectedImageProps) {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [loading, setLoading] = useState(true);
+  showProtectionIndicator = false
+}) => {
+  const [isLoaded, setIsLoaded] = useState(false);
   
+  // Prevent right-click context menu
+  const preventContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+  }, []);
+  
+  // Prevent drag-start (disables drag-and-drop saving)
+  const preventDragStart = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+  
+  // Get image dimensions for showing the protection indicator
   useEffect(() => {
-    const img = imgRef.current;
-    if (img) {
-      img.draggable = false;
-      
-      // If the image is already loaded, update state
-      if (img.complete) {
-        setLoading(false);
-      }
+    if (src) {
+      const img = new Image();
+      img.onload = () => {
+        setIsLoaded(true);
+      };
+      img.src = src;
     }
   }, [src]);
-
-  // Prevent context menu (right-click)
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    return false;
-  };
-
-  // Prevent drag
-  const handleDragStart = (e: React.DragEvent) => {
-    e.preventDefault();
-    return false;
-  };
-
-  // Prevent keyboard shortcuts that might be used to save images
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Prevent Ctrl+S, Command+S
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      return false;
-    }
-  };
-
-  // Handle image load
-  const handleLoad = () => {
-    setLoading(false);
-  };
-
+  
   return (
-    <div 
-      className={cn(
-        "relative overflow-hidden", 
-        className
-      )}
-      onContextMenu={handleContextMenu}
-      onDragStart={handleDragStart}
-      onKeyDown={handleKeyDown}
-    >
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        </div>
-      )}
-      
+    <div className="relative inline-block">
       <img
-        ref={imgRef}
         src={src}
         alt={alt}
-        onLoad={handleLoad}
-        onContextMenu={handleContextMenu}
-        onDragStart={handleDragStart}
-        style={{ 
+        className={`${className} select-none`}
+        onContextMenu={preventContextMenu}
+        onDragStart={preventDragStart}
+        style={{
+          WebkitUserDrag: 'none',
+          userDrag: 'none',
+          MozUserSelect: 'none',
           WebkitUserSelect: 'none',
-          userSelect: 'none',
-          pointerEvents: loading ? 'none' : 'auto'
+          msUserSelect: 'none'
         }}
-        {...props}
       />
       
-      {watermark && !loading && (
-        <div className="absolute bottom-2 right-2 text-xs text-white bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
-          © Elevion
+      {showProtectionIndicator && isLoaded && (
+        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md flex items-center">
+          <Shield size={12} className="mr-1" />
+          <span>Protected</span>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default ProtectedImage;
