@@ -1,0 +1,107 @@
+Sub-Prompt 1: Set Up xAI API Integration for Elevion
+Objective: Set up the xAI API key in Elevion to enable real-time applications like debugging, analytics, and AI-powered features, including the ElevateBot AI assistant.
+
+Details:
+
+Elevion is a full-stack web development company using React, Node.js/Express, and PostgreSQL, with Stripe for payments.
+We’ll integrate the xAI API (supporting Grok 3 and Grok 3 Mini models) for real-time applications.
+The xAI API will be used for debugging, data analytics, user engagement algorithms, content generation, auto-suggestions, ElevateBot AI, product recommendations, and search.
+Step 1: Add xAI API Key to Environment Variables
+
+Replit AI, open the .env file in the root directory (or create it if it doesn’t exist). Add the xAI API key:
+
+plaintext
+
+Collapse
+
+Wrap
+
+Copy
+XAI_API_KEY=your_xai_api_key_here  
+What to Check:
+
+Replit AI, ensure the XAI_API_KEY is added to .env. Replace your_xai_api_key_here with the actual key obtained from the xAI Console (you can get the key from the xAI Console’s “API Keys” section, as per https://x.ai/api).
+In Replit, add this as a “Secret” in the “Secrets” tab for security: key XAI_API_KEY, value your_xai_api_key_here.
+Step 2: Create an xAI API Client Utility
+
+Replit AI, create a new file server/utils/xaiClient.js to handle xAI API requests:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const axios = require('axios');  
+
+const xaiClient = axios.create({  
+  baseURL: 'https://api.x.ai/v1',  
+  headers: {  
+    'Authorization': `Bearer ${process.env.XAI_API_KEY}`,  
+    'Content-Type': 'application/json',  
+  },  
+});  
+
+const callXAI = async (endpoint, data) => {  
+  try {  
+    const response = await xaiClient.post(endpoint, data);  
+    return response.data;  
+  } catch (error) {  
+    console.error(`xAI API error at ${endpoint}:`, error.response?.data || error.message);  
+    throw new Error('xAI API request failed');  
+  }  
+};  
+
+module.exports = { callXAI };  
+What to Check:
+
+Replit AI, create server/utils/xaiClient.js and paste the code above.
+Ensure the baseURL matches the xAI API endpoint (https://api.x.ai/v1, as per xAI documentation).
+The callXAI function will be used for all xAI API requests, handling errors gracefully.
+Step 3: Install Required Backend Dependencies
+
+Replit AI, install axios in the server directory:
+
+Update server/package.json:
+
+json
+
+Collapse
+
+Wrap
+
+Copy
+{  
+  "dependencies": {  
+    "express": "^4.18.0",  
+    "pg": "^8.11.0",  
+    "drizzle-orm": "^0.29.0",  
+    "passport": "^0.7.0",  
+    "passport-local": "^1.0.0",  
+    "express-session": "^1.17.0",  
+    "connect-pg-simple": "^9.0.0",  
+    "bcrypt": "^5.1.0",  
+    "jsonwebtoken": "^9.0.0",  
+    "stripe": "^14.0.0",  
+    "mailgun-js": "^0.22.0",  
+    "openai": "^4.0.0",  
+    "axios": "^1.6.0"  
+  }  
+}  
+Run:
+
+bash
+
+Collapse
+
+Wrap
+
+Copy
+cd server  
+npm install  
+What to Check:
+
+Replit AI, ensure axios is added to server/package.json.
+Run npm install to install the dependency.
+If there’s an error, check for typos in package.json.

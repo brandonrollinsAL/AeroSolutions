@@ -1,4 +1,5 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import express, { type Express, type Response, type NextFunction } from "express";
+import { Request as ExpressRequest } from "express-serve-static-core";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertContactSchema } from "@shared/schema";
@@ -12,6 +13,12 @@ import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
 import quoteRouter from './routes/quote';
+
+// Extended request interface with authentication
+interface Request extends ExpressRequest {
+  isAuthenticated(): boolean;
+  user?: any;
+}
 
 // Performance optimization: Cache for API responses
 // - TTL: 300 seconds (5 minutes)

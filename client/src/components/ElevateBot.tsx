@@ -273,7 +273,7 @@ export default function ElevateBot({
                 </div>
                 <div>
                   <h3 className="font-bold font-poppins">Tech Assistant</h3>
-                  <span className="text-xs text-[#00D1D1] font-inter">Powered by Grok AI</span>
+                  <span className="text-xs text-[#00D1D1] font-inter">Powered by xAI Grok</span>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white">
@@ -298,7 +298,7 @@ export default function ElevateBot({
                       </div>
                     ) : typingComplete ? (
                       <p className="text-gray-800 font-lato">
-                        Hi there! I'm your Elevion Tech Assistant, powered by Grok AI. How can I help you with your web development needs today?
+                        Hi there! I'm your Elevion Tech Assistant, powered by xAI Grok. How can I help you with your web development needs today?
                       </p>
                     ) : null}
                   </div>
