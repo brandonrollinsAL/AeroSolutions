@@ -913,6 +913,71 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Logging and bug monitoring methods
+  async createLog(log: InsertLog): Promise<Log> {
+    const [logEntry] = await db.insert(logs).values(log).returning();
+    return logEntry;
+  }
+
+  async getRecentLogs(level?: string, limit: number = 100): Promise<Log[]> {
+    // Build the query based on parameters
+    let query = db.select().from(logs);
+    
+    // Add level filter if provided
+    if (level) {
+      query = query.where(eq(logs.level, level));
+    }
+    
+    // Execute the query with ordering and limit
+    const results = await query
+      .orderBy(desc(logs.timestamp))
+      .limit(limit);
+      
+    return results;
+  }
+
+  async createBugReport(report: InsertBugReport): Promise<BugReport> {
+    const [bugReport] = await db.insert(bug_reports).values(report).returning();
+    return bugReport;
+  }
+
+  async getBugReports(status?: string, limit: number = 50): Promise<BugReport[]> {
+    // Build the query based on parameters
+    let query = db.select().from(bug_reports);
+    
+    // Add status filter if provided
+    if (status) {
+      query = query.where(eq(bug_reports.status, status));
+    }
+    
+    // Execute the query with ordering and limit
+    const results = await query
+      .orderBy(desc(bug_reports.createdAt))
+      .limit(limit);
+      
+    return results;
+  }
+
+  async updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined> {
+    try {
+      const [bugReport] = await db.update(bug_reports)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(bug_reports.id, id))
+        .returning();
+      return bugReport;
+    } catch (error) {
+      console.error('Error updating bug report:', error);
+      return undefined;
+    }
+  }
+
+  async getRecentFeedback(limit: number = 20): Promise<Feedback[]> {
+    return await db.select()
+      .from(feedback)
+      .orderBy(desc(feedback.createdAt))
+      .limit(limit);
+  }
 }
 
 // Create a new instance of DatabaseStorage
