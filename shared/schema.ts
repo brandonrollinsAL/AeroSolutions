@@ -640,7 +640,90 @@ export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit
 export type EmailCampaign = typeof emailCampaigns.$inferSelect;
 export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
 
-// Twitter posts schema for automation and scheduling
+// Social media platforms
+export const socialPlatforms = pgTable("social_platforms", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(), // twitter, linkedin, instagram, facebook, etc.
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  description: text("description"),
+  apiConfig: json("api_config").$type<{
+    baseUrl?: string;
+    endpoints?: Record<string, string>;
+    authType?: string;
+    scopes?: string[];
+    characterLimit?: number;
+  }>().default({}),
+  isActive: boolean("is_active").default(true).notNull(),
+  icon: varchar("icon", { length: 50 }), // CSS class for platform icon
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSocialPlatformSchema = createInsertSchema(socialPlatforms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SocialPlatform = typeof socialPlatforms.$inferSelect;
+export type InsertSocialPlatform = z.infer<typeof insertSocialPlatformSchema>;
+
+// Social media posts schema for automation and scheduling across multiple platforms
+export const socialPosts = pgTable("social_posts", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(), // Allow longer content for platforms that support it
+  platformId: integer("platform_id").notNull().references(() => socialPlatforms.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("draft"), // draft, scheduled, processing, posted, failed, cancelled, missed
+  scheduledTime: timestamp("scheduled_time"),
+  postedAt: timestamp("posted_at"),
+  externalId: text("external_id"), // Platform-specific post ID after posting
+  errorMessage: text("error_message"),
+  contentSourceId: integer("content_source_id"), // Generic reference to source content (could be article, product, etc.)
+  contentSourceType: varchar("content_source_type", { length: 50 }), // Type of source (post, product, etc.)
+  mediaUrls: json("media_urls").$type<string[]>().default([]),
+  metrics: json("metrics").$type<{
+    impressions?: number;
+    likes?: number;
+    shares?: number;
+    comments?: number;
+    clicks?: number;
+    engagement?: number;
+    reach?: number;
+    // Platform-specific metrics can be included
+    twitter?: {
+      retweets?: number;
+      quotes?: number;
+    };
+    linkedin?: {
+      reactions?: number;
+    };
+    instagram?: {
+      saves?: number;
+    };
+  }>().default({}),
+  hashTags: json("hash_tags").$type<string[]>().default([]),
+  mentions: json("mentions").$type<string[]>().default([]),
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  bufferPostId: text("buffer_post_id"), // For integration with Buffer API
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSocialPostSchema = createInsertSchema(socialPosts).omit({
+  id: true,
+  externalId: true,
+  postedAt: true,
+  errorMessage: true,
+  metrics: true,
+  bufferPostId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type InsertSocialPost = z.infer<typeof insertSocialPostSchema>;
+
+// Keep Twitter posts for backward compatibility
 export const twitterPosts = pgTable("twitter_posts", {
   id: serial("id").primaryKey(),
   content: varchar("content", { length: 280 }).notNull(),
