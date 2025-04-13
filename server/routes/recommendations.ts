@@ -61,11 +61,20 @@ router.post('/services', async (req, res) => {
         "additional_services": ["service1", "service2"]
       }`;
     
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-latest',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
+    
+    // Race the API call against the timeout
+    const response = await Promise.race([
+      callXAI('/chat/completions', {
+        model: 'grok-3-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      }),
+      timeoutPromise
+    ]);
     
     const content = JSON.parse(response.choices[0].message.content);
     
@@ -246,11 +255,20 @@ router.post('/tech-stack', async (req, res) => {
       Components should include frontend, backend, database, hosting, and any additional services.
       Format the response as JSON.`;
     
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-latest',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
+    
+    // Race the API call against the timeout
+    const response = await Promise.race([
+      callXAI('/chat/completions', {
+        model: 'grok-3-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      }),
+      timeoutPromise
+    ]);
     
     const content = JSON.parse(response.choices[0].message.content);
     
@@ -328,11 +346,20 @@ router.post('/content-plan', async (req, res) => {
       
       Format the response as JSON with clear sections for each component of the plan.`;
     
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-latest',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
+    
+    // Race the API call against the timeout
+    const response = await Promise.race([
+      callXAI('/chat/completions', {
+        model: 'grok-3-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      }),
+      timeoutPromise
+    ]);
     
     const content = JSON.parse(response.choices[0].message.content);
     
