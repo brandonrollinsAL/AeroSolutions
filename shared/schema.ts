@@ -146,6 +146,11 @@ export const marketplaceItems = pgTable("marketplace_items", {
   isAvailable: boolean("is_available").default(true).notNull(),
   stripeProductId: text("stripe_product_id"),
   stripePriceId: text("stripe_price_id"),
+  // SEO fields
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoKeywords: text("seo_keywords"),
+  schemaMarkup: text("schema_markup"), // JSON-LD schema markup for the product
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -492,6 +497,13 @@ export const posts = pgTable("posts", {
   status: text("status").default("published").notNull(), // published, draft, archived
   viewCount: integer("view_count").default(0),
   likeCount: integer("like_count").default(0),
+  // SEO fields
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoKeywords: text("seo_keywords"),
+  schemaMarkup: text("schema_markup"), // JSON-LD schema markup for the blog post
+  canonicalUrl: text("canonical_url"), // For managing duplicate content
+  focusKeyword: text("focus_keyword"), // Primary keyword for optimization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
