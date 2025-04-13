@@ -681,6 +681,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ElevateBot specialized business AI assistant endpoint
+  app.post("/api/elevate-bot", [
+    // Express-validator validations
+    body('message')
+      .notEmpty().withMessage('Message is required')
+      .isString().withMessage('Message must be a string')
+      .isLength({ min: 1, max: 1000 }).withMessage('Message must be between 1 and 1000 characters')
+      .trim()
+  ], handleElevateBotQuery);
+
   const httpServer = createServer(app);
   return httpServer;
 }

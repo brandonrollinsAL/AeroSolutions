@@ -1,66 +1,145 @@
+/**
+ * ElevateBot AI Assistant - Specialized business-focused chatbot endpoints
+ * Uses xAI Grok for business-oriented conversations and queries
+ */
+
 import { Request, Response } from 'express';
-import { callXAI, getGrokCompletion } from '../utils/xaiClient';
+import { validationResult } from 'express-validator';
+import { grokApi } from '../grok';
+import NodeCache from 'node-cache';
 
-// System message to guide AI responses for business-related queries
-const BUSINESS_SYSTEM_MESSAGE = `
-You are ElevateBot, Elevion's AI assistant for small business owners and entrepreneurs.
-Your expertise is in web development, digital marketing, and business technology solutions.
-
-When providing advice:
-- Be concise, practical, and actionable
-- Focus on solutions that are realistic for small businesses with limited budgets
-- Provide step-by-step guidance when appropriate
-- Reference relevant modern web technologies and business strategies
-- Maintain a professional but friendly tone
-- If you don't know the answer, say so rather than making up information
-
-You work for Elevion, a web development company specializing in creating affordable,
-high-quality websites and digital solutions for small businesses.
-`;
+// Create cache for API responses to reduce API calls for frequent queries
+// TTL: 600 seconds (10 minutes)
+// Maximum 30 items in cache
+const elevateBotCache = new NodeCache({ 
+  stdTTL: 600, 
+  checkperiod: 120,
+  maxKeys: 30 
+});
 
 /**
  * Handles business queries from the ElevateBot chat interface
  */
 export async function handleElevateBotQuery(req: Request, res: Response) {
-  const { message } = req.body;
-  
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Message is required and must be a string' 
-    });
-  }
-
   try {
-    // Use the xAI API directly with system message for better control
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-mini', // Using mini model for faster responses
-      messages: [
-        { role: 'system', content: BUSINESS_SYSTEM_MESSAGE },
-        { role: 'user', content: message }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
-    }, 30000); // 30 second timeout for complex business queries
-
-    if (!response.choices || !response.choices[0]?.message?.content) {
-      throw new Error('Invalid response format from Grok API');
+    // Check for validation errors from express-validator middleware
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid message format",
+        errors: errors.array()
+      });
     }
-
-    return res.json({ 
-      success: true,
-      response: response.choices[0].message.content,
-      source: 'grok'
-    });
-  } catch (error: any) {
-    console.error('Error in ElevateBot query:', error);
     
-    // Provide a helpful fallback response
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Unknown error',
-      response: "I'm sorry, I'm having trouble processing your request at the moment. Please try again later or contact our team for direct assistance.",
-      source: 'fallback'
+    const { message } = req.body;
+    
+    // Generate a cache key for this message
+    const cacheKey = Buffer.from(message.trim().toLowerCase()).toString('base64');
+    
+    // Check if we have a cached response
+    const cachedResponse = elevateBotCache.get<string>(cacheKey);
+    
+    if (cachedResponse) {
+      console.log('ElevateBot cache hit');
+      
+      return res.status(200).json({
+        success: true,
+        response: cachedResponse,
+        timestamp: new Date().toISOString(),
+        cached: true
+      });
+    }
+    
+    // No cache hit, generate a new response
+    console.log('ElevateBot cache miss, generating response with xAI');
+    
+    // Create the system prompt for business-focused responses
+    const businessSystemPrompt = `You are ElevateBot, a tech assistant from Elevion, a premier web development company for small businesses. 
+Use these guidelines for all responses:
+
+1. Provide expert, business-focused advice about web development, site design, mobile optimization, and digital presence.
+2. Use a friendly, professional tone that's accessible to non-technical business owners.
+3. Highlight Elevion's focus on affordable, high-quality web solutions specifically tailored for small businesses.
+4. Mention Elevion's competitive pricing when relevant (approximately 60% below market rates).
+5. Focus on practical solutions that help small businesses succeed online.
+6. Keep responses concise (3-5 paragraphs maximum) and actionable.
+7. When discussing technical concepts, explain them in simple terms a non-technical business owner would understand.
+8. Emphasize Elevion's AI-powered approach that makes professional web development accessible to small businesses.
+
+Remember that Elevion specializes in web development with these core services:
+- Custom website design and development
+- Mobile optimization and responsive design
+- E-commerce solutions
+- Business branding and identity
+- SEO and digital marketing integration
+- Content management systems
+- Web application development
+- AI-driven business insights`;
+
+    // Generate response using xAI's Grok model
+    try {
+      // First attempt - use grok-3-latest for best quality responses
+      const aiResponse = await grokApi.createChatCompletion([
+        { role: 'system', content: businessSystemPrompt },
+        { role: 'user', content: message }
+      ], {
+        model: 'grok-3-latest',
+        temperature: 0.7,
+        max_tokens: 800
+      });
+      
+      const responseText = aiResponse.choices[0].message.content;
+      
+      // Cache the successful response for future requests
+      elevateBotCache.set(cacheKey, responseText);
+      
+      return res.status(200).json({
+        success: true,
+        response: responseText,
+        timestamp: new Date().toISOString(),
+        cached: false,
+        model: 'grok-3-latest'
+      });
+    } catch (error) {
+      console.error("Primary model failed, falling back to mini model:", error);
+      
+      // Fallback to grok-3-mini if the main model fails
+      try {
+        const fallbackResponse = await grokApi.createChatCompletion([
+          { role: 'system', content: businessSystemPrompt },
+          { role: 'user', content: message }
+        ], {
+          model: 'grok-3-mini',
+          temperature: 0.7,
+          max_tokens: 600
+        });
+        
+        const fallbackText = fallbackResponse.choices[0].message.content;
+        
+        // Cache the fallback response
+        elevateBotCache.set(cacheKey, fallbackText);
+        
+        return res.status(200).json({
+          success: true,
+          response: fallbackText,
+          timestamp: new Date().toISOString(),
+          cached: false,
+          model: 'grok-3-mini'
+        });
+      } catch (fallbackError) {
+        console.error("Both models failed:", fallbackError);
+        throw new Error("Failed to generate AI response with all models");
+      }
+    }
+  } catch (error) {
+    console.error("ElevateBot error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
+    res.status(500).json({
+      success: false,
+      message: "Failed to process ElevateBot request",
+      error: errorMessage
     });
   }
 }
@@ -69,41 +148,68 @@ export async function handleElevateBotQuery(req: Request, res: Response) {
  * Alternative implementation using the simplified helper function
  */
 export async function handleElevateBotQuerySimple(req: Request, res: Response) {
-  const { message } = req.body;
-  
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Message is required and must be a string' 
-    });
-  }
-
   try {
-    // Construct prompt with business focus
-    const prompt = `${BUSINESS_SYSTEM_MESSAGE}\n\nUser query: ${message}`;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid message format",
+        errors: errors.array()
+      });
+    }
     
-    // Use the simplified helper function
-    const response = await getGrokCompletion(prompt, {
-      model: 'grok-3-mini',
-      maxTokens: 500,
-      temperature: 0.7,
-      timeout: 30000 // 30 second timeout
-    });
-
-    return res.json({ 
-      success: true,
-      response,
-      source: 'grok'
-    });
-  } catch (error: any) {
-    console.error('Error in ElevateBot query (simple method):', error);
+    const { message } = req.body;
     
-    // Provide a helpful fallback response
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Unknown error',
-      response: "I'm sorry, I'm having trouble processing your request at the moment. Please try again later or contact our team for direct assistance.",
-      source: 'fallback'
+    // Generate a cache key for this message
+    const cacheKey = Buffer.from(message.trim().toLowerCase()).toString('base64');
+    
+    // Check if we have a cached response
+    const cachedResponse = elevateBotCache.get<string>(cacheKey);
+    
+    if (cachedResponse) {
+      console.log('ElevateBot cache hit');
+      
+      return res.status(200).json({
+        success: true,
+        response: cachedResponse,
+        timestamp: new Date().toISOString(),
+        cached: true
+      });
+    }
+    
+    console.log('ElevateBot cache miss, generating response with xAI');
+    
+    // Use the simpler analyzeText helper with business instructions
+    const businessInstructions = 
+      "You are ElevateBot, a tech assistant from Elevion, a web development company for small businesses. " +
+      "Provide expert but accessible advice about web development, site design, and digital presence. " +
+      "Highlight Elevion's focus on affordable web solutions (60% below market rates). " +
+      "Keep responses concise (3-5 paragraphs) and explain technical concepts in simple terms.";
+    
+    try {
+      const responseText = await grokApi.analyzeText(message, businessInstructions);
+      
+      // Cache the successful response
+      elevateBotCache.set(cacheKey, responseText);
+      
+      return res.status(200).json({
+        success: true,
+        response: responseText,
+        timestamp: new Date().toISOString(),
+        cached: false
+      });
+    } catch (error) {
+      console.error("ElevateBot AI generation error:", error);
+      throw new Error("Failed to generate AI response");
+    }
+  } catch (error) {
+    console.error("ElevateBot error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
+    res.status(500).json({
+      success: false,
+      message: "Failed to process ElevateBot request",
+      error: errorMessage
     });
   }
 }
