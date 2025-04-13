@@ -415,6 +415,29 @@ export const insertMockupRequestSchema = createInsertSchema(mockupRequests).omit
 export type MockupRequest = typeof mockupRequests.$inferSelect;
 export type InsertMockupRequest = z.infer<typeof insertMockupRequestSchema>;
 
+// Mockup engagement schema for tracking client mockup views and feedback
+export const mockupEngagement = pgTable("mockup_engagement", {
+  id: serial("id").primaryKey(),
+  mockupId: integer("mockup_id").references(() => mockupRequests.id).notNull(),
+  views: integer("views").default(0).notNull(),
+  lastViewed: timestamp("last_viewed").defaultNow(),
+  feedback: text("feedback"),
+  rating: integer("rating"), // 1-5 star rating
+  sharedCount: integer("shared_count").default(0),
+  engagementSource: text("engagement_source"), // website, email, social, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMockupEngagementSchema = createInsertSchema(mockupEngagement).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type MockupEngagement = typeof mockupEngagement.$inferSelect;
+export type InsertMockupEngagement = z.infer<typeof insertMockupEngagementSchema>;
+
 // Email Campaigns schema for tracking client email campaign suggestions and templates
 export const emailCampaigns = pgTable("email_campaigns", {
   id: serial("id").primaryKey(),
