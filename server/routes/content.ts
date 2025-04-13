@@ -1005,20 +1005,19 @@ router.get('/content-engagement', async (req, res) => {
     // Extract article IDs from results
     const articleIds = engagementData.rows.map(row => row.article_id);
     
-    // Join with posts to get titles
-    const postsData = await db.select({
-      id: posts.id,
-      title: posts.title,
-      category: posts.category
-    })
-    .from(posts)
-    .where(
-      sql`${posts.id} IN (${articleIds.join(',')})`
+    // Join with posts to get titles - we need to format the array for SQL properly
+    // Create a parameter placeholder for each ID
+    const placeholders = articleIds.map((_, i) => `$${i + 1}`).join(',');
+    
+    // Create the SQL query with proper parameter placeholders
+    const postsData = await db.execute(
+      sql`SELECT id, title, category FROM posts WHERE id IN (${sql.raw(placeholders)})`,
+      articleIds // Pass the array of IDs as parameters
     );
     
     // Create a map of post IDs to titles
     const postTitleMap: Record<number, { title: string, category: string }> = {};
-    postsData.forEach(post => {
+    postsData.rows.forEach(post => {
       postTitleMap[post.id] = {
         title: post.title,
         category: post.category || 'Uncategorized'
