@@ -56,6 +56,15 @@ export interface IStorage {
   getUserSubscriptions(userId: number): Promise<UserSubscription[]>;
   getUserActiveSubscription(userId: number): Promise<UserSubscription | undefined>;
   updateUserSubscription(id: number, data: Partial<InsertUserSubscription>): Promise<UserSubscription>;
+  updateSubscriptionPlan(id: number, data: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan>;
+  
+  // Price optimization methods
+  createPriceRecommendation(recommendation: InsertPriceRecommendation): Promise<PriceRecommendation>;
+  getPriceRecommendations(status?: string): Promise<PriceRecommendation[]>;
+  getPriceRecommendation(id: number): Promise<PriceRecommendation | undefined>;
+  updatePriceRecommendation(id: number, data: Partial<PriceRecommendation>): Promise<PriceRecommendation>;
+  createPriceHistory(history: InsertPriceHistory): Promise<PriceHistory>;
+  getPriceHistory(planId: number): Promise<PriceHistory[]>;
   
   // Marketplace methods
   createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem>;
@@ -464,6 +473,59 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userSubscriptions.id, id))
       .returning();
     return subscription;
+  }
+  
+  async updateSubscriptionPlan(id: number, data: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan> {
+    const [plan] = await db.update(subscriptionPlans)
+      .set(data)
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return plan;
+  }
+  
+  // Price optimization methods
+  async createPriceRecommendation(recommendation: InsertPriceRecommendation): Promise<PriceRecommendation> {
+    const [priceRecommendation] = await db.insert(priceRecommendations).values(recommendation).returning();
+    return priceRecommendation;
+  }
+  
+  async getPriceRecommendations(status?: string): Promise<PriceRecommendation[]> {
+    if (status) {
+      return await db.select()
+        .from(priceRecommendations)
+        .where(eq(priceRecommendations.status, status))
+        .orderBy(desc(priceRecommendations.createdAt));
+    }
+    return await db.select()
+      .from(priceRecommendations)
+      .orderBy(desc(priceRecommendations.createdAt));
+  }
+  
+  async getPriceRecommendation(id: number): Promise<PriceRecommendation | undefined> {
+    const [recommendation] = await db.select()
+      .from(priceRecommendations)
+      .where(eq(priceRecommendations.id, id));
+    return recommendation;
+  }
+  
+  async updatePriceRecommendation(id: number, data: Partial<PriceRecommendation>): Promise<PriceRecommendation> {
+    const [recommendation] = await db.update(priceRecommendations)
+      .set(data)
+      .where(eq(priceRecommendations.id, id))
+      .returning();
+    return recommendation;
+  }
+  
+  async createPriceHistory(history: InsertPriceHistory): Promise<PriceHistory> {
+    const [priceHistory] = await db.insert(subscriptionPriceHistory).values(history).returning();
+    return priceHistory;
+  }
+  
+  async getPriceHistory(planId: number): Promise<PriceHistory[]> {
+    return await db.select()
+      .from(subscriptionPriceHistory)
+      .where(eq(subscriptionPriceHistory.planId, planId))
+      .orderBy(desc(subscriptionPriceHistory.createdAt));
   }
   
   // Marketplace methods

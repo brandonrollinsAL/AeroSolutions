@@ -44,10 +44,12 @@ import achievementsRouter from './routes/achievements';
 import socialMediaRouter from './routes/socialMedia';
 import marketingCampaignsRouter from './routes/marketingCampaigns';
 import seoRouter from './routes/seo';
+import priceOptimizationRouter from './routes/priceOptimization';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
 import { schedulerService } from './utils/schedulerService';
+import { priceOptimizationService } from './utils/priceOptimizationService';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
