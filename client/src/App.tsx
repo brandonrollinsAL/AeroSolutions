@@ -21,6 +21,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import LoginPage from "@/pages/LoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
+import ContentHubPage from "@/pages/ContentHubPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -319,6 +320,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <AdminClientPreviewsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/content-hub">
+          {() => (
+            <>
+              <Helmet>
+                <title>Content Hub | Elevion</title>
+                <meta name="description" content="Access AI-powered business insights, trending topics, and personalized content recommendations for small business owners." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/content-hub" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <ContentHubPage />
             </>
           )}
         </Route>
