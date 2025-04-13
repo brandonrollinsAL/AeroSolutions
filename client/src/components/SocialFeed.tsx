@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaTwitter, FaFacebookF, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
 import { TbNews } from 'react-icons/tb';
-import { HiTrendingUp, HiOutlineBookmark, HiOutlineHeart, HiOutlineShare } from 'react-icons/hi';
+import { HiTrendingUp, HiOutlineBookmark, HiOutlineHeart, HiOutlineShare, HiLightningBolt } from 'react-icons/hi';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,13 @@ interface FeedResponse {
   fallback?: boolean;
 }
 
+interface PostSuggestionResponse {
+  success: boolean;
+  suggestion: string;
+  source: 'generic' | 'activity-based' | 'fallback';
+  error?: string;
+}
+
 interface SocialFeedProps {
   className?: string;
   initialTab?: string;
@@ -60,6 +67,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState(type || initialTab);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSuggestion, setShowSuggestion] = useState(false);
   const feedHeight = `${height}px`;
   const { toast } = useToast();
   
@@ -73,6 +81,12 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   const { data: trendingData, isLoading: isTrendingLoading } = useQuery<FeedResponse>({
     queryKey: ['/api/feed/trending'],
     enabled: activeTab === 'trending',
+  });
+  
+  // Fetch post suggestions if userId is provided
+  const { data: suggestionData, isLoading: isSuggestionLoading } = useQuery<PostSuggestionResponse>({
+    queryKey: ['/api/feed/suggest-post', userId],
+    enabled: !!userId, // Only fetch if userId is provided
   });
 
   // Record user engagement with the content
@@ -352,6 +366,72 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
           </CardContent>
         )}
       </Card>
+      
+      {/* Post Suggestion Feature */}
+      {userId && suggestionData && !showSuggestion && (
+        <div className="mt-4">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2 text-sm"
+            onClick={() => setShowSuggestion(true)}
+          >
+            <HiLightningBolt className="h-4 w-4 text-amber-500" />
+            Get Posting Ideas
+          </Button>
+        </div>
+      )}
+      
+      {/* Post Suggestion Display */}
+      {userId && suggestionData && showSuggestion && (
+        <Card className="mt-4 bg-muted/20 border-dashed">
+          <CardContent className="pt-4">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <HiLightningBolt className="h-5 w-5 text-amber-500" />
+                <h4 className="font-semibold text-sm">Suggested Post Idea</h4>
+              </div>
+              <Badge 
+                variant="outline" 
+                className="text-xs"
+              >
+                {suggestionData.source === 'activity-based' ? 'Personalized' : 
+                 suggestionData.source === 'generic' ? 'For Small Business' : 'Suggested'}
+              </Badge>
+            </div>
+            
+            <div className="bg-card p-3 rounded-md border border-border/50 my-2">
+              <p className="text-sm italic">"{suggestionData.suggestion}"</p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs"
+                onClick={() => setShowSuggestion(false)}
+              >
+                Hide
+              </Button>
+              
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(suggestionData.suggestion);
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "Post idea copied to your clipboard",
+                    duration: 3000,
+                  });
+                }}
+              >
+                Use This Idea
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <div className="text-center mt-3 text-xs text-muted-foreground">
         Follow us on social media to stay updated with our latest web development insights and small business solutions.
