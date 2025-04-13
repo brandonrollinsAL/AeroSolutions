@@ -15,6 +15,10 @@ const onboardingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 12
 const websiteCopySuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for branding ideas with 2-hour TTL
 const brandingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for navigation suggestions with 2-hour TTL
+const navigationSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for performance optimization suggestions with 2-hour TTL
+const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -824,6 +828,306 @@ Make the suggestions professional, modern, and industry-appropriate. Consider cu
     return res.status(500).json({
       success: false,
       message: "Failed to generate branding ideas",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 36: Auto-Suggestions for Client Website Navigation
+ * Suggest navigation structures for client websites based on their business type
+ */
+router.post('/suggest-navigation', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `navigation_suggestion_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedNavigation = navigationSuggestionsCache.get(cacheKey);
+    if (cachedNavigation) {
+      console.log(`Returning cached navigation suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        navigation: cachedNavigation,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new navigation suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (20 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 20 seconds')), 20000);
+    });
+    
+    // Generate navigation using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional UX/UI designer specializing in website navigation structures. Provide detailed, practical navigation recommendations in JSON format.'
+        },
+        { 
+          role: 'user', 
+          content: `Create a comprehensive website navigation structure for a ${normalizedBusinessType} business website. 
+          
+Include:
+1. Main navigation items (maximum 7 items)
+2. Dropdown sub-items for each main item where appropriate
+3. Recommended footer navigation items
+4. Recommended mobile navigation structure
+5. Any special navigation considerations for this business type
+
+Format your response as a JSON object with these sections. Each navigation item should include a label and a brief description explaining its purpose.`
+        }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+      max_tokens: 1500
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const navigationSuggestion = response.choices[0].message.content;
+    
+    // Validate the response is proper JSON
+    try {
+      const parsedNavigation = JSON.parse(navigationSuggestion);
+      
+      // Cache the successful response
+      navigationSuggestionsCache.set(cacheKey, parsedNavigation);
+      
+      console.log(`Successfully generated navigation suggestions for business type: ${normalizedBusinessType}`);
+      
+      return res.json({
+        success: true,
+        navigation: parsedNavigation,
+        source: 'fresh'
+      });
+    } catch (jsonError) {
+      console.error("Error parsing navigation JSON:", jsonError);
+      
+      // If JSON parsing fails, return the raw content
+      navigationSuggestionsCache.set(cacheKey, navigationSuggestion);
+      
+      return res.json({
+        success: true,
+        navigation: navigationSuggestion,
+        source: 'fresh',
+        warning: 'Response could not be parsed as JSON'
+      });
+    }
+  } catch (error: any) {
+    console.error("Error generating navigation suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 20 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate navigation suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 37: Auto-Suggestions for Website Performance Optimization
+ * Analyze and suggest performance improvements for client websites
+ */
+router.post('/suggest-performance-optimization', async (req: Request, res: Response) => {
+  try {
+    const { 
+      businessType, 
+      websiteUrl, 
+      currentIssues, 
+      targetAudience, 
+      deviceTarget 
+    } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Create a unique cache key based on the input parameters
+    const hashInput = `${businessType}_${websiteUrl || ''}_${currentIssues || ''}_${targetAudience || ''}_${deviceTarget || 'all'}`;
+    const cacheKey = `performance_optimization_${Buffer.from(hashInput).toString('base64').substring(0, 40)}`;
+    
+    // Check cache first
+    const cachedSuggestions = performanceOptimizationCache.get(cacheKey);
+    if (cachedSuggestions) {
+      console.log(`Returning cached performance optimization suggestions for: ${businessType}`);
+      return res.json({
+        success: true,
+        optimizationSuggestions: cachedSuggestions,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new performance optimization suggestions for: ${businessType}`);
+    
+    // Build the prompt based on the available information
+    let prompt = `Generate performance optimization suggestions for a ${businessType} business website.`;
+    
+    if (websiteUrl) {
+      prompt += `\nWebsite URL: ${websiteUrl}`;
+    }
+    
+    if (currentIssues) {
+      prompt += `\nCurrent issues: ${currentIssues}`;
+    }
+    
+    if (targetAudience) {
+      prompt += `\nTarget audience: ${targetAudience}`;
+    }
+    
+    if (deviceTarget) {
+      prompt += `\nTarget devices: ${deviceTarget}`;
+    }
+    
+    prompt += `\n\nPlease provide a comprehensive performance optimization plan with these sections:
+
+1. Core Web Vitals Optimization
+   - Largest Contentful Paint (LCP) improvements
+   - First Input Delay (FID) improvements
+   - Cumulative Layout Shift (CLS) improvements
+
+2. Image Optimization Strategy
+   - Recommendations for image formats
+   - Lazy loading implementation
+   - Image CDN recommendations
+
+3. JavaScript and CSS Optimization
+   - Code splitting recommendations
+   - Critical CSS strategy
+   - Third-party script management
+
+4. Server and Hosting Recommendations
+   - Caching strategy
+   - CDN implementation
+   - Hosting platform recommendations
+
+5. Mobile Performance Optimization
+   - Mobile-specific optimizations
+   - Progressive Web App (PWA) considerations
+   - Touch optimization
+
+6. Implementation Priority
+   - High-impact, quick wins
+   - Medium-term improvements
+   - Long-term strategic optimizations
+
+Format your response as a JSON object with these sections. For each recommendation, include a brief explanation of the benefit and relative implementation difficulty (Easy, Medium, Hard).`;
+    
+    // Set timeout for Grok call (25 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 25 seconds')), 25000);
+    });
+    
+    // Generate optimization suggestions using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3', // Using standard model for better quality analysis
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a senior web performance engineer at Elevion, specializing in optimizing websites for various business types. Provide practical, actionable performance optimization recommendations in JSON format.'
+        },
+        { 
+          role: 'user', 
+          content: prompt
+        }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const optimizationContent = response.choices[0].message.content;
+    
+    // Validate the response is proper JSON
+    try {
+      const parsedOptimizations = JSON.parse(optimizationContent);
+      
+      // Cache the successful response
+      performanceOptimizationCache.set(cacheKey, parsedOptimizations);
+      
+      console.log(`Successfully generated performance optimization suggestions for: ${businessType}`);
+      
+      return res.json({
+        success: true,
+        optimizationSuggestions: parsedOptimizations,
+        source: 'fresh'
+      });
+    } catch (jsonError) {
+      console.error("Error parsing optimization JSON:", jsonError);
+      
+      // If JSON parsing fails, return the raw content with a warning
+      return res.json({
+        success: true,
+        optimizationSuggestions: optimizationContent,
+        source: 'fresh',
+        warning: 'Response could not be parsed as JSON'
+      });
+    }
+  } catch (error: any) {
+    console.error("Error generating performance optimization suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 25 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with more specific details."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate performance optimization suggestions",
       error: error.message || "Unknown error"
     });
   }
