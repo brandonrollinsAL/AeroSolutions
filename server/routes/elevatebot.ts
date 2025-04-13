@@ -12,6 +12,8 @@ import { body, param, validationResult } from 'express-validator';
 import { db } from '../db';
 import { grokApi } from '../grok';
 import NodeCache from 'node-cache';
+import { eq } from 'drizzle-orm';
+import { elevatebotQueries } from '@shared/schema';
 
 // Create a router
 const router = express.Router();
@@ -45,16 +47,20 @@ router.post('/log',
 
       const { query, userId, model = 'grok-3-mini', tokensUsed, responseTime, response } = req.body;
 
-      // Insert the query into the database
-      const result = await db.query(
-        'INSERT INTO elevatebot_queries (query, user_id, model_used, tokens_used, response_time, response) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-        [query, userId || null, model, tokensUsed || null, responseTime || null, response || null]
-      );
+      // Insert the query into the database using Drizzle
+      const result = await db.insert(elevatebotQueries).values({
+        query: query,
+        user_id: userId || null,
+        model_used: model,
+        tokens_used: tokensUsed || null,
+        response_time: responseTime || null,
+        response: response || null
+      }).returning({ id: elevatebotQueries.id });
 
       return res.status(201).json({
         success: true,
         message: 'Query logged successfully',
-        id: result.rows[0].id
+        id: result[0].id
       });
     } catch (error: any) {
       console.error('Error logging ElevateBot query:', error);
@@ -82,10 +88,18 @@ router.get('/usage-analytics', async (req: Request, res: Response) => {
       return res.json(cachedAnalytics);
     }
     
-    // If not in cache, query the database
-    const { rows: queries } = await db.query(
-      'SELECT query, user_id, model_used, tokens_used, response_time, created_at FROM elevatebot_queries ORDER BY created_at DESC LIMIT 100'
-    );
+    // If not in cache, query the database with Drizzle ORM
+    const queries = await db.select({
+      query: elevatebotQueries.query,
+      user_id: elevatebotQueries.user_id,
+      model_used: elevatebotQueries.model_used,
+      tokens_used: elevatebotQueries.tokens_used,
+      response_time: elevatebotQueries.response_time,
+      created_at: elevatebotQueries.created_at
+    })
+    .from(elevatebotQueries)
+    .orderBy(elevatebotQueries.created_at, 'desc')
+    .limit(100);
     
     if (!queries || queries.length === 0) {
       return res.status(404).json({
@@ -229,10 +243,16 @@ router.get('/elevatebot-usage', async (req: Request, res: Response) => {
       return res.json(cachedAnalysis);
     }
     
-    // Query the database for usage data
-    const usage = await db.query('SELECT query, created_at FROM elevatebot_queries ORDER BY created_at DESC LIMIT 100');
+    // Query the database for usage data using Drizzle ORM
+    const usage = await db.select({
+      query: elevatebotQueries.query,
+      created_at: elevatebotQueries.created_at
+    })
+    .from(elevatebotQueries)
+    .orderBy(elevatebotQueries.created_at, 'desc')
+    .limit(100);
     
-    if (!usage.rows || usage.rows.length === 0) {
+    if (!usage || usage.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'No ElevateBot usage data found'
@@ -240,7 +260,7 @@ router.get('/elevatebot-usage', async (req: Request, res: Response) => {
     }
     
     // Format the data for AI analysis
-    const usageData = usage.rows.map(u => `Query: ${u.query} at ${new Date(u.created_at).toISOString()}`).join('\n');
+    const usageData = usage.map(u => `Query: ${u.query} at ${new Date(u.created_at).toISOString()}`).join('\n');
     
     // Call the Grok AI for analysis
     const response = await grokApi.createChatCompletion(
@@ -264,7 +284,7 @@ router.get('/elevatebot-usage', async (req: Request, res: Response) => {
     // Create result with the analysis
     const result = {
       success: true,
-      queryCount: usage.rows.length,
+      queryCount: usage.length,
       analysis: response.choices[0].message.content,
       timestamp: new Date().toISOString()
     };
@@ -396,12 +416,6 @@ IMPORTANT: Never fabricate information about Elevion. Stick to these key facts:
     const endTime = process.hrtime(startTime);
     const responseTimeMs = Math.round((endTime[0] * 1000) + (endTime[1] / 1000000));
     
-    // Log the query to the database for analytics
-    const logResult = await db.query(
-      'INSERT INTO elevatebot_queries (query, user_id, model_used, response_time, response, session_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [message, userId || null, 'grok-3-mini', responseTimeMs, assistantResponse, currentSessionId]
-    );
-    
     // Analyze if the response contains subscription or service recommendations
     const containsRecommendation = 
       assistantResponse.toLowerCase().includes('subscription') ||
@@ -411,6 +425,17 @@ IMPORTANT: Never fabricate information about Elevion. Stick to these key facts:
       assistantResponse.toLowerCase().includes('free mockup') ||
       assistantResponse.toLowerCase().includes('consultation');
     
+    // Log the query to the database for analytics using Drizzle ORM
+    const logResult = await db.insert(elevatebotQueries).values({
+      query: message,
+      user_id: userId || null,
+      model_used: 'grok-3-mini',
+      response_time: responseTimeMs,
+      response: assistantResponse,
+      session_id: currentSessionId,
+      containsRecommendation: containsRecommendation
+    }).returning({ id: elevatebotQueries.id });
+    
     // Return the response
     return res.json({
       success: true,
@@ -418,7 +443,7 @@ IMPORTANT: Never fabricate information about Elevion. Stick to these key facts:
       message: assistantResponse,
       containsRecommendation,
       responseTime: responseTimeMs,
-      queryId: logResult.rows[0].id
+      queryId: logResult[0].id
     });
     
   } catch (error: any) {
@@ -449,21 +474,18 @@ router.get('/elevatebot-engagement', async (req: Request, res: Response) => {
       });
     }
     
-    // Query the database for detailed engagement data
-    const { rows: queries } = await db.query(`
-      SELECT 
-        query,
-        user_id,
-        response_time,
-        tokens_used,
-        model_used,
-        created_at
-      FROM 
-        elevatebot_queries
-      ORDER BY 
-        created_at DESC
-      LIMIT 100
-    `);
+    // Query the database for detailed engagement data using Drizzle ORM
+    const queries = await db.select({
+      query: elevatebotQueries.query,
+      user_id: elevatebotQueries.user_id,
+      response_time: elevatebotQueries.response_time,
+      tokens_used: elevatebotQueries.tokens_used,
+      model_used: elevatebotQueries.model_used,
+      created_at: elevatebotQueries.created_at
+    })
+    .from(elevatebotQueries)
+    .orderBy(elevatebotQueries.created_at, 'desc')
+    .limit(100);
     
     if (!queries || queries.length === 0) {
       return res.status(404).json({
