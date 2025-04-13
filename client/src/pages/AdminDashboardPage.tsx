@@ -5,13 +5,14 @@ import { Helmet } from 'react-helmet';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FaUsers, FaChartBar, FaRegCalendarAlt, FaExternalLinkAlt, FaLock, FaDatabase, FaGlobe, FaClipboard, FaUser, FaCode, FaShieldAlt } from 'react-icons/fa';
+import { FaUsers, FaChartBar, FaRegCalendarAlt, FaExternalLinkAlt, FaLock, FaDatabase, FaGlobe, FaClipboard, FaUser, FaCode, FaShieldAlt, FaTwitter } from 'react-icons/fa';
 import { Shield, Activity, BarChart, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/MainLayout';
 import LanguageMetaTags from '@/components/LanguageMetaTags';
 import ComplianceAlerts from '@/components/ComplianceAlerts';
 import ModerationDashboard from '@/components/ModerationDashboard';
+import TwitterDashboard from '@/components/TwitterDashboard';
 
 export default function AdminDashboardPage() {
   const [, setLocation] = useLocation();
@@ -259,10 +260,10 @@ export default function AdminDashboardPage() {
             <CardHeader className="border-b pb-3">
               <CardTitle className="flex items-center text-lg">
                 <FaShieldAlt className="mr-2 h-5 w-5 text-blue-600" />
-                Platform Protection & Compliance
+                Platform Management & Automation
               </CardTitle>
               <CardDescription>
-                AI-powered monitoring, moderation, and legal compliance management
+                AI-powered monitoring, moderation, legal compliance, and content automation
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -270,12 +271,16 @@ export default function AdminDashboardPage() {
                 <TabsList className="mb-4">
                   <TabsTrigger value="compliance">Legal Compliance</TabsTrigger>
                   <TabsTrigger value="moderation">Content Moderation</TabsTrigger>
+                  <TabsTrigger value="twitter">Twitter Automation</TabsTrigger>
                 </TabsList>
                 <TabsContent value="compliance">
                   <ComplianceAlerts />
                 </TabsContent>
                 <TabsContent value="moderation">
                   <ModerationDashboard />
+                </TabsContent>
+                <TabsContent value="twitter">
+                  <TwitterDashboard />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -288,7 +293,7 @@ export default function AdminDashboardPage() {
               <CardDescription>Common administrative tasks and tools</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <Button 
                   variant="outline" 
                   className="h-auto flex flex-col items-center justify-center p-4 gap-2"
@@ -320,6 +325,15 @@ export default function AdminDashboardPage() {
                 >
                   <FaCode className="h-5 w-5 text-blue-600" />
                   <span className="text-sm">Manage Access Codes</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
+                  onClick={() => window.open('https://developer.twitter.com/en/portal/dashboard', '_blank')}
+                >
+                  <FaTwitter className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm">X API Dashboard</span>
                 </Button>
                 
                 <Button 
