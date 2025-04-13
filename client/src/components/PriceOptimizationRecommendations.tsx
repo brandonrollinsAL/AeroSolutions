@@ -171,7 +171,8 @@ const PriceOptimizationRecommendations: React.FC = () => {
     );
   }
 
-  const recommendations: RecommendationItem[] = data?.data || [];
+  // Make sure we safely extract the data
+  const recommendations: RecommendationItem[] = (data as any)?.data || [];
 
   if (recommendations.length === 0) {
     return (

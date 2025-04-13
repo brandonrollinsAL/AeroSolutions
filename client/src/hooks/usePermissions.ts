@@ -1,5 +1,13 @@
 // Type definition for permissions
-type Permission = 'admin' | 'marketing' | 'content' | 'user' | 'client' | 'pricing.view' | 'pricing.manage';
+// Define all available permission types
+type Permission = 
+  | 'admin'           // Full system access
+  | 'marketing'       // Marketing features access
+  | 'content'         // Content management access
+  | 'user'            // Standard user access
+  | 'client'          // Client-specific features
+  | 'pricing.view'    // Can view pricing optimization data
+  | 'pricing.manage'; // Can manage pricing (approve/reject changes)
 
 /**
  * Hook for checking user permissions

@@ -97,7 +97,8 @@ const PriceOptimizationHistory: React.FC = () => {
     );
   }
 
-  const priceHistory: PriceHistoryEntry[] = data?.data || [];
+  // Make sure we safely extract the data
+  const priceHistory: PriceHistoryEntry[] = (data as any)?.data || [];
 
   if (priceHistory.length === 0) {
     return (

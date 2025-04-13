@@ -23,8 +23,9 @@ const PriceOptimizationPage: React.FC = () => {
   const { hasPermission } = usePermissions();
   const [, setLocation] = useLocation();
   
-  const canViewPricing = hasPermission('pricing.view');
-  const canManagePricing = hasPermission('pricing.manage');
+  // Cast the permissions to the appropriate type
+  const canViewPricing = hasPermission('pricing.view' as any);
+  const canManagePricing = hasPermission('pricing.manage' as any);
 
   if (isLoading) {
     return (
