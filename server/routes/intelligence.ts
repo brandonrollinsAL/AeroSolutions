@@ -392,7 +392,7 @@ router.post('/optimize-conversion', [
     .isObject().withMessage('Visitor metrics must be an object'),
   body('current_conversion_rate')
     .optional()
-    .isNumber().withMessage('Current conversion rate must be a number')
+    .isNumeric().withMessage('Current conversion rate must be a number')
 ], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);

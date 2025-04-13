@@ -12,8 +12,7 @@ const router = Router();
 router.post('/generate-blog', [
   body('topic')
     .notEmpty().withMessage('Topic is required')
-    .isString().withMessage('Topic must be a string')
-    .isLength({ max: 200 }).withMessage('Topic must be less than 200 characters'),
+    .isString().withMessage('Topic must be a string'),
   body('target_audience')
     .optional()
     .isString().withMessage('Target audience must be a string'),
@@ -31,27 +30,29 @@ router.post('/generate-blog', [
       });
     }
 
-    const { topic, target_audience = 'small business owners', word_count = 800 } = req.body;
+    const { 
+      topic, 
+      target_audience = 'small business owners', 
+      word_count = 800 
+    } = req.body;
 
-    const prompt = `Write a compelling blog post about ${topic} for ${target_audience}. 
-    The blog should be approximately ${word_count} words and follow SEO best practices.
+    const prompt = `Generate a blog post about "${topic}" for ${target_audience}. 
+    The blog should be approximately ${word_count} words and include:
     
-    The blog should represent Elevion, a premier web development company that specializes in creating 
-    modern, responsive websites and web applications for small to medium-sized businesses.
+    1. An engaging headline
+    2. Introduction that hooks the reader
+    3. 3-5 main points with subheadings
+    4. Practical advice or actionable tips
+    5. A conclusion with call-to-action
+    6. Meta description for SEO
     
-    Include these elements:
-    - An engaging headline
-    - 3-5 subheadings
-    - At least one practical example or case study
-    - A clear call-to-action at the end that encourages readers to contact Elevion for web development services
-    
-    Brand voice: Professional, helpful, and knowledgeable without being overly technical`;
+    The content should highlight Elevion's expertise in web development and subtly mention our free mockup service and 60% below market rates. Format the content with proper HTML tags for a website blog.`;
 
-    const content = await getGrokCompletion(prompt, 'grok-3-mini');
+    const blogContent = await getGrokCompletion(prompt, 'grok-3-mini');
     
     return res.status(200).json({
       success: true,
-      blog_content: content
+      blog_content: blogContent
     });
   } catch (error: any) {
     console.error('Blog generation error:', error);
@@ -72,7 +73,7 @@ router.post('/generate-email', [
     .notEmpty().withMessage('Campaign type is required')
     .isString().withMessage('Campaign type must be a string'),
   body('target_audience')
-    .optional()
+    .notEmpty().withMessage('Target audience is required')
     .isString().withMessage('Target audience must be a string'),
   body('key_points')
     .optional()
@@ -90,12 +91,12 @@ router.post('/generate-email', [
 
     const { 
       campaign_type, 
-      target_audience = 'small business owners', 
+      target_audience, 
       key_points = [] 
     } = req.body;
 
     const keyPointsText = key_points.length > 0 
-      ? `Key points to include:\n${key_points.map(p => `- ${p}`).join('\n')}`
+      ? `Key points to include:\n${key_points.map((p: string) => `- ${p}`).join('\n')}`
       : '';
 
     const prompt = `Create a marketing email for Elevion web development company. 
@@ -227,7 +228,7 @@ router.post('/generate-description', [
     } = req.body;
 
     const featuresText = features.length > 0
-      ? `Service features:\n${features.map(f => `- ${f}`).join('\n')}`
+      ? `Service features:\n${features.map((f: string) => `- ${f}`).join('\n')}`
       : '';
 
     const prompt = `Create a compelling service description for Elevion's ${service_name} offering.

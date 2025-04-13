@@ -101,7 +101,7 @@ router.post('/generate-faq', [
     } = req.body;
 
     const questionsText = common_questions.length > 0
-      ? `Include answers to these specific questions:\n${common_questions.map(q => `- ${q}`).join('\n')}`
+      ? `Include answers to these specific questions:\n${common_questions.map((q: string) => `- ${q}`).join('\n')}`
       : 'Generate common questions and answers relevant to this business type';
 
     const prompt = `Create a comprehensive FAQ section for ${business_type} businesses interested in ${service_focus} services from Elevion.

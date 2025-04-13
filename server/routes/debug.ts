@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { callXAI, getGrokCompletion } from '../utils/xaiClient';
 import { db } from '../db';
-import { eq, desc, sql } from 'drizzle-orm';
 
 const router = Router();
 
@@ -12,12 +11,16 @@ const router = Router();
  */
 router.post('/analyze-code', [
   body('code')
-    .notEmpty().withMessage('Code snippet is required')
-    .isString().withMessage('Code must be a string')
-    .isLength({ max: 5000 }).withMessage('Code snippet must be less than 5000 characters')
+    .notEmpty().withMessage('Code is required')
+    .isString().withMessage('Code must be a string'),
+  body('language')
+    .notEmpty().withMessage('Language is required')
+    .isString().withMessage('Language must be a string'),
+  body('context')
+    .optional()
+    .isString().withMessage('Context must be a string')
 ], async (req: Request, res: Response) => {
   try {
-    // Validate request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -27,51 +30,34 @@ router.post('/analyze-code', [
       });
     }
 
-    const { code, language = 'javascript' } = req.body;
-
-    // Analyze code with Grok
-    const prompt = `As an expert developer, analyze the following ${language} code for bugs, performance issues, and improvement opportunities:
+    const { code, language, context = '' } = req.body;
     
+    const contextText = context ? `Additional context: ${context}\n\n` : '';
+
+    const prompt = `Analyze this ${language} code for errors, bugs, and optimization opportunities:
+
 \`\`\`${language}
 ${code}
 \`\`\`
 
-Please provide your analysis in the following JSON format:
-{
-  "issues": [
-    {
-      "type": "bug|performance|security|best_practice",
-      "severity": "high|medium|low",
-      "description": "Description of the issue",
-      "line": "line number or range",
-      "recommendation": "Suggested fix"
-    }
-  ],
-  "summary": "Brief summary of findings",
-  "improved_code": "Suggested improved version of the code (if applicable)"
-}`;
+${contextText}
+Please provide a comprehensive analysis including:
+1. Identified bugs and errors
+2. Performance issues or inefficiencies
+3. Security vulnerabilities
+4. Code quality concerns
+5. Optimization recommendations
+6. A corrected version of the code (if applicable)
+
+Return the analysis as a well-structured JSON object.`;
 
     const response = await callXAI('/chat/completions', {
       model: 'grok-3-mini',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
-      temperature: 0.3,
-      max_tokens: 1000
+      max_tokens: 1500
     });
-
-    // Save analysis in debug logs table if available
-    try {
-      // Potential table structure, depends on actual schema
-      // await db.insert(debugLogs).values({
-      //   code_snippet: code.substring(0, 500), // storing just the beginning for reference
-      //   analysis: JSON.stringify(response.choices[0].message.content),
-      //   created_at: new Date()
-      // });
-    } catch (dbError) {
-      console.warn('Failed to save debug log:', dbError);
-      // Continue anyway, don't fail the request if logging fails
-    }
-
+    
     return res.status(200).json({
       success: true,
       analysis: JSON.parse(response.choices[0].message.content)
@@ -92,44 +78,57 @@ Please provide your analysis in the following JSON format:
  */
 router.post('/analyze-trends', async (req: Request, res: Response) => {
   try {
-    // Note: This would need a debug_logs table in the schema
-    // Placeholder query that would need to be modified based on actual schema
-    // const logs = await db.query.debugLogs.findMany({
-    //   orderBy: [desc(debugLogs.created_at)],
-    //   limit: 100
-    // });
+    const { logs } = req.body;
     
-    // Mock data for demonstration
-    const logs = [
-      { message: "TypeError: Cannot read property 'id' of undefined in UserProfile.jsx", created_at: new Date() },
-      { message: "API error: 429 Too Many Requests in AuthService.ts", created_at: new Date() },
-      { message: "React warning: Each child in a list should have a unique 'key' prop in ProductList.jsx", created_at: new Date() }
-    ];
-    
-    const logData = logs.map(log => log.message).join('\n');
-    
-    const prompt = `Analyze these debug logs for patterns and trends. Categorize the issues and suggest potential solutions:
+    if (!logs || !Array.isArray(logs) || logs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid logs array is required'
+      });
+    }
 
-Debug Logs:
-${logData}
+    // Format logs for analysis
+    const logsText = logs.map((log: any, index: number) => {
+      if (typeof log === 'string') {
+        return `${index + 1}. ${log}`;
+      } else if (typeof log === 'object') {
+        return `${index + 1}. ${JSON.stringify(log)}`;
+      }
+      return `${index + 1}. ${String(log)}`;
+    }).join('\n');
 
-Provide your analysis in JSON format with these sections:
-- Common error patterns
-- Root cause suggestions
-- Recommended fixes
-- Priority areas for improvement`;
+    const prompt = `Analyze these debugging logs to identify patterns, trends, and recurring issues:
 
-    const analysis = await getGrokCompletion(prompt, 'grok-3-mini');
+Logs:
+${logsText}
+
+Provide a comprehensive analysis including:
+1. Most frequent error types and their occurrence count
+2. Time-based patterns (if timestamps are present)
+3. Common error sequences or cascading failures
+4. Component or module-specific error clusters
+5. Root cause probability analysis
+6. Actionable recommendations for fixing the most critical issues
+7. Suggested monitoring improvements
+
+Format the analysis as a JSON object with appropriate sections.`;
+
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000
+    });
     
     return res.status(200).json({
       success: true,
-      trends: analysis
+      trend_analysis: JSON.parse(response.choices[0].message.content)
     });
   } catch (error: any) {
-    console.error('Debug trend analysis error:', error);
+    console.error('Log trend analysis error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Debug trend analysis failed',
+      message: 'Log trend analysis failed',
       error: error.message
     });
   }
@@ -139,10 +138,16 @@ Provide your analysis in JSON format with these sections:
  * Suggestion 3: Performance Optimization Analysis
  * Analyzes component performance metrics and provides optimization suggestions
  */
-router.post('/performance-optimization', [
-  body('component_data')
-    .notEmpty().withMessage('Component performance data is required')
-    .isObject().withMessage('Component data must be an object')
+router.post('/performance-analysis', [
+  body('metrics')
+    .notEmpty().withMessage('Performance metrics are required')
+    .isObject().withMessage('Metrics must be an object'),
+  body('component_name')
+    .optional()
+    .isString().withMessage('Component name must be a string'),
+  body('context')
+    .optional()
+    .isString().withMessage('Context must be a string')
 ], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -154,27 +159,38 @@ router.post('/performance-optimization', [
       });
     }
 
-    const { component_data } = req.body;
+    const { metrics, component_name = 'component', context = '' } = req.body;
     
-    // Format the component data as string
-    const formattedData = JSON.stringify(component_data, null, 2);
-    
-    const prompt = `Analyze this React component performance data and suggest optimizations:
-    
-${formattedData}
+    const metricsText = JSON.stringify(metrics, null, 2);
+    const contextText = context ? `Additional context: ${context}\n\n` : '';
 
-Provide recommendations for improving performance in these areas:
-1. Render optimization
-2. State management
-3. Effects and lifecycle
-4. Network/data fetching
-5. Memory utilization`;
+    const prompt = `Analyze these performance metrics for the "${component_name}" component:
 
-    const analysis = await getGrokCompletion(prompt, 'grok-3-mini');
+${metricsText}
+
+${contextText}
+Provide a comprehensive performance optimization analysis including:
+1. Performance bottlenecks identification
+2. Resource usage inefficiencies
+3. Loading time and rendering optimization suggestions
+4. Caching recommendations
+5. Network request optimizations
+6. Bundle size reduction opportunities
+7. Priority fixes with estimated impact
+8. Long-term optimization strategy
+
+Return the analysis as a JSON object with appropriate sections.`;
+
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000
+    });
     
     return res.status(200).json({
       success: true,
-      optimization_suggestions: analysis
+      performance_analysis: JSON.parse(response.choices[0].message.content)
     });
   } catch (error: any) {
     console.error('Performance analysis error:', error);
@@ -192,38 +208,51 @@ Provide recommendations for improving performance in these areas:
  */
 router.post('/api-optimization', async (req: Request, res: Response) => {
   try {
-    // This would typically fetch from logs or analytics DB
-    // Mock data for demonstration
-    const apiLogs = [
-      { endpoint: '/api/products', method: 'GET', response_time: 320, success: true, timestamp: new Date() },
-      { endpoint: '/api/users/profile', method: 'GET', response_time: 450, success: true, timestamp: new Date() },
-      { endpoint: '/api/orders', method: 'POST', response_time: 620, success: false, timestamp: new Date() }
-    ];
+    const { api_calls } = req.body;
     
-    const apiData = JSON.stringify(apiLogs, null, 2);
-    
-    const prompt = `Analyze these API usage patterns and suggest optimizations:
-    
-${apiData}
+    if (!api_calls || !Array.isArray(api_calls) || api_calls.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid API calls array is required'
+      });
+    }
 
-Consider:
-1. Response time optimization
-2. Caching opportunities
-3. Request patterns that could be batched
-4. Error patterns
-5. Resource utilization`;
+    // Format API calls for analysis
+    const apiCallsText = JSON.stringify(api_calls, null, 2);
 
-    const analysis = await getGrokCompletion(prompt, 'grok-3-mini');
+    const prompt = `Analyze these API call patterns and provide optimization recommendations:
+
+API Calls:
+${apiCallsText}
+
+Provide a comprehensive API usage optimization analysis including:
+1. Redundant API call patterns
+2. Excessive polling or request frequency
+3. Opportunities for batching or bulk operations
+4. Caching recommendations with TTL suggestions
+5. Rate limiting concerns and mitigation strategies
+6. Parallel request optimization opportunities
+7. Data payload size optimization
+8. Error handling and retry strategy improvements
+
+Format the analysis as a JSON object with appropriate sections.`;
+
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000
+    });
     
     return res.status(200).json({
       success: true,
-      api_optimization: analysis
+      api_optimization: JSON.parse(response.choices[0].message.content)
     });
   } catch (error: any) {
-    console.error('API optimization analysis error:', error);
+    console.error('API optimization error:', error);
     return res.status(500).json({
       success: false,
-      message: 'API optimization analysis failed',
+      message: 'API optimization failed',
       error: error.message
     });
   }
@@ -233,10 +262,16 @@ Consider:
  * Suggestion 5: User Flow Optimization
  * Analyzes user session flows and suggests UX improvements
  */
-router.post('/user-flow-analysis', [
+router.post('/user-flow-optimization', [
   body('session_data')
     .notEmpty().withMessage('Session data is required')
-    .isArray().withMessage('Session data must be an array')
+    .isArray().withMessage('Session data must be an array'),
+  body('conversion_goal')
+    .optional()
+    .isString().withMessage('Conversion goal must be a string'),
+  body('bounce_rate')
+    .optional()
+    .isNumeric().withMessage('Bounce rate must be a number')
 ], async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -248,30 +283,52 @@ router.post('/user-flow-analysis', [
       });
     }
 
-    const { session_data } = req.body;
+    const { 
+      session_data, 
+      conversion_goal = 'general engagement', 
+      bounce_rate = null 
+    } = req.body;
     
-    const prompt = `Analyze these user session flows and suggest UX improvements:
-    
-${JSON.stringify(session_data, null, 2)}
+    const sessionDataText = JSON.stringify(session_data, null, 2);
+    const bounceRateText = bounce_rate !== null 
+      ? `Current bounce rate: ${bounce_rate}%` 
+      : 'Bounce rate not provided';
 
-For each flow pattern, provide:
-1. Identified friction points
-2. Drop-off analytics
-3. Suggested UI/UX improvements
-4. Potential A/B test ideas
-5. Priority recommendations`;
+    const prompt = `Analyze these user session flows for a website with the conversion goal of "${conversion_goal}":
 
-    const analysis = await getGrokCompletion(prompt, 'grok-3-mini');
+Session Data:
+${sessionDataText}
+
+${bounceRateText}
+
+Provide a comprehensive user flow optimization analysis including:
+1. Identified drop-off points and friction areas
+2. Navigation path inefficiencies
+3. Content engagement patterns
+4. Form completion obstacles
+5. Call-to-action effectiveness
+6. Mobile vs desktop behavioral differences (if applicable)
+7. Suggested A/B tests for improvement
+8. Prioritized UX recommendations with expected impact
+
+Format the analysis as a JSON object with appropriate sections.`;
+
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000
+    });
     
     return res.status(200).json({
       success: true,
-      user_flow_analysis: analysis
+      user_flow_analysis: JSON.parse(response.choices[0].message.content)
     });
   } catch (error: any) {
-    console.error('User flow analysis error:', error);
+    console.error('User flow optimization error:', error);
     return res.status(500).json({
       success: false,
-      message: 'User flow analysis failed',
+      message: 'User flow optimization failed',
       error: error.message
     });
   }
