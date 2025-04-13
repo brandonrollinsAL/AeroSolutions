@@ -436,6 +436,21 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/social-media-suggestions">
+          {() => (
+            <>
+              <Helmet>
+                <title>Social Media Post Suggestions | Elevion</title>
+                <meta name="description" content="Get AI-powered social media post suggestions tailored to your business type to boost your online presence." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/social-media-suggestions" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <SocialMediaSuggestionsPage />
+            </>
+          )}
+        </Route>
         <Route>
           {() => (
             <>

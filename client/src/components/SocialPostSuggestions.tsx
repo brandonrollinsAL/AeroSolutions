@@ -17,8 +17,10 @@ export function SocialPostSuggestions({ userId, businessType }: SocialPostSugges
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
 
   // Fetch social media post suggestions from the API
-  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ['/api/marketplace/suggest-social-posts', userId],
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery<{ 
+    data: { posts: string; cached?: boolean; fallback?: boolean };
+  }>({
+    queryKey: ['/api/marketplace/suggest-social-posts', userId, businessType],
     enabled: !!userId,
   });
 
@@ -117,8 +119,8 @@ export function SocialPostSuggestions({ userId, businessType }: SocialPostSugges
         <CardTitle className="text-2xl">Social Media Post Suggestions</CardTitle>
         <CardDescription>
           AI-generated post ideas for your {businessType || 'business'}
-          {data?.cached && <span className="text-xs text-muted-foreground ml-2">(cached)</span>}
-          {data?.fallback && <span className="text-xs text-amber-500 ml-2">(fallback suggestions)</span>}
+          {data?.data?.cached && <span className="text-xs text-muted-foreground ml-2">(cached)</span>}
+          {data?.data?.fallback && <span className="text-xs text-amber-500 ml-2">(fallback suggestions)</span>}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
