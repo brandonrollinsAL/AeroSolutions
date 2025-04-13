@@ -877,15 +877,21 @@ marketplaceRouter.post(
     try {
       const { businessType, userId } = req.body;
       
-      // Generate a cache key based on business type
-      const cacheKey = `content_marketing_${businessType.toLowerCase().replace(/\s+/g, '_')}`;
+      // Generate a cache key based on business type - standardized format
+      const normalizedBizType = businessType.toLowerCase().replace(/\s+/g, '_');
+      const cacheKey = `content-marketing-${normalizedBizType}`;
       
       // Check if we have a cached result
+      console.log(`[Content Marketing API] Checking cache for key: ${cacheKey}`);
       const cachedResult = contentMarketingCache.get(cacheKey);
       if (cachedResult) {
-        console.log(`[Cache Hit] Using cached content marketing suggestions for ${businessType}`);
-        return res.json(cachedResult);
+        console.log(`[Content Marketing API] Cache HIT for business type: ${businessType}`);
+        return res.json({
+          ...cachedResult,
+          cacheHit: true
+        });
       }
+      console.log(`[Content Marketing API] Cache MISS for business type: ${businessType}`);
 
       // If userId is provided, try to get more context from their mockup requests
       let businessGoals = '';
