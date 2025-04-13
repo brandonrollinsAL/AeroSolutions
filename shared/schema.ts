@@ -1028,3 +1028,58 @@ export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+// System logs table for monitoring and bug detection
+export const logs = pgTable("logs", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  level: text("level").notNull(), // error, warn, info, debug
+  message: text("message").notNull(),
+  source: text("source"), // Component or file that generated the log
+  context: json("context"), // Additional contextual data
+  stackTrace: text("stack_trace"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  sessionId: text("session_id"),
+  requestId: text("request_id"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+});
+
+export const insertLogSchema = createInsertSchema(logs).omit({
+  id: true,
+});
+
+export type Log = typeof logs.$inferSelect;
+export type InsertLog = z.infer<typeof insertLogSchema>;
+
+// Bug reports table for tracking detected issues
+export const bug_reports = pgTable("bug_reports", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  severity: text("severity").notNull(), // low, medium, high, critical
+  status: text("status").notNull(), // open, in-progress, resolved, closed, fix-attempted
+  source: text("source").notNull(), // automated-log-analysis, user-feedback, manual-report
+  affectedComponent: text("affected_component"),
+  suggestedFix: text("suggested_fix"),
+  canAutoFix: boolean("can_auto_fix").default(false),
+  autoFixCode: text("auto_fix_code"),
+  assignedToUserId: integer("assigned_to_user_id").references(() => users.id, { onDelete: "set null" }),
+  reportedByUserId: integer("reported_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  logIds: json("log_ids").$type<number[]>(),
+  feedbackId: integer("feedback_id").references(() => feedback.id, { onDelete: "set null" }),
+  fixAttemptedAt: timestamp("fix_attempted_at"),
+  resolvedAt: timestamp("resolved_at"),
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertBugReportSchema = createInsertSchema(bug_reports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type BugReport = typeof bug_reports.$inferSelect;
+export type InsertBugReport = z.infer<typeof insertBugReportSchema>;

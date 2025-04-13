@@ -14,7 +14,10 @@ import {
   type MockupRequest, type InsertMockupRequest, type MarketplaceServiceEngagement,
   priceRecommendations, subscriptionPriceHistory,
   type PriceRecommendation, type InsertPriceRecommendation,
-  type PriceHistory, type InsertPriceHistory
+  type PriceHistory, type InsertPriceHistory,
+  logs, bug_reports,
+  type Log, type InsertLog, 
+  type BugReport, type InsertBugReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
@@ -96,6 +99,14 @@ export interface IStorage {
   getFeedback(id: number): Promise<Feedback | undefined>;
   getAllFeedback(limit?: number, status?: string): Promise<Feedback[]>;
   updateFeedbackStatus(id: number, status: string): Promise<Feedback | undefined>;
+  getRecentFeedback(limit?: number): Promise<Feedback[]>;
+  
+  // Logging and bug monitoring methods
+  createLog(log: InsertLog): Promise<Log>;
+  getRecentLogs(level?: string, limit?: number): Promise<Log[]>;
+  createBugReport(report: InsertBugReport): Promise<BugReport>;
+  getBugReports(status?: string, limit?: number): Promise<BugReport[]>;
+  updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined>;
   
   // Mockup requests methods
   createMockupRequest(request: InsertMockupRequest): Promise<MockupRequest>;
