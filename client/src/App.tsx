@@ -27,6 +27,7 @@ import AIServices from "@/pages/AIServices";
 import FeedbackPage from "@/pages/FeedbackPage";
 import BlogPostPage from "@/pages/BlogPostPage";
 import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
+import SeoTools from "@/pages/SeoTools";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -400,6 +401,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <MockupSuggestionPage />
+            </>
+          )}
+        </Route>
+        <Route path="/seo-tools">
+          {() => (
+            <>
+              <Helmet>
+                <title>SEO Tools - AI-Powered SEO Optimization | Elevion</title>
+                <meta name="description" content="Elevion's AI-powered SEO tools help small businesses optimize their websites for better search rankings. Get personalized recommendations and strategies." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/seo-tools" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <SeoTools />
             </>
           )}
         </Route>
