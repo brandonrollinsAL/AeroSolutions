@@ -18,6 +18,10 @@ import debugRouter from './routes/debug';
 import contentRouter from './routes/content';
 import uxRouter from './routes/ux';
 import intelligenceRouter from './routes/intelligence';
+import analyticsRouter from './routes/analytics';
+import aiContentRouter from './routes/ai-content';
+import recommendationsRouter from './routes/recommendations';
+import intelligentSearchRouter from './routes/intelligent-search';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -111,6 +115,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/content', contentRouter);
   app.use('/api/ux', uxRouter);
   app.use('/api/intelligence', intelligenceRouter);
+  app.use('/api/analytics', analyticsRouter);
+  app.use('/api/ai-content', aiContentRouter);
+  app.use('/api/recommendations', recommendationsRouter);
+  app.use('/api/intelligent-search', intelligentSearchRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
@@ -131,6 +139,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false,
         message: 'xAI API test failed', 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Test AI content generation endpoint - public endpoint, no auth required
+  app.post('/api/test-ai-content', async (req: Request, res: Response) => {
+    try {
+      console.log("Testing AI content generation...");
+      const { contentType = 'blog-ideas', contentParams } = req.body;
+      
+      let prompt = '';
+      
+      switch (contentType) {
+        case 'blog-ideas':
+          const { keywords, audience = 'small business owners', industry = 'web development', count = 3 } = contentParams || {};
+          prompt = `Generate ${count} engaging blog post ideas for a ${industry} 
+            company targeting ${audience}. Include compelling headlines, 
+            brief descriptions (2-3 sentences), and target keywords. The blog should incorporate these 
+            keywords: ${Array.isArray(keywords) ? keywords.join(', ') : 'web development, small business'}. 
+            Format the response as JSON with the following structure:
+            {
+              "ideas": [
+                {
+                  "headline": "Compelling headline here",
+                  "description": "Brief 2-3 sentence description",
+                  "keywords": ["keyword1", "keyword2"],
+                  "estimated_word_count": 1200
+                }
+              ]
+            }`;
+          break;
+          
+        case 'product-description':
+          const { productName = 'Website Development Package', features = ['Responsive design', 'SEO optimization'] } = contentParams || {};
+          prompt = `Create a compelling product description for "${productName}". 
+            Features: ${Array.isArray(features) ? features.join(', ') : features}. 
+            Make the description engaging, highlight unique selling points, and include a call to action.`;
+          break;
+          
+        default:
+          prompt = 'Generate creative content for a web development company blog post.';
+      }
+      
+      const response = await callXAI('/chat/completions', {
+        model: 'grok-3-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: contentType === 'blog-ideas' ? { type: 'json_object' } : undefined
+      });
+      
+      const content = contentType === 'blog-ideas' 
+        ? JSON.parse(response.choices[0].message.content)
+        : response.choices[0].message.content;
+      
+      res.json({
+        success: true,
+        message: 'AI content generation successful',
+        content
+      });
+    } catch (error: any) {
+      console.error("AI content generation failed:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'AI content generation failed', 
         error: error.message 
       });
     }

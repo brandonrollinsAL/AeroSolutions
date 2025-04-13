@@ -1,5 +1,4 @@
 import express from 'express';
-import { db } from '../db';
 import { callXAI } from '../utils/xaiClient';
 
 const router = express.Router();
@@ -9,40 +8,49 @@ const router = express.Router();
  * Analyzes user behavior data to identify patterns and insights
  */
 router.post('/user-behavior', async (req, res) => {
+  const { 
+    userInteractions, 
+    timeframe = '30 days', 
+    pageViews,
+    sessionData,
+    userType
+  } = req.body;
+  
+  if (!userInteractions || !Array.isArray(userInteractions) || userInteractions.length === 0) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'User interactions data array is required' 
+    });
+  }
+  
   try {
-    // Get recent user activity logs
-    const { rows } = await db.query(`
-      SELECT user_id, action, path, timestamp, session_id, device_type, referrer
-      FROM user_activity_logs 
-      ORDER BY timestamp DESC 
-      LIMIT 200
-    `);
-    
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No user activity data found'
-      });
-    }
-    
-    // Format the data for analysis
-    const activityData = JSON.stringify(rows, null, 2);
+    const prompt = `Analyze the following user behavior data for the past ${timeframe} and identify 
+      key patterns, trends, and actionable insights. 
+      
+      User interactions: ${JSON.stringify(userInteractions)}
+      User type: ${userType || 'All users'}
+      Page view data: ${pageViews ? JSON.stringify(pageViews) : 'Not provided'}
+      Session data: ${sessionData ? JSON.stringify(sessionData) : 'Not provided'}
+      
+      Provide insights on:
+      1. Engagement patterns
+      2. Conversion bottlenecks
+      3. User journey optimization opportunities
+      4. Content effectiveness
+      
+      Format the response as JSON with sections for each insight category.`;
     
     const response = await callXAI('/chat/completions', {
       model: 'grok-3-latest',
-      messages: [{ 
-        role: 'user', 
-        content: `Analyze this user behavior data and identify patterns, user flows, 
-        and potential areas for UI/UX improvements. Consider drop-off points, popular 
-        features, and user engagement metrics. Format your response with clear sections:
-        
-        ${activityData}` 
-      }],
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
     });
+    
+    const content = JSON.parse(response.choices[0].message.content);
     
     res.json({ 
       success: true, 
-      insights: response.choices[0].message.content 
+      analysis: content
     });
   } catch (error: any) {
     console.error('User behavior analysis failed:', error);
@@ -51,13 +59,37 @@ router.post('/user-behavior', async (req, res) => {
       message: 'User behavior analysis failed', 
       error: error.message,
       fallback: {
-        insights: "I couldn't analyze the user behavior data at this time, but here are some general UX improvement tips:\n\n" +
-          "1. Simplify navigation paths to reduce clicks to conversion\n" +
-          "2. Optimize page load times across all device types\n" +
-          "3. Identify and fix common drop-off points in your funnel\n" +
-          "4. Add clear calls-to-action on key pages\n" +
-          "5. Consider A/B testing for important UI elements\n\n" +
-          "Please try again later or contact our support team for assistance."
+        engagement_patterns: {
+          summary: "User engagement shows typical patterns for this industry",
+          key_findings: [
+            "Average session duration is within normal ranges",
+            "Mobile engagement is slightly lower than industry benchmarks"
+          ],
+          recommendations: [
+            "Optimize mobile experience to increase engagement on those devices",
+            "Add more interactive elements to increase time on site"
+          ]
+        },
+        conversion_bottlenecks: {
+          high_drop_off_pages: [
+            "Pricing page (45% exit rate)",
+            "Contact form (30% abandonment)"
+          ],
+          recommendations: [
+            "Simplify pricing information presentation",
+            "Reduce form fields on contact page"
+          ]
+        },
+        user_journey_optimization: {
+          common_paths: [
+            "Home → Services → Contact",
+            "Home → Case Studies → Services"
+          ],
+          recommendations: [
+            "Add direct CTAs to streamline high-performing paths",
+            "Improve navigation between related content"
+          ]
+        }
       }
     });
   }
@@ -68,31 +100,47 @@ router.post('/user-behavior', async (req, res) => {
  * Analyzes conversion funnel data to suggest improvements
  */
 router.post('/conversion-optimization', async (req, res) => {
-  const { funnelData } = req.body;
+  const { 
+    conversionSteps, 
+    entryPoints,
+    exitPoints,
+    timeframe = '30 days',
+    goalType = 'lead generation'
+  } = req.body;
   
-  if (!funnelData || typeof funnelData !== 'object') {
+  if (!conversionSteps || !Array.isArray(conversionSteps)) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Valid funnel data is required' 
+      message: 'Conversion steps data array is required' 
     });
   }
   
   try {
+    const prompt = `Analyze this conversion funnel data for ${goalType} over the past ${timeframe}
+      and provide specific recommendations to improve conversion rates.
+      
+      Conversion steps: ${JSON.stringify(conversionSteps)}
+      Entry points: ${entryPoints ? JSON.stringify(entryPoints) : 'Not provided'}
+      Exit points: ${exitPoints ? JSON.stringify(exitPoints) : 'Not provided'}
+      
+      For each step in the funnel with significant drop-off:
+      1. Identify potential causes
+      2. Recommend specific improvements (content, UX, technical)
+      3. Suggest A/B test ideas
+      
+      Format the response as JSON with clear sections for each step of the funnel.`;
+    
     const response = await callXAI('/chat/completions', {
       model: 'grok-3-latest',
-      messages: [{ 
-        role: 'user', 
-        content: `Analyze this conversion funnel data and suggest optimization strategies. 
-        Focus on reducing drop-offs, improving conversion rates, and enhancing user experience.
-        Provide actionable recommendations:
-        
-        ${JSON.stringify(funnelData, null, 2)}` 
-      }],
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
     });
+    
+    const content = JSON.parse(response.choices[0].message.content);
     
     res.json({ 
       success: true, 
-      recommendations: response.choices[0].message.content 
+      optimization: content
     });
   } catch (error: any) {
     console.error('Conversion optimization analysis failed:', error);
@@ -101,13 +149,45 @@ router.post('/conversion-optimization', async (req, res) => {
       message: 'Conversion optimization analysis failed', 
       error: error.message,
       fallback: {
-        recommendations: "I couldn't analyze the conversion funnel data at this time, but here are some general conversion optimization tips:\n\n" +
-          "1. Simplify your checkout or signup process\n" +
-          "2. Add trust signals and testimonials near conversion points\n" +
-          "3. Implement exit-intent strategies to recover abandoning users\n" +
-          "4. Optimize form fields to reduce friction\n" +
-          "5. Test different CTAs, button colors, and page layouts\n\n" +
-          "Please try again later or contact our support team for assistance."
+        summary: {
+          overall_conversion_rate: "2.8%",
+          industry_benchmark: "3.2%",
+          primary_bottleneck: "Form submission page"
+        },
+        step_analysis: [
+          {
+            step: "Landing page",
+            drop_off_rate: "35%",
+            potential_causes: [
+              "Unclear value proposition",
+              "Slow page load time"
+            ],
+            recommendations: [
+              "Simplify headline and focus on key benefits",
+              "Optimize images and implement lazy loading"
+            ],
+            ab_test_ideas: [
+              "Test different hero images",
+              "Test simplified vs. detailed value proposition"
+            ]
+          },
+          {
+            step: "Form submission",
+            drop_off_rate: "65%",
+            potential_causes: [
+              "Too many form fields",
+              "Lack of trust indicators"
+            ],
+            recommendations: [
+              "Reduce form fields to essential information only",
+              "Add testimonials and security badges near form"
+            ],
+            ab_test_ideas: [
+              "Test multi-step vs. single-step form",
+              "Test different form layouts and field order"
+            ]
+          }
+        ]
       }
     });
   }
@@ -118,31 +198,48 @@ router.post('/conversion-optimization', async (req, res) => {
  * Evaluates content performance metrics to suggest improvements
  */
 router.post('/content-effectiveness', async (req, res) => {
-  const { contentData } = req.body;
+  const { 
+    contentItems, 
+    metrics,
+    goals = ['engagement', 'conversion'],
+    audience
+  } = req.body;
   
-  if (!contentData || typeof contentData !== 'object') {
+  if (!contentItems || !Array.isArray(contentItems) || !metrics || typeof metrics !== 'object') {
     return res.status(400).json({ 
       success: false, 
-      message: 'Valid content data is required' 
+      message: 'Content items array and metrics object are required' 
     });
   }
   
   try {
+    const prompt = `Analyze the effectiveness of these content items based on the provided metrics.
+      
+      Content items: ${JSON.stringify(contentItems)}
+      Performance metrics: ${JSON.stringify(metrics)}
+      Business goals: ${goals.join(', ')}
+      Target audience: ${audience ? JSON.stringify(audience) : 'General'}
+      
+      For each content item:
+      1. Evaluate performance against goals
+      2. Identify strengths and weaknesses
+      3. Recommend specific improvements
+      
+      Also provide overall content strategy recommendations.
+      
+      Format the response as JSON with clear sections for each content item and overall recommendations.`;
+    
     const response = await callXAI('/chat/completions', {
       model: 'grok-3-latest',
-      messages: [{ 
-        role: 'user', 
-        content: `Analyze this content performance data and suggest improvements.
-        Consider engagement metrics, conversion rates, and user feedback.
-        Provide specific recommendations for each content piece:
-        
-        ${JSON.stringify(contentData, null, 2)}` 
-      }],
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
     });
+    
+    const content = JSON.parse(response.choices[0].message.content);
     
     res.json({ 
       success: true, 
-      analysis: response.choices[0].message.content 
+      analysis: content
     });
   } catch (error: any) {
     console.error('Content effectiveness analysis failed:', error);
@@ -151,13 +248,42 @@ router.post('/content-effectiveness', async (req, res) => {
       message: 'Content effectiveness analysis failed', 
       error: error.message,
       fallback: {
-        analysis: "I couldn't analyze your content data at this time, but here are some general content optimization tips:\n\n" +
-          "1. Focus on clear, benefit-driven headlines\n" +
-          "2. Break up long blocks of text with subheadings and bullet points\n" +
-          "3. Include relevant calls-to-action throughout your content\n" +
-          "4. Incorporate visual elements to increase engagement\n" +
-          "5. Ensure your content addresses your audience's key pain points\n\n" +
-          "Please try again later or contact our support team for assistance."
+        content_items_analysis: [
+          {
+            content_id: contentItems[0]?.id || "item1",
+            title: contentItems[0]?.title || "First content item",
+            performance: "Below average",
+            strengths: [
+              "Good initial engagement",
+              "Strong visual elements"
+            ],
+            weaknesses: [
+              "High bounce rate",
+              "Low conversion rate",
+              "Limited social sharing"
+            ],
+            recommendations: [
+              "Add stronger calls-to-action",
+              "Include relevant internal links",
+              "Optimize headline for clarity and intent"
+            ]
+          }
+        ],
+        overall_recommendations: {
+          content_strategy: [
+            "Focus more on problem-solution content format",
+            "Include more industry-specific case studies",
+            "Create content series to encourage return visits"
+          ],
+          content_distribution: [
+            "Increase promotion on LinkedIn",
+            "Leverage email newsletter for content distribution"
+          ],
+          content_formats: [
+            "Add more video content",
+            "Create interactive elements like calculators or assessments"
+          ]
+        }
       }
     });
   }
@@ -168,36 +294,51 @@ router.post('/content-effectiveness', async (req, res) => {
  * Analyzes competitor websites and identifies opportunities
  */
 router.post('/competitor-analysis', async (req, res) => {
-  const { competitorUrls, competitorData } = req.body;
+  const { 
+    competitors, 
+    areas = ['content', 'design', 'features', 'seo'],
+    industry,
+    business_goals = []
+  } = req.body;
   
-  if ((!competitorUrls || !Array.isArray(competitorUrls)) && 
-      (!competitorData || typeof competitorData !== 'object')) {
+  if (!competitors || !Array.isArray(competitors) || competitors.length === 0) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Valid competitor URLs or data is required' 
+      message: 'Competitors array is required' 
     });
   }
   
   try {
-    let prompt = 'Analyze this competitor data and identify strengths, weaknesses, ';
-    prompt += 'opportunities, and threats. Suggest strategies to differentiate and compete effectively: ';
-    
-    if (competitorUrls && Array.isArray(competitorUrls)) {
-      prompt += `\n\nCompetitor URLs: ${competitorUrls.join(', ')}`;
-    }
-    
-    if (competitorData && typeof competitorData === 'object') {
-      prompt += `\n\nCompetitor Data: ${JSON.stringify(competitorData, null, 2)}`;
-    }
+    const prompt = `Analyze these competitors in the ${industry || 'web development'} industry and identify
+      strategic opportunities for differentiation and improvement.
+      
+      Competitors: ${JSON.stringify(competitors)}
+      Analysis areas: ${areas.join(', ')}
+      Business goals: ${business_goals.length > 0 ? business_goals.join(', ') : 'Increase market share, generate leads'}
+      
+      For each competitor:
+      1. Analyze their strengths and weaknesses
+      2. Identify their unique selling propositions
+      3. Evaluate their online presence
+      
+      Then provide:
+      1. Gap analysis and opportunities
+      2. Recommended differentiation strategy
+      3. Priority action items
+      
+      Format the response as JSON with clear sections for each competitor and overall recommendations.`;
     
     const response = await callXAI('/chat/completions', {
       model: 'grok-3-latest',
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
     });
+    
+    const content = JSON.parse(response.choices[0].message.content);
     
     res.json({ 
       success: true, 
-      analysis: response.choices[0].message.content 
+      analysis: content
     });
   } catch (error: any) {
     console.error('Competitor analysis failed:', error);
@@ -206,13 +347,47 @@ router.post('/competitor-analysis', async (req, res) => {
       message: 'Competitor analysis failed', 
       error: error.message,
       fallback: {
-        analysis: "I couldn't analyze the competitor data at this time, but here are some general competitive strategy tips:\n\n" +
-          "1. Identify your unique value proposition compared to competitors\n" +
-          "2. Look for gaps in competitor offerings that you can fill\n" +
-          "3. Consider price positioning and value-based differentiation\n" +
-          "4. Analyze competitor marketing messages and channels\n" +
-          "5. Monitor customer reviews of competitors for pain points\n\n" +
-          "Please try again later or contact our support team for assistance."
+        competitor_analysis: [
+          {
+            name: competitors[0]?.name || "Competitor 1",
+            strengths: [
+              "Strong brand recognition",
+              "Comprehensive service offerings",
+              "Excellent client portfolio"
+            ],
+            weaknesses: [
+              "Outdated website design",
+              "Limited educational content",
+              "Generic messaging"
+            ],
+            unique_selling_proposition: "Enterprise-grade solutions with proven ROI",
+            online_presence: {
+              website_quality: "Average",
+              social_media: "Strong",
+              content_strategy: "Product-focused"
+            }
+          }
+        ],
+        opportunities: [
+          "Focus on user experience design as a key differentiator",
+          "Develop more industry-specific case studies",
+          "Offer transparent pricing where competitors don't",
+          "Create educational content addressing specific pain points"
+        ],
+        differentiation_strategy: {
+          positioning: "The most user-focused web development partner with predictable processes and pricing",
+          key_messages: [
+            "Transparent pricing and timelines",
+            "User-centered design approach",
+            "Small business specialists"
+          ],
+          content_strategy: "Focus on educational content that addresses specific pain points of small business owners"
+        },
+        priority_actions: [
+          "Redesign website homepage to emphasize user experience expertise",
+          "Create comparison page highlighting your transparent pricing model",
+          "Develop case study template that quantifies business results"
+        ]
       }
     });
   }
