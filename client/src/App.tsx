@@ -472,6 +472,21 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/marketplace/ad-generator">
+          {() => (
+            <>
+              <Helmet>
+                <title>Ad Generator | Marketplace | Elevion</title>
+                <meta name="description" content="Create compelling, AI-generated ad content for your premium marketplace listings to attract more customers and increase engagement." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/marketplace/ad-generator" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MarketplaceAdGeneratorPage />
+            </>
+          )}
+        </Route>
         <Route path="/content/analytics">
           {() => (
             <>
