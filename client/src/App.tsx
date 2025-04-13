@@ -438,6 +438,21 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/content/analytics">
+          {() => (
+            <>
+              <Helmet>
+                <title>Content Analytics | Elevion</title>
+                <meta name="description" content="Track content performance and engagement metrics with AI-powered insights. Analyze reader behavior, social sharing patterns, and content effectiveness." />
+                <meta name="robots" content="noindex, follow" />
+                <link rel="canonical" href="https://elevion.dev/content/analytics" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <ContentAnalyticsPage />
+            </>
+          )}
+        </Route>
         <Route path="/social-media-suggestions">
           {() => (
             <>
