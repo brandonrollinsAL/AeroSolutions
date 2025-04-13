@@ -3,6 +3,7 @@ import { FaCalendarAlt, FaUser, FaArrowRight, FaTwitter, FaLinkedin, FaFacebookF
 import { BlogPost } from "@/lib/types";
 import SocialFeed from "@/components/SocialFeed";
 import SocialShareButtons from "@/components/SocialShareButtons";
+import PostSentimentIndicator from "@/components/PostSentimentIndicator";
 
 export default function Blog() {
   const blogPosts: BlogPost[] = [
@@ -86,6 +87,12 @@ export default function Blog() {
                   <span className="mx-2">|</span>
                   <FaUser className="mr-2" />
                   <span>{post.author}</span>
+                  <span className="mx-2">|</span>
+                  <PostSentimentIndicator 
+                    postId={post.id} 
+                    customLabel="" 
+                    size="sm"
+                  />
                 </div>
                 <h3 className="text-xl font-bold font-montserrat text-primary mb-3">{post.title}</h3>
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>

@@ -1,5 +1,12 @@
 import express from 'express';
 import { callXAI } from '../utils/xaiClient';
+import { db } from '../db';
+import { posts } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import NodeCache from 'node-cache';
+
+// Cache for sentiment analysis results (5 minutes TTL)
+const sentimentCache = new NodeCache({ stdTTL: 300 });
 
 const router = express.Router();
 
@@ -205,6 +212,86 @@ router.post('/publish-content', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Article publishing failed',
+      error: error.message
+    });
+  }
+});
+
+// Blog post sentiment analysis endpoint
+router.get('/post-sentiment/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    if (!postId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Post ID is required'
+      });
+    }
+    
+    // Check cache first for faster response times
+    const cacheKey = `post_sentiment_${postId}`;
+    const cachedResult = sentimentCache.get(cacheKey);
+    
+    if (cachedResult) {
+      console.log(`[Cache Hit] Returning cached sentiment analysis for post ${postId}`);
+      return res.json(cachedResult);
+    }
+    
+    // Fetch the post content from database
+    const [post] = await db.select().from(posts).where(eq(posts.id, Number(postId)));
+    
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+    
+    // Extract content for analysis
+    const { title, content } = post;
+    
+    // Analyze sentiment using xAI Grok
+    const prompt = `Please analyze the sentiment of this blog post content and title. 
+                    Provide the following in JSON format:
+                    1. overall_sentiment: A string value of "positive", "negative", or "neutral"
+                    2. sentiment_score: A number between -1 (very negative) and 1 (very positive)
+                    3. key_emotional_phrases: An array of up to 5 phrases from the content that strongly influenced this sentiment score
+                    4. tone_analysis: A brief description of the tone (e.g., "professional", "excited", "concerned")
+                    5. topic_sentiment: For each main topic in the content, provide its sentiment (positive/negative/neutral)
+                    
+                    Title: ${title}
+                    
+                    Content: ${content.substring(0, 1500)}...`;
+    
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
+    });
+    
+    // Parse the sentiment analysis
+    const sentimentAnalysis = JSON.parse(response.choices[0].message.content);
+    
+    // Create the result object
+    const result = {
+      success: true,
+      postId,
+      title: post.title,
+      sentimentAnalysis,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Cache the result
+    sentimentCache.set(cacheKey, result);
+    
+    // Return the sentiment analysis
+    res.json(result);
+  } catch (error: any) {
+    console.error('Post sentiment analysis error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze post sentiment',
       error: error.message
     });
   }
