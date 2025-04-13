@@ -106,6 +106,7 @@ export interface IStorage {
   getRecentLogs(level?: string, limit?: number): Promise<Log[]>;
   createBugReport(report: InsertBugReport): Promise<BugReport>;
   getBugReports(status?: string, limit?: number): Promise<BugReport[]>;
+  getBugReport(id: number): Promise<BugReport | undefined>;
   updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined>;
   
   // Mockup requests methods
@@ -957,6 +958,19 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
       
     return results;
+  }
+  
+  async getBugReport(id: number): Promise<BugReport | undefined> {
+    try {
+      const [bugReport] = await db.select()
+        .from(bug_reports)
+        .where(eq(bug_reports.id, id));
+      
+      return bugReport;
+    } catch (error) {
+      console.error(`Error fetching bug report with ID ${id}:`, error);
+      return undefined;
+    }
   }
 
   async updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined> {
