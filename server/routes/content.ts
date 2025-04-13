@@ -48,11 +48,21 @@ router.post('/generate-blog', [
     
     The content should highlight Elevion's expertise in web development and subtly mention our free mockup service and 60% below market rates. Format the content with proper HTML tags for a website blog.`;
 
-    const blogContent = await getGrokCompletion(prompt, 'grok-3-mini');
+    // Use direct callXAI method instead of getGrokCompletion helper
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1000,
+      temperature: 0.7
+    });
+    
+    if (!response.choices || !response.choices[0]?.message?.content) {
+      throw new Error('Invalid response format from Grok API');
+    }
     
     return res.status(200).json({
       success: true,
-      blog_content: blogContent
+      blog_content: response.choices[0].message.content
     });
   } catch (error: any) {
     console.error('Blog generation error:', error);
@@ -180,11 +190,21 @@ Provide SEO optimization recommendations including:
 
 Also provide an optimized version of the content.`;
 
-    const analysis = await getGrokCompletion(prompt, 'grok-3-mini');
+    // Use direct callXAI method instead of getGrokCompletion helper
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1000,
+      temperature: 0.7
+    });
+    
+    if (!response.choices || !response.choices[0]?.message?.content) {
+      throw new Error('Invalid response format from Grok API');
+    }
     
     return res.status(200).json({
       success: true,
-      seo_analysis: analysis
+      seo_analysis: response.choices[0].message.content
     });
   } catch (error: any) {
     console.error('SEO optimization error:', error);
@@ -244,11 +264,21 @@ router.post('/generate-description', [
     
     Include a short testimonial-style quote at the end.`;
 
-    const description = await getGrokCompletion(prompt, 'grok-3-mini');
+    // Use direct callXAI method instead of getGrokCompletion helper
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 800,
+      temperature: 0.7
+    });
+    
+    if (!response.choices || !response.choices[0]?.message?.content) {
+      throw new Error('Invalid response format from Grok API');
+    }
     
     return res.status(200).json({
       success: true,
-      service_description: description
+      service_description: response.choices[0].message.content
     });
   } catch (error: any) {
     console.error('Description generation error:', error);
