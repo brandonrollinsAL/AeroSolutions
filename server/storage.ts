@@ -11,7 +11,10 @@ import {
   type UserSession, type ContentViewMetric, type Feedback,
   type InsertUserSession, type InsertContentViewMetric, type InsertFeedback,
   posts, mockupRequests, mockupEngagement, marketplaceServiceEngagement,
-  type MockupRequest, type InsertMockupRequest, type MarketplaceServiceEngagement
+  type MockupRequest, type InsertMockupRequest, type MarketplaceServiceEngagement,
+  priceRecommendations, subscriptionPriceHistory,
+  type PriceRecommendation, type InsertPriceRecommendation,
+  type PriceHistory, type InsertPriceHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";

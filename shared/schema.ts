@@ -133,6 +133,82 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 
+// Subscription price history schema
+export const subscriptionPriceHistory = pgTable("subscription_price_history", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull().references(() => subscriptionPlans.id, { onDelete: "cascade" }),
+  previousPrice: decimal("previous_price", { precision: 10, scale: 2 }).notNull(),
+  newPrice: decimal("new_price", { precision: 10, scale: 2 }).notNull(),
+  changeReason: text("change_reason").notNull(),
+  aiAnalysis: json("ai_analysis").$type<{
+    marketFactors: string[];
+    competitiveAnalysis: string;
+    userImpact: string;
+    recommendedAdjustment: number;
+    confidence: number;
+  }>().notNull(),
+  changedByUserId: integer("changed_by_user_id").references(() => users.id),
+  isAutomatic: boolean("is_automatic").default(false).notNull(),
+  appliedAt: timestamp("applied_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPriceHistorySchema = createInsertSchema(subscriptionPriceHistory).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertPriceHistory = z.infer<typeof insertPriceHistorySchema>;
+export type PriceHistory = typeof subscriptionPriceHistory.$inferSelect;
+
+// Subscription price recommendations schema
+export const priceRecommendations = pgTable("price_recommendations", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull().references(() => subscriptionPlans.id, { onDelete: "cascade" }),
+  currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
+  recommendedPrice: decimal("recommended_price", { precision: 10, scale: 2 }).notNull(),
+  percentChange: decimal("percent_change", { precision: 10, scale: 2 }).notNull(),
+  analysisData: json("analysis_data").$type<{
+    marketTrends: {
+      factor: string;
+      impact: number;
+      description: string;
+    }[];
+    userMetrics: {
+      metric: string;
+      value: number;
+      impact: string;
+    }[];
+    competitiveAnalysis: {
+      competitor: string;
+      price: number;
+      features: string[];
+      comparison: string;
+    }[];
+    projectedImpact: {
+      revenue: number;
+      userRetention: number;
+      newSubscriptions: number;
+    };
+    reasoning: string;
+    confidenceScore: number;
+  }>().notNull(),
+  status: text("status").default("pending").notNull(), // pending, approved, rejected, applied
+  reviewedByUserId: integer("reviewed_by_user_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const insertPriceRecommendationSchema = createInsertSchema(priceRecommendations).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertPriceRecommendation = z.infer<typeof insertPriceRecommendationSchema>;
+export type PriceRecommendation = typeof priceRecommendations.$inferSelect;
+
 // Marketplace items schema
 export const marketplaceItems = pgTable("marketplace_items", {
   id: serial("id").primaryKey(),
