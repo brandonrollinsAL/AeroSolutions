@@ -4,6 +4,7 @@ import { BlogPost } from "@/lib/types";
 import SocialFeed from "@/components/SocialFeed";
 import SocialShareButtons from "@/components/SocialShareButtons";
 import PostSentimentIndicator from "@/components/PostSentimentIndicator";
+import BlogSeoAnalysis from "@/components/BlogSeoAnalysis";
 
 export default function Blog() {
   const blogPosts: BlogPost[] = [
@@ -93,11 +94,16 @@ export default function Blog() {
                     customLabel="" 
                     size="sm"
                   />
+                  <span className="mx-2">|</span>
+                  <BlogSeoAnalysis
+                    postId={post.id.toString()}
+                    displayMode="icon"
+                  />
                 </div>
                 <h3 className="text-xl font-bold font-montserrat text-primary mb-3">{post.title}</h3>
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>
                 <div className="flex justify-between items-center">
-                  <a href="#" className="inline-flex items-center text-luxury font-semibold hover:underline">
+                  <a href={`/blog/${post.id}`} className="inline-flex items-center text-luxury font-semibold hover:underline">
                     Read more
                     <FaArrowRight className="ml-2" />
                   </a>
