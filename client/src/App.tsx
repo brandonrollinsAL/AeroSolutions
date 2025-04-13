@@ -495,6 +495,22 @@ export default function App() {
             </>
           )}
         </Route>
+        
+        <Route path="/checkout-optimization">
+          {() => (
+            <>
+              <Helmet>
+                <title>Checkout Optimization | Elevion</title>
+                <meta name="description" content="Optimize your checkout process to increase conversions using AI-powered suggestions and analytics." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/checkout-optimization" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <CheckoutOptimizationPage />
+            </>
+          )}
+        </Route>
         <Route path="/website-analytics">
           {() => (
             <>
