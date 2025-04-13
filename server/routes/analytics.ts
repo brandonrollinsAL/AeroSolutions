@@ -5,7 +5,6 @@ import { eq, and, or, sql, desc, gt, lt, between } from "drizzle-orm";
 import { storage } from "../storage";
 import { callXAI } from "../utils/xaiClient";
 import NodeCache from "node-cache";
-import { avg, sum } from "drizzle-orm/pg-core";
 
 // Initialize API cache with standard TTL of 10 minutes
 const apiCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -933,6 +932,261 @@ For client ID ${clientId}, we've analyzed ${metrics.length} website metrics reco
         success: false, 
         message: "Website performance analysis failed", 
         error: error.message || "Unknown error"
+      });
+    }
+  });
+
+  /**
+   * Suggestion 37: Real-Time Analytics for Client Website Engagement
+   * Analyze website engagement metrics (e.g., clicks, time on page) for client sites
+   */
+  app.get("/api/analytics/website-engagement/:clientId", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { clientId } = req.params;
+      const { startDate, endDate, path } = req.query;
+
+      // Cache key based on request parameters
+      const cacheKey = `website-engagement-${clientId}-${startDate || 'default'}-${endDate || 'default'}-${path || 'all'}`;
+
+      // Check cache first
+      const cachedData = apiCache.get(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
+      // Set date range - default to last 30 days
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const start = startDate ? new Date(startDate as string) : thirtyDaysAgo;
+      const end = endDate ? new Date(endDate as string) : now;
+
+      // Build query filters
+      let filters = and(
+        eq(websiteEngagement.clientId, parseInt(clientId)),
+        gt(websiteEngagement.dateCollected, start),
+        lt(websiteEngagement.dateCollected, end)
+      );
+
+      // Add path filter if specified
+      if (path) {
+        filters = and(
+          filters,
+          eq(websiteEngagement.path, path as string)
+        );
+      }
+
+      // Get engagement data
+      const engagementData = await db.select().from(websiteEngagement).where(filters);
+
+      if (engagementData.length === 0) {
+        return res.json({
+          message: "No engagement data found for the specified client and time period",
+          clientId,
+          timeframe: { start: start.toISOString(), end: end.toISOString() }
+        });
+      }
+
+      // Calculate aggregate metrics
+      const totalClicks = engagementData.reduce((sum, record) => sum + record.clicks, 0);
+      const totalInteractions = engagementData.reduce((sum, record) => sum + record.interactionCount, 0);
+      
+      // Calculate average time on page
+      const totalTimeOnPage = engagementData.reduce((sum, record) => sum + parseFloat(record.timeOnPage.toString()), 0);
+      const avgTimeOnPage = totalTimeOnPage / engagementData.length;
+
+      // Calculate average scroll depth
+      const totalScrollDepth = engagementData.reduce((sum, record) => sum + parseFloat(record.scrollDepth.toString()), 0);
+      const avgScrollDepth = totalScrollDepth / engagementData.length;
+
+      // Get page-specific metrics
+      const pageMetrics = engagementData.reduce((pages: Record<string, any>, record) => {
+        const pageUrl = record.pageUrl;
+        if (!pages[pageUrl]) {
+          pages[pageUrl] = {
+            url: pageUrl,
+            path: record.path,
+            clicks: 0,
+            timeOnPage: 0,
+            interactionCount: 0,
+            scrollDepth: 0,
+            records: 0
+          };
+        }
+        
+        pages[pageUrl].clicks += record.clicks;
+        pages[pageUrl].timeOnPage += parseFloat(record.timeOnPage.toString());
+        pages[pageUrl].interactionCount += record.interactionCount;
+        pages[pageUrl].scrollDepth += parseFloat(record.scrollDepth.toString());
+        pages[pageUrl].records++;
+        
+        return pages;
+      }, {});
+
+      // Calculate averages for each page
+      Object.keys(pageMetrics).forEach(pageUrl => {
+        const page = pageMetrics[pageUrl];
+        page.avgTimeOnPage = page.timeOnPage / page.records;
+        page.avgScrollDepth = page.scrollDepth / page.records;
+        // Clean up
+        delete page.timeOnPage;
+        delete page.scrollDepth;
+        delete page.records;
+      });
+
+      // Calculate engagement score for each page
+      const pageEngagementScores = Object.keys(pageMetrics).map(pageUrl => {
+        const page = pageMetrics[pageUrl];
+        
+        // Calculate engagement score (weighted combination of clicks, time on page, interactions, and scroll depth)
+        const clickScore = Math.min(page.clicks / 50, 1) * 0.3; // 30% weight, max at 50 clicks
+        const timeScore = Math.min(page.avgTimeOnPage / 300, 1) * 0.35; // 35% weight, max at 5 minutes
+        const interactionScore = Math.min(page.interactionCount / 20, 1) * 0.2; // 20% weight, max at 20 interactions
+        const scrollScore = (page.avgScrollDepth / 100) * 0.15; // 15% weight, based on percentage scrolled
+        
+        const engagementScore = (clickScore + timeScore + interactionScore + scrollScore) * 100;
+        
+        return {
+          ...page,
+          engagementScore: parseFloat(engagementScore.toFixed(1))
+        };
+      });
+
+      // Sort pages by engagement score (high to low)
+      const sortedPages = pageEngagementScores.sort((a, b) => b.engagementScore - a.engagementScore);
+
+      // Prepare device and browser breakdowns
+      const deviceBreakdown = engagementData.reduce((devices: Record<string, number>, record) => {
+        const device = record.deviceType || 'unknown';
+        devices[device] = (devices[device] || 0) + 1;
+        return devices;
+      }, {});
+
+      const browserBreakdown = engagementData.reduce((browsers: Record<string, number>, record) => {
+        const browser = record.browser || 'unknown';
+        browsers[browser] = (browsers[browser] || 0) + 1;
+        return browsers;
+      }, {});
+
+      // Get AI analysis of the engagement data
+      let aiAnalysis = '';
+      try {
+        // Prepare data for AI analysis
+        const analysisData = {
+          totalEngagementRecords: engagementData.length,
+          totalClicks,
+          totalInteractions,
+          avgTimeOnPage,
+          avgScrollDepth,
+          topPages: sortedPages.slice(0, 3),
+          bottomPages: sortedPages.slice(-3).reverse(),
+          deviceBreakdown,
+          browserBreakdown
+        };
+
+        // Call xAI for analysis
+        aiAnalysis = await callXAI(
+          `Analyze the following client website engagement data: ${JSON.stringify(analysisData)}. 
+          Identify 3 key insights about user engagement patterns. Also suggest 2 specific actions the client could take to improve engagement.
+          Focus on trends, anomalies, and actionable recommendations. Keep the analysis concise, about 250 words maximum.`,
+          { model: 'grok-3-mini', max_tokens: 350 }
+        );
+      } catch (error) {
+        console.error('Error getting AI analysis for website engagement:', error);
+        aiAnalysis = 'AI analysis unavailable at this time. Please try again later.';
+      }
+
+      // Prepare response data
+      const responseData = {
+        clientId: parseInt(clientId),
+        timeframe: {
+          start: start.toISOString(),
+          end: end.toISOString(),
+          days: Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+        },
+        overview: {
+          totalRecords: engagementData.length,
+          totalClicks,
+          totalInteractions,
+          avgTimeOnPage: avgTimeOnPage.toFixed(2),
+          avgScrollDepth: `${avgScrollDepth.toFixed(2)}%`,
+        },
+        pages: {
+          total: sortedPages.length,
+          mostEngaging: sortedPages.slice(0, 5),
+          leastEngaging: sortedPages.slice(-5).reverse(),
+        },
+        demographics: {
+          devices: deviceBreakdown,
+          browsers: browserBreakdown
+        },
+        analysis: aiAnalysis
+      };
+
+      // Cache the response for 30 minutes
+      apiCache.set(cacheKey, responseData, 1800);
+
+      res.json(responseData);
+    } catch (error) {
+      console.error("Error getting website engagement analytics:", error);
+      res.status(500).json({ 
+        error: "Failed to retrieve website engagement analytics",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  /**
+   * Track client website engagement metrics
+   */
+  app.post("/api/analytics/website-engagement", async (req: Request, res: Response) => {
+    try {
+      const { 
+        clientId, 
+        pageUrl, 
+        path,
+        clicks, 
+        timeOnPage, 
+        scrollDepth, 
+        interactionCount,
+        deviceType,
+        browser
+      } = req.body;
+      
+      if (!clientId || !pageUrl) {
+        return res.status(400).json({ error: "Missing required data. Client ID and page URL are required." });
+      }
+      
+      // Create new engagement record
+      const engagementData = {
+        clientId,
+        pageUrl,
+        path: path || new URL(pageUrl).pathname,
+        clicks: clicks || 0,
+        timeOnPage: timeOnPage?.toString() || "0",
+        scrollDepth: scrollDepth?.toString() || "0",
+        interactionCount: interactionCount || 0,
+        dateCollected: new Date(),
+        deviceType,
+        browser
+      };
+      
+      const [result] = await db.insert(websiteEngagement).values(engagementData).returning();
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Website engagement data recorded successfully",
+        id: result.id 
+      });
+    } catch (error) {
+      console.error("Error tracking website engagement:", error);
+      res.status(500).json({ 
+        error: "Failed to track website engagement data",
+        message: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
