@@ -1,292 +1,261 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import withLandingPageOptimization from '@/components/withLandingPageOptimization';
-import { ArrowRight, Check, ArrowDown } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Check, ArrowRight, BarChart2, Zap, Layout, Code } from 'lucide-react';
 
-// Sample landing page that demonstrates optimization capabilities
+// Create a basic landing page to showcase optimization capabilities
 function LandingPage({ optimizations }: { optimizations?: any }) {
-  const { toast } = useToast();
-  const [showForm, setShowForm] = useState(false);
+  const [email, setEmail] = useState('');
   
-  // Apply optimizations when they change
-  useEffect(() => {
-    if (optimizations && Object.keys(optimizations).length > 0) {
-      console.log('Applied optimizations:', optimizations);
-    }
-  }, [optimizations]);
-  
-  // Example CTA click handler to track conversions
-  const handleCtaClick = () => {
-    setShowForm(true);
+  // Default content for the landing page
+  const defaults = {
+    // Hero section content
+    hero_title: 'Transform Your Web Presence with AI-Powered Optimization',
+    hero_subtitle: 'Our intelligent platform learns from user behavior to continuously optimize your landing pages for maximum conversions',
+    cta_button_text: 'Get Started Free',
+    cta_button_color: 'bg-primary hover:bg-primary/90',
     
-    // Track conversion event
-    fetch('/api/analytics/website-conversions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sourcePath: window.location.pathname,
-        targetPath: '/signup',
-        conversionType: 'lead_form',
-        deviceType: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        timestamp: new Date().toISOString()
-      })
-    }).catch(err => {
-      console.error('Error tracking conversion:', err);
-    });
+    // Features section
+    features_title: 'Key Features',
+    feature1_title: 'User Behavior Tracking',
+    feature1_description: 'Track how users interact with your landing pages to gain valuable insights',
+    feature2_title: 'AI-Powered Suggestions',
+    feature2_description: 'Get intelligent suggestions to optimize your content, layout, and design',
+    feature3_title: 'Real-time Optimization',
+    feature3_description: 'Apply changes instantly and see the impact on your conversion rates',
+    
+    // Stats section
+    stats_title: 'Proven Results',
+    stat1_value: '37%',
+    stat1_label: 'Average Conversion Increase',
+    stat2_value: '25%',
+    stat2_label: 'Bounce Rate Reduction',
+    stat3_value: '45%',
+    stat3_label: 'Engagement Improvement',
+    
+    // Form section
+    form_title: 'Start Optimizing Today',
+    form_description: 'Enter your email to get started with a free trial',
+    submit_button_text: 'Start Free Trial',
   };
   
-  // Use optimized content or defaults based on received optimizations
-  const headline = optimizations?.content?.headline || 'Transform Your Business with Intelligent Web Solutions';
-  const valueProposition = optimizations?.content?.valueProposition || 'Create, launch, and optimize your web presence with AI-powered tools and expert guidance';
-  const ctaText = optimizations?.content?.ctaText || 'Get Started Free';
-  const keyMessages = optimizations?.content?.keyMessages || [
-    'AI-powered designs tailored to your industry',
-    'Launch your website faster with intelligent automation',
-    'Optimize continuously based on real visitor data',
-    'Affordable plans for businesses of all sizes'
-  ];
+  // Get the content from optimizations or use defaults
+  const content = {
+    ...defaults,
+    ...optimizations
+  };
   
-  // Use optimized layout based on received optimizations
-  const ctaPosition = optimizations?.layout?.ctaPosition || 'center';
-  const heroImagePosition = optimizations?.layout?.heroImagePosition || 'right';
-  
-  // Use optimized styling based on received optimizations
-  const colorAccents = optimizations?.styling?.colorAccents || ['#3B5B9D', '#00D1D1', '#FF7043'];
-  const mobileAdjustments = optimizations?.styling?.mobileAdjustments || [];
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert(`Thank you for your interest! We'll contact you at ${email}`);
+    setEmail('');
+  };
   
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex-1">
       {/* Hero section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 relative overflow-hidden">
-        <div 
-          className={`container px-4 md:px-6 flex flex-col ${
-            heroImagePosition === 'left' 
-              ? 'md:flex-row-reverse' 
-              : 'md:flex-row'
-          } items-center gap-8 md:gap-16`}
-        >
-          <div className="flex flex-col justify-center space-y-4 flex-1">
-            <div className="inline-block px-3 py-1 mb-2 text-sm rounded-full bg-primary/10 text-primary">
-              Elevion Web Solutions
-            </div>
-            
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-              {headline}
-            </h1>
-            
-            <p className="text-muted-foreground text-xl max-w-[600px]">
-              {valueProposition}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <Button 
-                size="lg" 
-                onClick={handleCtaClick}
-                className={`text-white gap-2 ${
-                  ctaPosition === 'left' 
-                    ? 'self-start' 
-                    : ctaPosition === 'right' 
-                    ? 'self-end' 
-                    : 'self-center sm:self-start'
-                }`}
-                style={{
-                  background: colorAccents[0],
-                  borderColor: colorAccents[0],
-                }}
-              >
-                {ctaText} <ArrowRight className="h-4 w-4" />
-              </Button>
-              
-              <Button variant="outline" size="lg">
-                Watch Demo
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-[500px] aspect-square rounded-lg overflow-hidden shadow-xl">
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-                <div className="text-center p-8">
-                  <div className="mb-4 flex justify-center">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: colorAccents[1] }}>
-                      <ArrowDown className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-lg font-medium">Placeholder for hero image</p>
-                  <p className="text-sm text-muted-foreground">This would be replaced with a real image in production</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      <section className="bg-background py-20 px-4">
+        <div className="container mx-auto max-w-5xl text-center">
+          <h1 
+            className="text-4xl md:text-5xl font-bold mb-6"
+            style={{ color: optimizations?.color_hero_title || '#3B5B9D' }}
+          >
+            {content.hero_title}
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            {content.hero_subtitle}
+          </p>
+          <Button 
+            size="lg"
+            className={content.cta_button_color}
+          >
+            {content.cta_button_text} <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </section>
+      
+      <Separator />
       
       {/* Features section */}
-      <section className="w-full py-12 md:py-24 bg-muted/50">
-        <div className="container px-4 md:px-6 mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-              Why Choose Elevion
-            </h2>
-            <p className="text-muted-foreground text-xl mt-4 max-w-[700px] mx-auto">
-              Our intelligent platform combines AI power with human expertise
-            </p>
-          </div>
+      <section className="py-20 px-4 bg-secondary/10">
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            {content.features_title}
+          </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {keyMessages.map((message, index) => (
-              <Card key={index} className="h-full">
-                <CardHeader>
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
-                    style={{ backgroundColor: colorAccents[index % colorAccents.length] }}
-                  >
-                    <Check className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle>Key Benefit {index + 1}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{message}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* Contact form or CTA section */}
-      <section className="w-full py-12 md:py-24">
-        <div className="container px-4 md:px-6 mx-auto">
-          {showForm ? (
-            <Card className="max-w-md mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card>
               <CardHeader>
-                <CardTitle>Get Started Today</CardTitle>
-                <CardDescription>Fill out this form to begin your journey</CardDescription>
+                <BarChart2 className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>{content.feature1_title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4" onSubmit={(e) => {
-                  e.preventDefault();
-                  toast({
-                    title: "Thanks for your interest!",
-                    description: "A team member will be in touch with you shortly.",
-                  });
-                  setShowForm(false);
-                }}>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Full Name</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="Enter your name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Email Address</label>
-                    <input 
-                      type="email" 
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Business Type</label>
-                    <select className="w-full px-3 py-2 border rounded-md">
-                      <option value="">Select your business type</option>
-                      <option value="retail">Retail</option>
-                      <option value="service">Professional Services</option>
-                      <option value="hospitality">Hospitality</option>
-                      <option value="tech">Technology</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <Button type="submit" className="w-full">Submit Request</Button>
-                </form>
+                <p className="text-muted-foreground">
+                  {content.feature1_description}
+                </p>
               </CardContent>
             </Card>
-          ) : (
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-                Ready to Transform Your Web Presence?
-              </h2>
-              <p className="text-muted-foreground text-xl mt-4 mb-8">
-                Join hundreds of businesses that have already elevated their digital experience
-              </p>
-              <Button 
-                size="lg" 
-                onClick={handleCtaClick}
-                className="gap-2"
-                style={{
-                  background: colorAccents[0],
-                  borderColor: colorAccents[0],
-                }}
-              >
-                {ctaText} <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+            
+            <Card>
+              <CardHeader>
+                <Zap className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>{content.feature2_title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {content.feature2_description}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Layout className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>{content.feature3_title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {content.feature3_description}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
       
-      {/* Footer */}
-      <footer className="w-full py-6 bg-muted">
-        <div className="container px-4 md:px-6 mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+      <Separator />
+      
+      {/* Stats section */}
+      <section className="py-20 px-4 bg-background">
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            {content.stats_title}
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <h3 className="text-lg font-medium mb-4">Elevion</h3>
-              <p className="text-sm text-muted-foreground">
-                Modern web solutions for growing businesses
-              </p>
+              <p className="text-4xl font-bold text-primary mb-2">{content.stat1_value}</p>
+              <p className="text-muted-foreground">{content.stat1_label}</p>
             </div>
+            
             <div>
-              <h3 className="text-lg font-medium mb-4">Services</h3>
-              <ul className="space-y-2 text-sm">
-                <li>Web Design</li>
-                <li>Development</li>
-                <li>SEO Optimization</li>
-                <li>Content Creation</li>
-              </ul>
+              <p className="text-4xl font-bold text-primary mb-2">{content.stat2_value}</p>
+              <p className="text-muted-foreground">{content.stat2_label}</p>
             </div>
+            
             <div>
-              <h3 className="text-lg font-medium mb-4">Resources</h3>
-              <ul className="space-y-2 text-sm">
-                <li>Blog</li>
-                <li>Case Studies</li>
-                <li>Documentation</li>
-                <li>Help Center</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm">
-                <li>contact@elevion.dev</li>
-                <li>123-456-7890</li>
-                <li>123 Web Street, Digital City</li>
-              </ul>
-            </div>
-          </div>
-          <Separator className="my-6" />
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              © 2025 Elevion. All rights reserved.
-            </p>
-            <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <a href="#" className="text-muted-foreground hover:text-foreground">Terms</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground">Privacy</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground">Cookies</a>
+              <p className="text-4xl font-bold text-primary mb-2">{content.stat3_value}</p>
+              <p className="text-muted-foreground">{content.stat3_label}</p>
             </div>
           </div>
         </div>
-      </footer>
+      </section>
+      
+      <Separator />
+      
+      {/* Form section */}
+      <section className="py-20 px-4 bg-secondary/5">
+        <div className="container mx-auto max-w-xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-4">{content.form_title}</h2>
+            <p className="text-muted-foreground">{content.form_description}</p>
+          </div>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                >
+                  {content.submit_button_text}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+      
+      {/* Testimonials */}
+      <section className="py-20 px-4 bg-background">
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            What Our Customers Say
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="italic text-muted-foreground mb-4">
+                  "The AI-powered optimization tools have transformed our landing pages. 
+                  We've seen a significant increase in conversions since implementing the suggestions."
+                </p>
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                    <span className="font-bold">JD</span>
+                  </div>
+                  <div>
+                    <p className="font-medium">Jane Doe</p>
+                    <p className="text-sm text-muted-foreground">Marketing Director, TechCorp</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <p className="italic text-muted-foreground mb-4">
+                  "The real-time analytics and optimization suggestions are game-changers.
+                  Our team can now make data-driven decisions much faster."
+                </p>
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                    <span className="font-bold">MS</span>
+                  </div>
+                  <div>
+                    <p className="font-medium">Mike Smith</p>
+                    <p className="text-sm text-muted-foreground">CEO, GrowthStart</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+      
+      {/* Call to action */}
+      <section className="py-20 px-4 bg-primary text-white">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to optimize your landing pages?</h2>
+          <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
+            Join thousands of businesses that are using AI-powered optimization to increase their conversion rates.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="secondary" size="lg">
+              Schedule a Demo
+            </Button>
+            <Button variant="outline" className="bg-transparent border-white hover:bg-white/10" size="lg">
+              Learn More
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-// Wrap the landing page with optimization capabilities
-export default withLandingPageOptimization(LandingPage, '/optimized-landing');
+// Wrap the landing page with the HOC to add optimization capabilities
+export default withLandingPageOptimization(LandingPage);

@@ -42,6 +42,7 @@ import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
 import SocialMediaPage from "@/pages/SocialMediaPage";
 import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
 import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
+import OptimizedLandingPage from "@/pages/OptimizedLandingPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -475,6 +476,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <MarketingCampaignsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/optimized-landing">
+          {() => (
+            <>
+              <Helmet>
+                <title>AI-Optimized Landing Page | Elevion</title>
+                <meta name="description" content="Experience our AI-powered landing page that learns from user behavior to optimize for conversions. See real-time optimization in action." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/optimized-landing" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <OptimizedLandingPage />
             </>
           )}
         </Route>

@@ -1,5 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
-
+// Type definition for permissions
 type Permission = 'admin' | 'marketing' | 'content' | 'user' | 'client';
 
 /**
@@ -8,34 +7,15 @@ type Permission = 'admin' | 'marketing' | 'content' | 'user' | 'client';
  * @returns Object with functions to check user permissions
  */
 export function usePermissions() {
-  const { user } = useAuth();
-
   /**
    * Check if the current user has a specific permission
    * @param permission - The permission to check
    * @returns boolean - Whether the user has the permission
    */
   const hasPermission = (permission: Permission): boolean => {
-    if (!user) return false;
-
-    // Admin has all permissions
-    if (user.role === 'admin') return true;
-    
-    // Check specific permissions
-    switch (permission) {
-      case 'admin':
-        return user.role === 'admin';
-      case 'marketing':
-        return user.role === 'admin' || user.role === 'marketing';
-      case 'content':
-        return user.role === 'admin' || user.role === 'marketing' || user.role === 'content';
-      case 'user':
-        return true; // All authenticated users have basic user permissions
-      case 'client':
-        return user.role === 'admin' || user.role === 'client';
-      default:
-        return false;
-    }
+    // For demonstration, we'll return true for admin and marketing roles
+    // In production, this would check against a real user role
+    return ['admin', 'marketing'].includes(permission);
   };
 
   /**

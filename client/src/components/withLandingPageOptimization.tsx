@@ -1,4 +1,4 @@
-import { useState, ComponentType, useEffect } from 'react';
+import { useState } from 'react';
 import LandingPageOptimizer from './LandingPageOptimizer';
 import { Separator } from '@/components/ui/separator';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -11,12 +11,12 @@ import { usePermissions } from '@/hooks/usePermissions';
  * @param pagePath - The path of the landing page (defaults to current path)
  * @returns A new component with optimization features
  */
-export default function withLandingPageOptimization<P extends object>(
-  WrappedComponent: ComponentType<P & { optimizations?: any }>,
+export default function withLandingPageOptimization(
+  WrappedComponent: any,
   pagePath?: string
 ) {
   // Return a new component with the added optimization features
-  return function OptimizedLandingPage(props: P) {
+  return function OptimizedLandingPage(props: any) {
     const [optimizations, setOptimizations] = useState<any>({});
     const { hasPermission } = usePermissions();
     const isAdmin = hasPermission('admin') || hasPermission('marketing');
