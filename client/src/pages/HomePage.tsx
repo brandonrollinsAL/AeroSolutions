@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
@@ -16,6 +17,21 @@ import QuoteGenerator from '@/components/QuoteGenerator';
 import ElevateBot from '@/components/ElevateBot';
 
 export default function HomePage() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  // Listen for custom event to open the tech assistant
+  useEffect(() => {
+    const openAssistant = () => {
+      setIsChatOpen(true);
+    };
+    
+    window.addEventListener('openTechAssistant', openAssistant);
+    
+    return () => {
+      window.removeEventListener('openTechAssistant', openAssistant);
+    };
+  }, []);
+  
   // Professional service data for structured data
   const professionalServiceData = {
     name: "Elevion",
@@ -203,7 +219,7 @@ export default function HomePage() {
         <Blog />
         <Contact />
         <div className="fixed bottom-0 left-0 right-0 z-20">
-          <ElevateBot />
+          <ElevateBot hideFloatingButton={true} isOpen={isChatOpen} />
         </div>
       </main>
       <Footer />
