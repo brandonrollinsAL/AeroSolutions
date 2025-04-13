@@ -388,7 +388,115 @@ export const registerFeedRoutes = (app: express.Express) => {
     }
   });
   
-  // Get similar content based on a specific post
+  // Suggest post content based on user activity for small business owners
+  app.get("/api/feed/suggest-post/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ 
+          success: false,
+          error: "User ID is required" 
+        });
+      }
+      
+      // Get the user's recent posts to analyze their activity
+      const userPosts = await db.select()
+        .from(posts)
+        .where(eq(posts.userId, parseInt(userId)))
+        .orderBy(desc(posts.createdAt))
+        .limit(10);
+      
+      if (userPosts.length === 0) {
+        // If user has no posts, suggest generic content
+        try {
+          const response = await callXAI('/chat/completions', {
+            model: 'grok-3-mini',
+            messages: [{ 
+              role: 'user', 
+              content: `Suggest a short business-related post (under 250 characters) for a new small business owner on Elevion platform. Focus on web presence best practices.`
+            }],
+          });
+          
+          return res.json({
+            success: true,
+            suggestion: response.choices[0].message.content,
+            source: 'generic'
+          });
+        } catch (xaiError) {
+          console.error("xAI suggestion error for new user:", xaiError);
+          return res.json({
+            success: true,
+            suggestion: "Share your latest business milestone! What recent achievement are you proud of?",
+            source: 'fallback'
+          });
+        }
+      }
+      
+      // Gather activity data from user's posts
+      const activityData = userPosts.map(p => p.content).join('\n');
+      
+      // Get user information for better context
+      const [userInfo] = await db.select()
+        .from(users)
+        .where(eq(users.id, parseInt(userId)))
+        .limit(1);
+      
+      const businessType = userInfo?.businessType || 'small business';
+      const interests = userInfo?.preferences || 'web development, small business';
+      
+      try {
+        // Call xAI to generate a post suggestion based on activity
+        const response = await callXAI('/chat/completions', {
+          model: 'grok-3-mini',
+          messages: [{ 
+            role: 'user', 
+            content: `You are a social media content strategist for Elevion web development company.
+            
+            Suggest a short, engaging post (under 250 characters) for a ${businessType} owner with interests in: ${interests}
+            
+            Based on their previous activity:
+            ${activityData}
+            
+            The suggestion should be business-related, professional in tone, and encourage engagement.`
+          }],
+        });
+        
+        res.json({
+          success: true,
+          suggestion: response.choices[0].message.content,
+          source: 'activity-based'
+        });
+      } catch (xaiError) {
+        console.error("xAI post suggestion error:", xaiError);
+        
+        // Fallback to standard suggestions if xAI fails
+        const fallbackSuggestions = [
+          "Share your latest product update and ask for feedback!",
+          "What's one business challenge you overcame this week?",
+          "Looking for website feedback! What features would you like to see on our site?",
+          "Just launched a new service! Ask me about our special introductory pricing.",
+          "Business tip: Share something you've learned about digital marketing recently."
+        ];
+        
+        const randomSuggestion = fallbackSuggestions[Math.floor(Math.random() * fallbackSuggestions.length)];
+        
+        res.json({
+          success: true,
+          suggestion: randomSuggestion,
+          source: 'fallback'
+        });
+      }
+    } catch (error) {
+      console.error("Error generating post suggestion:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to generate post suggestion",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   app.get("/api/feed/similar/:postId", async (req: Request, res: Response) => {
     try {
       const { postId } = req.params;
@@ -673,4 +781,11 @@ function findSimilarPostsByKeywords(sourcePost: any, otherPosts: any[]): any[] {
   return postsWithScores
     .sort((a, b) => b.score - a.score)
     .map(item => item.post);
+}
+
+/**
+ * Helper function to update feed cache
+ */
+function updateFeedCache(key: string, data: any, ttl: number = 600) {
+  feedCache.set(key, data, ttl);
 }
