@@ -639,3 +639,38 @@ export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit
 
 export type EmailCampaign = typeof emailCampaigns.$inferSelect;
 export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
+
+// Twitter posts schema for automation and scheduling
+export const twitterPosts = pgTable("twitter_posts", {
+  id: serial("id").primaryKey(),
+  content: varchar("content", { length: 280 }).notNull(),
+  status: text("status").notNull().default("draft"), // draft, scheduled, processing, posted, failed, cancelled, missed
+  scheduledTime: timestamp("scheduled_time"),
+  postedAt: timestamp("posted_at"),
+  externalId: text("external_id"), // Twitter post ID after posting
+  errorMessage: text("error_message"),
+  articleId: integer("article_id").references(() => posts.id, { onDelete: "set null" }),
+  mediaUrls: json("media_urls").$type<string[]>().default([]),
+  metrics: json("metrics").$type<{
+    impressions?: number;
+    likes?: number;
+    retweets?: number;
+    replies?: number;
+    clicks?: number;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTwitterPostSchema = createInsertSchema(twitterPosts).omit({
+  id: true,
+  externalId: true,
+  postedAt: true,
+  errorMessage: true,
+  metrics: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type TwitterPost = typeof twitterPosts.$inferSelect;
+export type InsertTwitterPost = z.infer<typeof insertTwitterPostSchema>;

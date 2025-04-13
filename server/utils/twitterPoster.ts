@@ -1,58 +1,46 @@
-import { TwitterClient } from './twitterClient';
-import { grokApi } from '../grok';
+import { getTwitterClient, TwitterClient } from './twitterClient';
 import { db } from '../db';
-import { twitterPosts, type TwitterPost } from '@shared/schema';
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { twitterPosts } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
+import { generateText } from './xaiClient';
+import type { TwitterPost } from '@shared/schema';
 
 /**
  * Service for generating, scheduling, and posting to Twitter
  */
 export class TwitterPosterService {
-  private twitterClient: TwitterClient;
+  private twitterClient: TwitterClient | null = null;
   private scheduledJobs: Map<number, NodeJS.Timeout> = new Map();
   private isInitialized: boolean = false;
 
   constructor() {
-    try {
-      // Validate required environment variables
-      this.validateEnvVars();
-
-      // Initialize Twitter client
-      this.twitterClient = new TwitterClient({
-        apiKey: process.env.TWITTER_API_KEY!,
-        apiKeySecret: process.env.TWITTER_API_SECRET!,
-        accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-        accessTokenSecret: process.env.TWITTER_ACCESS_SECRET!,
-        bearerToken: process.env.TWITTER_BEARER_TOKEN!,
-        clientId: process.env.TWITTER_CLIENT_ID!,
-        clientSecret: process.env.TWITTER_CLIENT_SECRET!,
-        callbackUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/twitter/callback`
-      });
-
-      this.isInitialized = true;
-    } catch (error) {
-      console.error('Failed to initialize TwitterPosterService:', error);
-      this.isInitialized = false;
-    }
+    // Validate environment variables
+    this.validateEnvVars();
+    // Initialize Twitter client
+    this.twitterClient = getTwitterClient();
   }
 
   /**
    * Validates that all required environment variables are present
    */
   private validateEnvVars() {
-    const required = [
+    const requiredVars = [
       'TWITTER_API_KEY',
       'TWITTER_API_SECRET',
       'TWITTER_ACCESS_TOKEN',
       'TWITTER_ACCESS_SECRET',
       'TWITTER_BEARER_TOKEN',
       'TWITTER_CLIENT_ID',
-      'TWITTER_CLIENT_SECRET'
+      'TWITTER_CLIENT_SECRET',
     ];
 
-    const missing = required.filter(key => !process.env[key]);
-    if (missing.length > 0) {
-      throw new Error(`Missing required environment variables for Twitter API: ${missing.join(', ')}`);
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    if (missingVars.length > 0) {
+      console.warn(`Missing Twitter environment variables: ${missingVars.join(', ')}`);
+      console.warn('Twitter posting functionality will be disabled.');
+      this.isInitialized = false;
+    } else {
+      this.isInitialized = true;
     }
   }
 
@@ -60,7 +48,7 @@ export class TwitterPosterService {
    * Checks if the service is properly initialized
    */
   isReady(): boolean {
-    return this.isInitialized;
+    return this.isInitialized && this.twitterClient !== null;
   }
 
   /**
@@ -72,41 +60,38 @@ export class TwitterPosterService {
    * @returns Generated tweet text
    */
   async generateTweetFromArticle(content: string, title: string, tags: string[] = []): Promise<string> {
-    try {
-      // Prepare the prompt for XAI
-      const prompt = `Generate a professional tweet about this web development article. 
-      
-      Title: "${title}"
-      
-      Content summary: ${content.substring(0, 500)}${content.length > 500 ? '...' : ''}
-      
-      Tags: ${tags.join(', ')}
-      
-      Guidelines:
-      - Use a professional tone suitable for a web development company named Elevion
-      - Keep under 280 characters
-      - Include a professional call to action
-      - Include relevant hashtags (max 3)
-      - Do not use excessive emoji
-      - Maintain a professional, elegant style with a slate-blue corporate feel
-      
-      Tweet:`;
+    if (!this.isReady()) {
+      throw new Error('Twitter poster service is not initialized');
+    }
+    
+    // Get the first 1000 characters of content to avoid token limits
+    const truncatedContent = content.length > 1000 ? content.substring(0, 1000) + '...' : content;
+    
+    // Create a prompt for the model
+    const prompt = `You are a social media expert crafting a tweet for a tech article. 
+Given the following article title and partial content, create an engaging tweet (max 280 chars)
+that will drive clicks to read the full article. Include hashtags for relevant keywords.
+Maintain a professional tone that matches Elevion's brand as a web development company.
 
-      // Use grok-3-mini for faster response
-      const response = await grokApi.generateText(prompt, 'grok-3-mini');
+Article Title: ${title}
+${tags.length > 0 ? `Keywords: ${tags.join(', ')}` : ''}
+Article Content: ${truncatedContent}
+
+Write ONLY the tweet text without any other explanations or formatting. It MUST be under 280 characters.`;
+
+    try {
+      // Use Elevion's xAI client to generate the tweet
+      const tweetContent = await generateText(prompt, 'grok-3-mini');
       
-      // Clean up and limit the tweet text
-      let tweet = response.trim();
-      
-      // Ensure the tweet doesn't exceed 280 characters
-      if (tweet.length > 280) {
-        tweet = tweet.substring(0, 277) + '...';
+      // Ensure the tweet is under 280 characters
+      if (tweetContent.length > 280) {
+        return tweetContent.substring(0, 277) + '...';
       }
       
-      return tweet;
+      return tweetContent;
     } catch (error) {
-      console.error('Error generating tweet:', error);
-      throw new Error('Failed to generate tweet from article');
+      console.error('Error generating tweet content:', error);
+      throw new Error('Failed to generate tweet content');
     }
   }
 
@@ -119,21 +104,28 @@ export class TwitterPosterService {
    * @returns The scheduled tweet record
    */
   async scheduleTweet(tweetText: string, scheduledTime: Date, articleId?: number): Promise<TwitterPost> {
+    if (!this.isReady()) {
+      throw new Error('Twitter poster service is not initialized');
+    }
+    
+    // Make sure the tweet is not too long
+    if (tweetText.length > 280) {
+      tweetText = tweetText.substring(0, 277) + '...';
+    }
+    
     try {
-      // Insert the scheduled tweet into the database
-      const [scheduledTweet] = await db.insert(twitterPosts).values({
+      // Insert the tweet into the database
+      const [tweet] = await db.insert(twitterPosts).values({
         content: tweetText,
-        scheduledTime: scheduledTime,
         status: 'scheduled',
+        scheduledTime,
         articleId: articleId || null,
-        createdAt: new Date(),
-        updatedAt: new Date()
       }).returning();
-
-      // Schedule the tweet to be posted at the scheduled time
-      this.scheduleJob(scheduledTweet);
-
-      return scheduledTweet;
+      
+      // Schedule the job to post the tweet
+      this.scheduleJob(tweet);
+      
+      return tweet;
     } catch (error) {
       console.error('Error scheduling tweet:', error);
       throw new Error('Failed to schedule tweet');
@@ -144,26 +136,32 @@ export class TwitterPosterService {
    * Sets up a scheduled job to post a tweet at the specified time
    */
   private scheduleJob(tweet: TwitterPost): void {
-    // Calculate milliseconds until scheduled time
     const now = new Date();
-    const scheduledTime = new Date(tweet.scheduledTime);
-    const timeUntilPost = scheduledTime.getTime() - now.getTime();
-
+    const scheduledTime = new Date(tweet.scheduledTime!);
+    const delay = scheduledTime.getTime() - now.getTime();
+    
     // Only schedule if the time is in the future
-    if (timeUntilPost <= 0) {
-      console.log(`Tweet ID ${tweet.id} scheduled time has already passed, marking as missed`);
+    if (delay <= 0) {
+      console.warn(`Tweet ${tweet.id} is scheduled in the past. Marking as missed.`);
       this.markTweetAsMissed(tweet.id);
       return;
     }
-
-    // Schedule the tweet
-    const job = setTimeout(async () => {
-      await this.postScheduledTweet(tweet.id);
-    }, timeUntilPost);
-
-    // Store the job reference for potential cancellation
+    
+    // Clear any existing job for this tweet
+    if (this.scheduledJobs.has(tweet.id)) {
+      clearTimeout(this.scheduledJobs.get(tweet.id));
+      this.scheduledJobs.delete(tweet.id);
+    }
+    
+    // Schedule the job
+    const job = setTimeout(() => {
+      this.postScheduledTweet(tweet.id);
+    }, delay);
+    
+    // Store the job reference
     this.scheduledJobs.set(tweet.id, job);
-    console.log(`Tweet ID ${tweet.id} scheduled for ${scheduledTime.toISOString()}`);
+    
+    console.log(`Tweet ${tweet.id} scheduled for ${scheduledTime.toISOString()}`);
   }
 
   /**
@@ -172,7 +170,10 @@ export class TwitterPosterService {
   private async markTweetAsMissed(tweetId: number): Promise<void> {
     try {
       await db.update(twitterPosts)
-        .set({ status: 'missed', updatedAt: new Date() })
+        .set({
+          status: 'missed',
+          updatedAt: new Date(),
+        })
         .where(eq(twitterPosts.id, tweetId));
     } catch (error) {
       console.error(`Error marking tweet ${tweetId} as missed:`, error);
@@ -183,50 +184,60 @@ export class TwitterPosterService {
    * Posts a scheduled tweet to Twitter
    */
   private async postScheduledTweet(tweetId: number): Promise<void> {
+    if (!this.isReady() || !this.twitterClient) {
+      this.markTweetAsMissed(tweetId);
+      return;
+    }
+    
     try {
+      // First update the status to processing
+      await db.update(twitterPosts)
+        .set({
+          status: 'processing',
+          updatedAt: new Date(),
+        })
+        .where(eq(twitterPosts.id, tweetId));
+      
       // Get the tweet from the database
       const [tweet] = await db.select()
         .from(twitterPosts)
         .where(eq(twitterPosts.id, tweetId));
-
+      
       if (!tweet) {
-        console.error(`Tweet ID ${tweetId} not found in database`);
+        console.error(`Tweet ${tweetId} not found`);
         return;
       }
-
-      // Update status to processing
-      await db.update(twitterPosts)
-        .set({ status: 'processing', updatedAt: new Date() })
-        .where(eq(twitterPosts.id, tweetId));
-
-      // Post the tweet to Twitter
-      const response = await this.twitterClient.createTweet(tweet.content);
-
-      // Update with success information
+      
+      // Post to Twitter
+      const result = await this.twitterClient.createTweet(tweet.content);
+      
+      // Update the tweet with the result
       await db.update(twitterPosts)
         .set({
           status: 'posted',
-          externalId: response.data?.id?.toString() || null,
           postedAt: new Date(),
-          updatedAt: new Date()
+          externalId: result.data.id,
+          updatedAt: new Date(),
         })
         .where(eq(twitterPosts.id, tweetId));
-
-      console.log(`Successfully posted tweet ID ${tweetId} to Twitter`);
+      
+      console.log(`Tweet ${tweetId} posted to Twitter with ID ${result.data.id}`);
     } catch (error) {
       console.error(`Error posting tweet ${tweetId}:`, error);
       
-      // Update with failure information
+      // Update the tweet with the error
       await db.update(twitterPosts)
         .set({
           status: 'failed',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          updatedAt: new Date()
+          errorMessage: error instanceof Error ? error.message : String(error),
+          updatedAt: new Date(),
         })
         .where(eq(twitterPosts.id, tweetId));
     } finally {
       // Clean up the scheduled job
-      this.scheduledJobs.delete(tweetId);
+      if (this.scheduledJobs.has(tweetId)) {
+        this.scheduledJobs.delete(tweetId);
+      }
     }
   }
 
@@ -234,7 +245,7 @@ export class TwitterPosterService {
    * Gets all scheduled tweets
    */
   async getScheduledTweets(): Promise<TwitterPost[]> {
-    return await db.select()
+    return db.select()
       .from(twitterPosts)
       .where(eq(twitterPosts.status, 'scheduled'))
       .orderBy(twitterPosts.scheduledTime);
@@ -244,18 +255,16 @@ export class TwitterPosterService {
    * Gets all tweets for a specific day
    */
   async getTweetsForDay(date: Date): Promise<TwitterPost[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
+    // Set start and end of the day
+    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
     
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    
-    return await db.select()
+    return db.select()
       .from(twitterPosts)
       .where(
         and(
-          gte(twitterPosts.scheduledTime, startOfDay),
-          lte(twitterPosts.scheduledTime, endOfDay)
+          twitterPosts.scheduledTime.gte(startOfDay),
+          twitterPosts.scheduledTime.lte(endOfDay)
         )
       )
       .orderBy(twitterPosts.scheduledTime);
@@ -265,7 +274,7 @@ export class TwitterPosterService {
    * Gets all tweets with a given status
    */
   async getTweetsByStatus(status: string): Promise<TwitterPost[]> {
-    return await db.select()
+    return db.select()
       .from(twitterPosts)
       .where(eq(twitterPosts.status, status))
       .orderBy(twitterPosts.scheduledTime);
@@ -275,7 +284,7 @@ export class TwitterPosterService {
    * Gets tweet stats by status
    */
   async getTweetStats(): Promise<Record<string, number>> {
-    const statuses = ['scheduled', 'posted', 'failed', 'missed', 'processing'];
+    const statuses = ['draft', 'scheduled', 'processing', 'posted', 'failed', 'cancelled', 'missed'];
     const stats: Record<string, number> = {};
     
     for (const status of statuses) {
@@ -283,12 +292,12 @@ export class TwitterPosterService {
         .from(twitterPosts)
         .where(eq(twitterPosts.status, status));
       
-      stats[status] = Number(count[0]?.count || 0);
+      stats[status] = Number(count[0].count);
     }
     
-    // Get total
+    // Add total
     const total = await db.select({ count: db.fn.count() }).from(twitterPosts);
-    stats.total = Number(total[0]?.count || 0);
+    stats.total = Number(total[0].count);
     
     return stats;
   }
@@ -297,75 +306,69 @@ export class TwitterPosterService {
    * Cancels a scheduled tweet
    */
   async cancelScheduledTweet(tweetId: number): Promise<boolean> {
-    try {
-      // Get the tweet
-      const [tweet] = await db.select()
-        .from(twitterPosts)
-        .where(eq(twitterPosts.id, tweetId));
-      
-      if (!tweet || tweet.status !== 'scheduled') {
-        return false;
-      }
-      
-      // Cancel the scheduled job
-      const job = this.scheduledJobs.get(tweetId);
-      if (job) {
-        clearTimeout(job);
-        this.scheduledJobs.delete(tweetId);
-      }
-      
-      // Update the status in the database
-      await db.update(twitterPosts)
-        .set({ status: 'cancelled', updatedAt: new Date() })
-        .where(eq(twitterPosts.id, tweetId));
-      
-      return true;
-    } catch (error) {
-      console.error(`Error cancelling tweet ${tweetId}:`, error);
+    // Get the tweet to check it's in a state that can be cancelled
+    const [tweet] = await db.select()
+      .from(twitterPosts)
+      .where(eq(twitterPosts.id, tweetId));
+    
+    if (!tweet || tweet.status !== 'scheduled') {
       return false;
     }
+    
+    // Clear the scheduled job
+    if (this.scheduledJobs.has(tweetId)) {
+      clearTimeout(this.scheduledJobs.get(tweetId));
+      this.scheduledJobs.delete(tweetId);
+    }
+    
+    // Update the tweet status
+    await db.update(twitterPosts)
+      .set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+      })
+      .where(eq(twitterPosts.id, tweetId));
+    
+    return true;
   }
 
   /**
    * Reschedules a tweet
    */
   async rescheduleTweet(tweetId: number, newScheduledTime: Date): Promise<boolean> {
-    try {
-      // Get the tweet
-      const [tweet] = await db.select()
-        .from(twitterPosts)
-        .where(eq(twitterPosts.id, tweetId));
-      
-      if (!tweet || !['scheduled', 'missed', 'failed', 'cancelled'].includes(tweet.status)) {
-        return false;
-      }
-      
-      // Cancel the current scheduled job if exists
-      const job = this.scheduledJobs.get(tweetId);
-      if (job) {
-        clearTimeout(job);
-        this.scheduledJobs.delete(tweetId);
-      }
-      
-      // Update the schedule
-      const [updatedTweet] = await db.update(twitterPosts)
-        .set({ 
-          status: 'scheduled', 
-          scheduledTime: newScheduledTime,
-          updatedAt: new Date(),
-          errorMessage: null
-        })
-        .where(eq(twitterPosts.id, tweetId))
-        .returning();
-      
-      // Create a new schedule
-      this.scheduleJob(updatedTweet);
-      
-      return true;
-    } catch (error) {
-      console.error(`Error rescheduling tweet ${tweetId}:`, error);
+    // Get the tweet to check it's in a state that can be rescheduled
+    const [tweet] = await db.select()
+      .from(twitterPosts)
+      .where(eq(twitterPosts.id, tweetId));
+    
+    if (!tweet || !['scheduled', 'missed', 'cancelled', 'failed'].includes(tweet.status)) {
       return false;
     }
+    
+    // Clear any existing scheduled job
+    if (this.scheduledJobs.has(tweetId)) {
+      clearTimeout(this.scheduledJobs.get(tweetId));
+      this.scheduledJobs.delete(tweetId);
+    }
+    
+    // Update the tweet
+    await db.update(twitterPosts)
+      .set({
+        status: 'scheduled',
+        scheduledTime: newScheduledTime,
+        updatedAt: new Date(),
+      })
+      .where(eq(twitterPosts.id, tweetId));
+    
+    // Get the updated tweet
+    const [updatedTweet] = await db.select()
+      .from(twitterPosts)
+      .where(eq(twitterPosts.id, tweetId));
+    
+    // Schedule the job
+    this.scheduleJob(updatedTweet);
+    
+    return true;
   }
 
   /**
@@ -373,11 +376,16 @@ export class TwitterPosterService {
    * Call this on server startup
    */
   async initializeScheduledTweets(): Promise<void> {
+    if (!this.isReady()) {
+      console.warn('Twitter poster service is not initialized. Skipping tweet initialization.');
+      return;
+    }
+    
     try {
       // Get all scheduled tweets
       const scheduledTweets = await this.getScheduledTweets();
       
-      // Schedule each tweet
+      // Schedule all tweets
       for (const tweet of scheduledTweets) {
         this.scheduleJob(tweet);
       }
