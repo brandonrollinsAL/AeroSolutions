@@ -15,7 +15,7 @@ export default function Copilot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "👋 Hello! I'm your Aero Solutions Copilot, powered by AI. I can answer questions about our services, provide insights about aviation software development, or discuss how we can help with your specific project needs. Try me out to see what Aero Solutions can build for you!",
+      text: "👋 Hello! I'm your Elevion Copilot, powered by Grok AI. I can answer questions about our web development services, provide insights about website design, e-commerce solutions, or discuss how we can help with your specific digital needs. Try me out to see what Elevion can build for your business!",
       sender: 'bot'
     }
   ]);
@@ -106,7 +106,7 @@ export default function Copilot() {
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
             onClick={toggleChat} 
-            className="bg-luxury hover:bg-luxury/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300"
+            className="bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300"
           >
             <FaCommentDots className="text-2xl" />
           </motion.button>
@@ -121,10 +121,10 @@ export default function Copilot() {
             exit={{ opacity: 0, y: 20 }}
             className="bg-white rounded-xl shadow-2xl absolute bottom-0 right-0 w-96 max-w-full overflow-hidden border border-gray-200"
           >
-            <div className="bg-primary text-white p-4 flex justify-between items-center">
+            <div className="bg-[#3B5B9D] text-white p-4 flex justify-between items-center">
               <div className="flex items-center">
                 <FaRobot className="mr-3 text-xl" />
-                <h3 className="font-bold font-montserrat">Aero Solutions Copilot</h3>
+                <h3 className="font-bold font-poppins">Elevion Copilot</h3>
               </div>
               <button 
                 onClick={toggleChat} 
@@ -138,12 +138,12 @@ export default function Copilot() {
               {messages.map((message) => (
                 <div key={message.id} className={`flex items-start ${message.sender === 'user' ? 'justify-end' : ''}`}>
                   {message.sender === 'bot' && (
-                    <div className="bg-primary text-white p-3 rounded-lg mr-2 flex-shrink-0">
+                    <div className="bg-[#3B5B9D] text-white p-3 rounded-lg mr-2 flex-shrink-0">
                       <FaRobot />
                     </div>
                   )}
                   
-                  <div className={`${message.sender === 'bot' ? 'bg-gray-100' : 'bg-luxury text-white'} rounded-lg p-3 max-w-[75%]`}>
+                  <div className={`${message.sender === 'bot' ? 'bg-gray-100' : 'bg-[#00D1D1] text-white'} rounded-lg p-3 max-w-[75%]`}>
                     <p>{message.text}</p>
                   </div>
                   
@@ -157,7 +157,7 @@ export default function Copilot() {
               
               {isLoading && (
                 <div className="flex items-start">
-                  <div className="bg-primary text-white p-3 rounded-lg mr-2 flex-shrink-0">
+                  <div className="bg-[#3B5B9D] text-white p-3 rounded-lg mr-2 flex-shrink-0">
                     <FaRobot />
                   </div>
                   <div className="bg-gray-100 rounded-lg p-3">
@@ -175,7 +175,7 @@ export default function Copilot() {
             
             <div className="border-t border-gray-200 p-4">
               <div className="mb-2 text-xs text-gray-500 text-center">
-                <p>Try asking: "What services do you offer?" or "Can you build a flight planning app?"</p>
+                <p>Try asking: "What web services do you offer?" or "Can you build an e-commerce website for my business?"</p>
               </div>
               <form onSubmit={handleSubmit} className="flex items-center">
                 <input 
@@ -189,7 +189,7 @@ export default function Copilot() {
                 <button 
                   type="submit" 
                   disabled={isLoading || !input.trim()}
-                  className="ml-2 bg-luxury text-white p-2 rounded-lg disabled:opacity-70"
+                  className="ml-2 bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white p-2 rounded-lg disabled:opacity-70"
                 >
                   <FaPaperPlane />
                 </button>
