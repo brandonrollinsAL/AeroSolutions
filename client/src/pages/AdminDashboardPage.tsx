@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/MainLayout';
 import LanguageMetaTags from '@/components/LanguageMetaTags';
 import ComplianceAlerts from '@/components/ComplianceAlerts';
+import ModerationDashboard from '@/components/ModerationDashboard';
 
 export default function AdminDashboardPage() {
   const [, setLocation] = useLocation();
@@ -253,19 +254,30 @@ export default function AdminDashboardPage() {
             </Card>
           </div>
           
-          {/* Compliance Monitoring Section */}
+          {/* Management Dashboards */}
           <Card className="border-blue-100 shadow">
             <CardHeader className="border-b pb-3">
               <CardTitle className="flex items-center text-lg">
                 <FaShieldAlt className="mr-2 h-5 w-5 text-blue-600" />
-                Legal Compliance Monitoring
+                Platform Protection & Compliance
               </CardTitle>
               <CardDescription>
-                AI-powered monitoring and detection of potential legal and regulatory compliance issues
+                AI-powered monitoring, moderation, and legal compliance management
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <ComplianceAlerts />
+              <Tabs defaultValue="compliance">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="compliance">Legal Compliance</TabsTrigger>
+                  <TabsTrigger value="moderation">Content Moderation</TabsTrigger>
+                </TabsList>
+                <TabsContent value="compliance">
+                  <ComplianceAlerts />
+                </TabsContent>
+                <TabsContent value="moderation">
+                  <ModerationDashboard />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
           

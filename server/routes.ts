@@ -27,6 +27,7 @@ import intelligentSearchRouter from './routes/intelligent-search';
 import searchRouter from './routes/search';
 import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
+import moderationRouter from './routes/moderation';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
@@ -146,6 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/email-campaigns', emailCampaignsRouter);
   app.use('/api/content', contentProtectionRouter);
   app.use('/api/compliance', complianceRouter);
+  app.use('/api/moderation', moderationRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
