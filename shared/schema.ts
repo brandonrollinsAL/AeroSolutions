@@ -257,6 +257,20 @@ export const feedback = pgTable("feedback", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Article Engagement Metrics Table
+export const articleEngagement = pgTable("article_engagement", {
+  id: serial("id").primaryKey(),
+  article_id: integer("article_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  views: integer("views").notNull().default(0),
+  shares: integer("shares").notNull().default(0),
+  likes: integer("likes").notNull().default(0),
+  comments: integer("comments").notNull().default(0),
+  avgReadTime: decimal("avg_read_time", { precision: 10, scale: 2 }).notNull().default("0"),
+  socialShares: json("social_shares").$type<Record<string, number>>().default({}),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Create the insert schemas
 export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
   id: true,
