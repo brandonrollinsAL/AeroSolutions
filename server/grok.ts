@@ -1,19 +1,32 @@
 import axios from 'axios';
 
-const API_KEY = process.env.XAI_API_KEY;
-const BASE_URL = 'https://api.x.ai/v1';
+// Default Grok API endpoint
+const GROK_API_URL = 'https://api.x.ai/v1';
 
-// Ensure API key is available
-if (!API_KEY) {
-  throw new Error('Missing required API key: XAI_API_KEY');
-}
-
-// Define response types
+/**
+ * Interface for Grok chat message
+ */
 interface GrokChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
+/**
+ * Interface for Grok API options
+ */
+interface GrokApiOptions {
+  model: string;
+  max_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  response_format?: { type: 'text' | 'json_object' };
+}
+
+/**
+ * Interface for Grok API response
+ */
 interface GrokChatCompletionResponse {
   id: string;
   object: string;
@@ -31,6 +44,9 @@ interface GrokChatCompletionResponse {
   };
 }
 
+/**
+ * Interface for content items in vision requests
+ */
 interface GrokVisionContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -39,45 +55,55 @@ interface GrokVisionContent {
   };
 }
 
-// Main API wrapper
+/**
+ * Implementation of the Grok API client
+ */
 export const grokApi = {
   /**
    * Generate a chat completion using Grok API
    */
   async createChatCompletion(
     messages: GrokChatMessage[],
-    options: {
-      model?: string;
-      temperature?: number;
-      max_tokens?: number;
-      response_format?: { type: string };
-    } = {}
+    options: GrokApiOptions = { model: 'grok-3-latest' }
   ): Promise<GrokChatCompletionResponse> {
-    const model = options.model || 'grok-3-latest';
-    
     try {
-      const response = await axios.post(
-        `${BASE_URL}/chat/completions`,
+      // Ensure API key is available
+      if (!process.env.XAI_API_KEY) {
+        throw new Error('XAI_API_KEY is not defined in environment');
+      }
+
+      const response = await axios.post<GrokChatCompletionResponse>(
+        `${GROK_API_URL}/chat/completions`,
         {
           messages,
-          model,
-          temperature: options.temperature ?? 0.7,
-          max_tokens: options.max_tokens,
-          response_format: options.response_format,
-          stream: false,
+          ...options
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`,
-          },
+            'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+          }
         }
       );
-      
+
       return response.data;
     } catch (error: any) {
-      console.error('Grok API error:', error.response?.data || error.message);
-      throw new Error(`Grok API error: ${error.response?.data?.error?.message || error.message}`);
+      // Enhanced error handling with more context
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        const status = error.response.status;
+        const errorData = error.response.data || {};
+        const errorMsg = errorData.error?.message || JSON.stringify(errorData);
+        
+        throw new Error(`Grok API Error (${status}): ${errorMsg}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        throw new Error(`Grok API network error: ${error.message}`);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw new Error(`Grok API configuration error: ${error.message}`);
+      }
     }
   },
 
@@ -85,45 +111,51 @@ export const grokApi = {
    * Generate a chat completion with vision capabilities
    */
   async createVisionCompletion(
-    content: GrokVisionContent[],
-    options: {
-      model?: string;
-      temperature?: number;
-      max_tokens?: number;
-    } = {}
+    contents: GrokVisionContent[],
+    options: GrokApiOptions = { model: 'grok-3-vision-latest' }
   ): Promise<GrokChatCompletionResponse> {
-    // Use a vision-compatible model by default
-    const model = options.model || 'grok-3-vision-latest';
-    
-    const messages: GrokChatMessage[] = [
-      {
-        role: 'user',
-        content: Array.isArray(content) ? content : [{ type: 'text', text: content as unknown as string }],
-      } as any, // Type assertion needed due to complex content structure
-    ];
-    
     try {
-      const response = await axios.post(
-        `${BASE_URL}/chat/completions`,
+      // Ensure API key is available
+      if (!process.env.XAI_API_KEY) {
+        throw new Error('XAI_API_KEY is not defined in environment');
+      }
+
+      // Format the message for the vision model
+      const messages = [
+        {
+          role: 'user' as const,
+          content: contents
+        }
+      ];
+
+      const response = await axios.post<GrokChatCompletionResponse>(
+        `${GROK_API_URL}/chat/completions`,
         {
           messages,
-          model,
-          temperature: options.temperature ?? 0.7,
-          max_tokens: options.max_tokens,
-          stream: false,
+          ...options
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`,
-          },
+            'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+          }
         }
       );
-      
+
       return response.data;
     } catch (error: any) {
-      console.error('Grok Vision API error:', error.response?.data || error.message);
-      throw new Error(`Grok Vision API error: ${error.response?.data?.error?.message || error.message}`);
+      // Enhanced error handling
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data || {};
+        const errorMsg = errorData.error?.message || JSON.stringify(errorData);
+        
+        throw new Error(`Grok Vision API Error (${status}): ${errorMsg}`);
+      } else if (error.request) {
+        throw new Error(`Grok Vision API network error: ${error.message}`);
+      } else {
+        throw new Error(`Grok Vision API configuration error: ${error.message}`);
+      }
     }
   },
 
@@ -131,51 +163,48 @@ export const grokApi = {
    * Analyze text with Grok
    */
   async analyzeText(text: string, instructions?: string): Promise<string> {
-    const systemPrompt = instructions || 
-      'Analyze the following text and provide insights. Be concise and focus on the most important points.';
-      
-    const completion = await this.createChatCompletion([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: text }
-    ]);
-    
-    return completion.choices[0].message.content;
+    const messages: GrokChatMessage[] = [
+      {
+        role: 'user',
+        content: instructions ? `${instructions}\n\nText to analyze: ${text}` : text
+      }
+    ];
+
+    const response = await this.createChatCompletion(messages, {
+      model: 'grok-3-latest',
+      temperature: 0.3 // Lower temperature for more focused analysis
+    });
+
+    return response.choices[0].message.content;
   },
 
   /**
    * Generate a JSON response with Grok
    */
   async generateJson<T = any>(prompt: string, systemPrompt?: string): Promise<T> {
-    const response = await this.createChatCompletion(
-      [
-        { 
-          role: 'system', 
-          content: systemPrompt || 'You are a helpful assistant that responds in JSON format.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      {
-        response_format: { type: 'json_object' }
-      }
-    );
-    
-    try {
-      return JSON.parse(response.choices[0].message.content) as T;
-    } catch (error) {
-      console.error('Failed to parse JSON response:', response.choices[0].message.content);
-      throw new Error('Failed to generate valid JSON from Grok API');
-    }
+    const messages: GrokChatMessage[] = systemPrompt 
+      ? [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ]
+      : [
+          { role: 'user', content: prompt }
+        ];
+
+    const response = await this.createChatCompletion(messages, {
+      model: 'grok-3-latest',
+      temperature: 0.2,
+      response_format: { type: 'json_object' }
+    });
+
+    return JSON.parse(response.choices[0].message.content) as T;
   },
 
   /**
    * Analyze image
    */
   async analyzeImage(imageBase64: string, prompt?: string): Promise<string> {
-    const content: GrokVisionContent[] = [
-      {
-        type: 'text',
-        text: prompt || 'Describe what you see in this image in detail.'
-      },
+    const contents: GrokVisionContent[] = [
       {
         type: 'image_url',
         image_url: {
@@ -183,8 +212,20 @@ export const grokApi = {
         }
       }
     ];
-    
-    const response = await this.createVisionCompletion(content);
+
+    // Add text prompt if provided
+    if (prompt) {
+      contents.unshift({
+        type: 'text',
+        text: prompt
+      });
+    }
+
+    const response = await this.createVisionCompletion(contents, {
+      model: 'grok-3-vision-latest',
+      max_tokens: 500
+    });
+
     return response.choices[0].message.content;
   }
 };
