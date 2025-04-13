@@ -318,6 +318,17 @@ const Navbar: React.FC = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
+                          <Link href="/ui-analytics" className="w-full flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 text-blue-600">
+                              <rect width="18" height="18" x="3" y="3" rx="2" />
+                              <path d="M9 17V11"/>
+                              <path d="M12 17V9"/>
+                              <path d="M15 17V13"/>
+                            </svg>
+                            <span>UI/UX Analytics</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
                           <Link href="/website-analytics" className="w-full flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="mr-2 h-4 w-4 text-blue-600" viewBox="0 0 16 16">
                               <path d="M4.5 11a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
@@ -461,6 +472,19 @@ const Navbar: React.FC = () => {
                           >
                             <Users className="h-4 w-4 inline mr-2" />
                             Manage Client Previews
+                          </Link>
+                          <Link
+                            href="/ui-analytics"
+                            className="block rounded-md px-3 py-2 text-base font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 inline mr-2">
+                              <rect width="18" height="18" x="3" y="3" rx="2" />
+                              <path d="M9 17V11"/>
+                              <path d="M12 17V9"/>
+                              <path d="M15 17V13"/>
+                            </svg>
+                            UI/UX Analytics
                           </Link>
                           <Link
                             href="/website-analytics"

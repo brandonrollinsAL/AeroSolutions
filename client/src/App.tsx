@@ -611,6 +611,20 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/ui-analytics">
+          {() => (
+            <>
+              <Helmet>
+                <title>UI/UX Analytics | Elevion</title>
+                <meta name="description" content="Analyze user interactions and improve your website's user experience with Elevion's AI-powered UI/UX analytics." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <UIAnalyticsDashboard />
+            </>
+          )}
+        </Route>
       </Switch>
       
       {/* Privacy consent banner */}
