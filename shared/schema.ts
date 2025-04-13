@@ -328,6 +328,63 @@ export const insertArticleEngagementSchema = createInsertSchema(articleEngagemen
   createdAt: true
 });
 
+// Content compliance scans
+export const contentComplianceScans = pgTable("content_compliance_scans", {
+  id: serial("id").primaryKey(),
+  contentId: text("content_id").notNull(),
+  contentType: text("content_type").notNull(), // blog_post, marketplace_item, user_profile, etc.
+  contentTitle: text("content_title").notNull(),
+  scanStartedAt: timestamp("scan_started_at").defaultNow().notNull(),
+  scanCompletedAt: timestamp("scan_completed_at"),
+  status: text("status").notNull(), // in_progress, completed, failed
+  passedCheck: boolean("passed_check"),
+  score: integer("score"), // 0-100
+  issueCount: integer("issue_count").default(0),
+  categories: text("categories").notNull(), // comma-separated list of categories that were checked
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Content compliance alerts
+export const contentComplianceAlerts = pgTable("content_compliance_alerts", {
+  id: serial("id").primaryKey(),
+  scanId: integer("scan_id").notNull().references(() => contentComplianceScans.id, { onDelete: "cascade" }),
+  contentId: text("content_id").notNull(),
+  contentType: text("content_type").notNull(),
+  contentTitle: text("content_title").notNull(),
+  category: text("category").notNull(), // us_law, gdpr, google_guidelines, etc.
+  severity: text("severity").notNull(), // info, warning, violation, critical
+  description: text("description").notNull(),
+  suggestedAction: text("suggested_action").notNull(),
+  relatedRegulation: text("related_regulation"),
+  excerpt: text("excerpt"),
+  status: text("status").default("open").notNull(), // open, resolved, acknowledged, false_positive
+  resolvedAt: timestamp("resolved_at"),
+  resolutionNotes: text("resolution_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertContentComplianceScanSchema = createInsertSchema(contentComplianceScans).omit({
+  id: true,
+  scanCompletedAt: true,
+  passedCheck: true,
+  score: true,
+  issueCount: true,
+  createdAt: true
+});
+
+export const insertContentComplianceAlertSchema = createInsertSchema(contentComplianceAlerts).omit({
+  id: true,
+  resolvedAt: true,
+  resolutionNotes: true,
+  createdAt: true
+});
+
+export type ContentComplianceScan = typeof contentComplianceScans.$inferSelect;
+export type InsertContentComplianceScan = z.infer<typeof insertContentComplianceScanSchema>;
+
+export type ContentComplianceAlert = typeof contentComplianceAlerts.$inferSelect;
+export type InsertContentComplianceAlert = z.infer<typeof insertContentComplianceAlertSchema>;
+
 // User data change logs for compliance and audit
 export const userDataChangeLogs = pgTable("user_data_change_logs", {
   id: serial("id").primaryKey(),
