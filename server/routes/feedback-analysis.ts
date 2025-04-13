@@ -8,7 +8,7 @@
 
 import express, { Request, Response } from 'express';
 import NodeCache from 'node-cache';
-import { getGrokCompletion } from '../utils/xaiClient';
+import { generateText, generateJson } from '../utils/xaiClient';
 import { storage } from '../storage';
 import { z } from 'zod';
 
@@ -133,13 +133,10 @@ Respond with valid JSON only.
 `;
 
     // Extended timeout (30s) for deeper analysis
-    const analysisResult = await getGrokCompletion(prompt, {
-      model: 'grok-3-mini',
-      temperature: 0.2,
-      responseFormat: 'json_object',
-      timeout: 30000,
-      maxTokens: 1000
-    });
+    const analysisResult = await generateJson(
+      prompt,
+      'You are an expert feedback analyst working for Elevion, a web development company.'
+    );
 
     // Parse the JSON response
     const analysisData = JSON.parse(analysisResult);
@@ -209,13 +206,10 @@ Respond with valid JSON only.
 `;
 
     // Get analysis from Grok
-    const trendsAnalysis = await getGrokCompletion(prompt, {
-      model: 'grok-3-mini',
-      temperature: 0.3,
-      responseFormat: 'json_object',
-      timeout: 45000,
-      maxTokens: 1500
-    });
+    const trendsAnalysis = await generateJson(
+      prompt,
+      'You are a data analyst for Elevion, a web development company.'
+    );
 
     // Parse and return
     const analysisData = JSON.parse(trendsAnalysis);

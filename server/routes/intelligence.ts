@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { callXAI, getGrokCompletion } from '../utils/xaiClient';
+import { callXAI, generateText } from '../utils/xaiClient';
 import { db } from '../db';
 
 const router = Router();

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { callXAI, getGrokCompletion } from '../utils/xaiClient';
+import { callXAI, generateText } from '../utils/xaiClient';
 import { db } from '../db';
 
 const router = Router();
@@ -376,7 +376,7 @@ router.post('/support-response', [
     
     Return the response as plain text.`;
 
-    const supportResponse = await getGrokCompletion(prompt, 'grok-3-mini');
+    const supportResponse = await generateText(prompt, 'You are a customer support expert at Elevion, a web development company.');
     
     return res.status(200).json({
       success: true,

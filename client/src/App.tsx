@@ -26,6 +26,7 @@ import ContentHubPage from "@/pages/ContentHubPage";
 import AIServices from "@/pages/AIServices";
 import FeedbackPage from "@/pages/FeedbackPage";
 import BlogPostPage from "@/pages/BlogPostPage";
+import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -384,6 +385,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <BlogPostPage />
+            </>
+          )}
+        </Route>
+        <Route path="/mockup-suggestions">
+          {() => (
+            <>
+              <Helmet>
+                <title>Free Website Design Suggestions | Elevion</title>
+                <meta name="description" content="Get free AI-powered website design suggestions tailored to your business type. Receive color schemes, typography, layouts, and key features instantly." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/mockup-suggestions" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MockupSuggestionPage />
             </>
           )}
         </Route>

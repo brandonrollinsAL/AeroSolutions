@@ -1,107 +1,153 @@
-import express from 'express';
-import { Request, Response } from 'express';
-import { grokApi } from '../grok';
+import express, { Request, Response, Router } from 'express';
+import { callXAI } from '../utils/xaiClient';
 import NodeCache from 'node-cache';
 
-const router = express.Router();
-const mockupCache = new NodeCache({ stdTTL: 3600 }); // Cache suggestions for 1 hour
+const router = Router();
 
-// Helper function to get a detailed prompt for mockup suggestions
+// Simple cache with 1-hour TTL
+const mockupSuggestionsCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
+
+/**
+ * Generate a detailed prompt for the business type
+ */
 function getDetailedPrompt(businessType: string): string {
-  return `Generate creative and professional website design suggestions for a ${businessType} business. 
-  Include the following in your response:
+  return `I need a comprehensive website design recommendation for a "${businessType}" business.
   
-  1. Color scheme (3-5 colors with hex codes that would work well for this business type)
-  2. Typography suggestions (2-3 font pairings that would be appropriate)
-  3. Layout recommendations (homepage structure, important sections to include)
-  4. Visual elements (types of imagery, graphics, or illustrations that would enhance the design)
-  5. Key features the website should have to be effective for this specific business type
-  
-  Make your suggestions specific to the ${businessType} industry, considering typical customer expectations 
-  and industry standards. Focus on modern, responsive design principles.`;
+Please provide a detailed markdown response with the following sections:
+
+## Color Scheme
+Recommend 3-5 colors that would work well for this business type. Include:
+- Primary color (with hex code)
+- Secondary color (with hex code)
+- Accent colors (with hex codes)
+- Brief explanation of why these colors work well for this business type
+
+## Typography
+Recommend font pairings that would work well, including:
+- Heading font suggestion
+- Body text font suggestion
+- UI elements font suggestion
+- Explanation of why these fonts work well for this business type
+
+## Layout and Structure
+Describe the ideal website structure, including:
+- Types of pages needed (e.g., home, about, services, gallery)
+- Key elements for the home page
+- Navigation structure recommendation
+- Mobile responsiveness considerations
+
+## Key Features
+Recommend 4-6 essential features that websites in this industry should have, including:
+- Functionality explanation
+- Business benefit of each feature
+- Priority level (must-have vs. nice-to-have)
+
+## Media Elements
+Suggest visual elements that would enhance the design:
+- Types of imagery recommended
+- Video or animation suggestions if applicable
+- Icons or graphics that would enhance the user experience
+
+## Call-to-Action Suggestions
+Provide 2-3 effective call-to-action suggestions specific to this business type.
+
+Keep the response detailed but concise, focusing on practical design recommendations that align with current design trends for this specific business type.`;
 }
 
-// Endpoint to generate mockup suggestions
+/**
+ * Endpoint for generating mockup design suggestions based on business type
+ */
 router.post('/suggest-mockup', async (req: Request, res: Response) => {
   try {
     const { businessType } = req.body;
     
-    if (!businessType) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Business type is required' 
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
       });
     }
-
-    // Check cache first
-    const cacheKey = `mockup-suggestion-${businessType.toLowerCase().replace(/\s+/g, '-')}`;
-    const cachedSuggestions = mockupCache.get(cacheKey);
     
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `mockup_suggestion_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedSuggestions = mockupSuggestionsCache.get(cacheKey);
     if (cachedSuggestions) {
+      console.log(`Returning cached mockup suggestions for business type: ${normalizedBusinessType}`);
       return res.json({
         success: true,
         designIdeas: cachedSuggestions,
         source: 'cache'
       });
     }
-
-    // Generate new suggestions
-    const detailedPrompt = getDetailedPrompt(businessType);
-    const suggestions = await grokApi.analyzeText(detailedPrompt);
     
-    // Cache the result
-    mockupCache.set(cacheKey, suggestions);
+    console.log(`Generating new mockup suggestions for business type: ${normalizedBusinessType}`);
     
-    res.json({
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    // Generate design ideas using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional web designer specializing in creating mockups and design systems for various business types. Provide detailed, practical design recommendations.'
+        },
+        { 
+          role: 'user', 
+          content: getDetailedPrompt(normalizedBusinessType) 
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const designIdeas = response.choices[0].message.content;
+    
+    // Cache the successful response
+    mockupSuggestionsCache.set(cacheKey, designIdeas);
+    
+    console.log(`Successfully generated mockup suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
       success: true,
-      designIdeas: suggestions,
+      designIdeas,
       source: 'fresh'
     });
   } catch (error: any) {
-    console.error('Error generating mockup suggestions:', error);
+    console.error("Error generating mockup suggestions:", error);
     
-    // Provide fallback content for reliability
-    const fallbackContent = `
-      # Website Design Suggestions
-      
-      Here are some general design recommendations for your website:
-      
-      ## Color Scheme
-      - Primary: #3B5B9D (Slate Blue)
-      - Secondary: #00D1D1 (Electric Cyan)
-      - Accent: #FF7043 (Sunset Orange)
-      - Background: #EDEFF2 (Light Gray)
-      - Text: #333333 (Dark Gray)
-      
-      ## Typography
-      - Headings: Poppins (Sans-serif)
-      - Body: Lato (Sans-serif)
-      - UI Elements: Inter (Sans-serif)
-      
-      ## Layout Recommendations
-      - Clean, minimal design with plenty of whitespace
-      - Hero section with clear value proposition
-      - Features/services section with icons
-      - Testimonials from satisfied clients
-      - Contact form with minimal required fields
-      
-      ## Visual Elements
-      - High-quality photographs relevant to your business
-      - Simple iconography for services/features
-      - Subtle animations for engagement
-      
-      ## Key Features
-      - Mobile-responsive design
-      - Fast loading times
-      - Clear call-to-action buttons
-      - Easy navigation
-      - Contact information easily accessible
-    `;
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
     
-    res.status(200).json({
-      success: true,
-      designIdeas: fallbackContent,
-      source: 'fallback'
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate design suggestions",
+      error: error.message || "Unknown error"
     });
   }
 });
