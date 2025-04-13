@@ -462,6 +462,21 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/marketing-campaigns">
+          {() => (
+            <>
+              <Helmet>
+                <title>Marketing Campaign Generator | Elevion</title>
+                <meta name="description" content="Create powerful, data-driven marketing campaigns with our AI-powered campaign generator. Design emails, social posts, and full campaigns." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/marketing-campaigns" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MarketingCampaignsPage />
+            </>
+          )}
+        </Route>
         <Route path="/website-analytics">
           {() => (
             <>
