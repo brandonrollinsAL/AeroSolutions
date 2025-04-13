@@ -869,7 +869,6 @@ const contentMarketingCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 // Generate content marketing suggestions based on business type
 marketplaceRouter.post(
   '/content-marketing-suggestions',
-  // authenticate, // Temporarily disabled for testing
   validate([
     body('businessType').isString().notEmpty().withMessage('Business type is required'),
     body('userId').optional().isNumeric().toInt()

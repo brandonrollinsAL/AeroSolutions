@@ -119,7 +119,9 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     // ElevateBot analytics routes
     /^\/api\/elevatebot\/elevatebot-usage$/,
     // Website performance analytics routes
-    /^\/api\/analytics\/website-performance\/\d+$/
+    /^\/api\/analytics\/website-performance\/\d+$/,
+    // Content marketing suggestions route (for testing)
+    /^\/api\/marketplace\/content-marketing-suggestions$/
   ];
   
   // Check if route is public
