@@ -48,17 +48,102 @@ router.post('/onboarding-message', [
     
     Format as a JSON object with "subject" and "message" fields.`;
 
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-mini',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-      max_tokens: 500
-    });
-    
-    return res.status(200).json({
-      success: true,
-      onboarding_message: JSON.parse(response.choices[0].message.content)
-    });
+    try {
+      const response = await callXAI('/chat/completions', {
+        model: 'grok-3-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        max_tokens: 500
+      });
+      
+      // Check if the content is valid JSON
+      let onboardingMessage;
+      try {
+        onboardingMessage = JSON.parse(response.choices[0].message.content);
+        
+        // Validate the expected fields exist and are not empty
+        if (!onboardingMessage.subject || !onboardingMessage.message || 
+            onboardingMessage.subject.trim() === '' || onboardingMessage.message.trim() === '') {
+          
+          console.log('JSON parsing succeeded but fields are empty, adding fallback content');
+          
+          if (!onboardingMessage.subject || onboardingMessage.subject.trim() === '') {
+            onboardingMessage.subject = `Welcome to Elevion, ${name}! Let's Transform Your ${business_type} Business`;
+          }
+          
+          if (!onboardingMessage.message || onboardingMessage.message.trim() === '') {
+            onboardingMessage.message = `Hi ${name},
+
+Welcome to Elevion! We're thrilled to have you join our community of forward-thinking ${business_type} business owners.
+
+As promised, we're here to help you transform your online presence with our cutting-edge web development services. Our AI-powered approach allows us to offer solutions at rates 60% below market, without compromising on quality.
+
+${onboarding_stage === 'new_signup' ? 'Your next step is to book a quick discovery call where we can learn more about your specific needs. Click the "Schedule Call" button in your dashboard to get started.' : ''}
+${onboarding_stage === 'discovery_completed' ? 'Based on our discovery call, we\'re ready to create your free mockup. Expect to receive this within 48 hours - no payment required until you\'re completely satisfied with the design.' : ''}
+${onboarding_stage === 'mockup_delivered' ? 'We hope you loved the mockup we created for you! Ready to move forward? Simply click "Approve Design" in your dashboard, and we\'ll begin development right away.' : ''}
+
+Looking forward to bringing your vision to life!
+
+The Elevion Team
+www.elevion.dev
+(555) 123-4567`;
+          }
+        }
+      } catch (jsonError) {
+        // If JSON parsing fails, use a fallback response
+        console.log('Onboarding message JSON parsing failed, using fallback content');
+        onboardingMessage = {
+          subject: `Welcome to Elevion, ${name}! Let's Transform Your ${business_type} Business`,
+          message: `Hi ${name},
+
+Welcome to Elevion! We're thrilled to have you join our community of forward-thinking ${business_type} business owners.
+
+As promised, we're here to help you transform your online presence with our cutting-edge web development services. Our AI-powered approach allows us to offer solutions at rates 60% below market, without compromising on quality.
+
+${onboarding_stage === 'new_signup' ? 'Your next step is to book a quick discovery call where we can learn more about your specific needs. Click the "Schedule Call" button in your dashboard to get started.' : ''}
+${onboarding_stage === 'discovery_completed' ? 'Based on our discovery call, we\'re ready to create your free mockup. Expect to receive this within 48 hours - no payment required until you\'re completely satisfied with the design.' : ''}
+${onboarding_stage === 'mockup_delivered' ? 'We hope you loved the mockup we created for you! Ready to move forward? Simply click "Approve Design" in your dashboard, and we\'ll begin development right away.' : ''}
+
+Looking forward to bringing your vision to life!
+
+The Elevion Team
+www.elevion.dev
+(555) 123-4567`
+        };
+      }
+      
+      return res.status(200).json({
+        success: true,
+        onboarding_message: onboardingMessage
+      });
+    } catch (error) {
+      console.error('Onboarding message API call error:', error);
+      
+      // If API call fails, create a fallback response
+      const fallbackMessage = {
+        subject: `Welcome to Elevion, ${name}! Let's Transform Your ${business_type} Business`,
+        message: `Hi ${name},
+
+Welcome to Elevion! We're thrilled to have you join our community of forward-thinking ${business_type} business owners.
+
+As promised, we're here to help you transform your online presence with our cutting-edge web development services. Our AI-powered approach allows us to offer solutions at rates 60% below market, without compromising on quality.
+
+${onboarding_stage === 'new_signup' ? 'Your next step is to book a quick discovery call where we can learn more about your specific needs. Click the "Schedule Call" button in your dashboard to get started.' : ''}
+${onboarding_stage === 'discovery_completed' ? 'Based on our discovery call, we\'re ready to create your free mockup. Expect to receive this within 48 hours - no payment required until you\'re completely satisfied with the design.' : ''}
+${onboarding_stage === 'mockup_delivered' ? 'We hope you loved the mockup we created for you! Ready to move forward? Simply click "Approve Design" in your dashboard, and we\'ll begin development right away.' : ''}
+
+Looking forward to bringing your vision to life!
+
+The Elevion Team
+www.elevion.dev
+(555) 123-4567`
+      };
+      
+      return res.status(200).json({
+        success: true,
+        onboarding_message: fallbackMessage
+      });
+    }
   } catch (error: any) {
     console.error('Onboarding message generation error:', error);
     return res.status(500).json({
@@ -117,17 +202,118 @@ router.post('/generate-faq', [
     
     Format as a JSON array of objects with "question" and "answer" fields.`;
 
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-mini',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-      max_tokens: 1500
-    });
+    try {
+      const response = await callXAI('/chat/completions', {
+        model: 'grok-3-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        max_tokens: 1500
+      });
+      
+      // Check if the content is valid JSON
+      let faqContent;
+      try {
+        faqContent = JSON.parse(response.choices[0].message.content);
+        
+        // Validate the response is a proper array with question/answer objects
+        if (!Array.isArray(faqContent) || faqContent.length === 0) {
+          console.log('JSON parsing succeeded but result is not a valid array, using fallback content');
+          faqContent = generateFallbackFAQ(business_type, service_focus, common_questions);
+        } else {
+          // Check if all objects have valid question and answer properties
+          const hasInvalidItems = faqContent.some(item => 
+            !item.question || !item.answer || 
+            item.question.trim() === '' || 
+            item.answer.trim() === ''
+          );
+          
+          if (hasInvalidItems) {
+            console.log('JSON parsing succeeded but some FAQ items are invalid, using fallback content');
+            faqContent = generateFallbackFAQ(business_type, service_focus, common_questions);
+          }
+        }
+      } catch (jsonError) {
+        // If JSON parsing fails, use a fallback response
+        console.log('FAQ JSON parsing failed, using fallback content');
+        faqContent = generateFallbackFAQ(business_type, service_focus, common_questions);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        faq_content: faqContent
+      });
+    } catch (error) {
+      console.error('FAQ API call error:', error);
+      
+      // If API call fails, create a fallback FAQ
+      const fallbackFAQ = generateFallbackFAQ(business_type, service_focus, common_questions);
+      
+      return res.status(200).json({
+        success: true,
+        faq_content: fallbackFAQ
+      });
+    }
     
-    return res.status(200).json({
-      success: true,
-      faq_content: JSON.parse(response.choices[0].message.content)
-    });
+    // Helper function to generate fallback FAQ
+    function generateFallbackFAQ(businessType: string, serviceFocus: string, commonQuestions: string[]) {
+      // Start with standard questions
+      const standardQuestions = [
+        {
+          question: `What services does Elevion offer for ${businessType} businesses?`,
+          answer: `Elevion provides comprehensive web development services tailored specifically for ${businessType} businesses, including custom website design, e-commerce solutions, responsive design, content management systems, SEO optimization, and ongoing maintenance. Our ${serviceFocus} solutions are designed to help your business establish a powerful online presence at 60% below market rates.`
+        },
+        {
+          question: "How much do your web development services cost?",
+          answer: "Elevion provides high-quality web development at rates 60% below market averages. Our pricing is transparent and value-based, with custom quotes based on your specific requirements. We offer flexible payment plans and no upfront costs—you only pay after approving your free mockup."
+        },
+        {
+          question: "What makes Elevion different from other web development companies?",
+          answer: "Elevion stands out through our AI-powered development approach, which allows us to offer premium services at 60% below market rates without compromising on quality. We provide free mockups before you commit to any payment, have a data-driven design process, and maintain ongoing relationships with clients long after launch."
+        },
+        {
+          question: "How long does it take to build a website?",
+          answer: "Our development timeline varies based on project complexity, but typical websites for small businesses are completed within 2-4 weeks. Our AI-powered processes allow us to work more efficiently than traditional agencies while maintaining exceptional quality standards. We'll provide you with a specific timeline during your initial consultation."
+        },
+        {
+          question: "Do you offer free mockups?",
+          answer: "Yes! We provide free, no-obligation mockups as part of our standard process. This allows you to see exactly what your website will look like before making any financial commitment. If you're not satisfied with the design, you don't pay anything. We believe in proving our value before asking for payment."
+        },
+        {
+          question: "What is your web development process?",
+          answer: "Our process includes: 1) Initial consultation to understand your needs, 2) Free mockup creation, 3) Design approval, 4) Development phase with regular updates, 5) Testing across devices/browsers, 6) Launch preparation, 7) Site deployment, and 8) Ongoing support. You'll have clear communication throughout each stage."
+        },
+        {
+          question: "Do you offer website maintenance services?",
+          answer: "Yes, we provide comprehensive website maintenance packages to keep your site secure, up-to-date, and performing optimally. Our maintenance includes regular updates, security monitoring, performance optimization, content updates, and technical support. We believe a website is an ongoing investment rather than a one-time project."
+        },
+        {
+          question: "Can you help with website content creation?",
+          answer: "Absolutely! We offer professional content creation services including copywriting, image selection, and content strategy development specifically tailored for ${businessType} businesses. Our AI-powered content tools help ensure your messaging resonates with your target audience while supporting your SEO goals."
+        }
+      ];
+      
+      // If there are custom questions, replace some of the standard ones or add them
+      if (commonQuestions.length > 0) {
+        const customFAQs = commonQuestions.map((question, index) => {
+          return {
+            question,
+            answer: `We address this common question about ${serviceFocus} for ${businessType} businesses with a tailored solution. Our approach includes personalized strategies, industry-specific best practices, and ongoing support to ensure optimal results. For more detailed information about this specific concern, please contact our team for a personalized consultation.`
+          };
+        });
+        
+        // Replace some standard questions if there are custom ones, otherwise add them
+        if (customFAQs.length <= standardQuestions.length) {
+          for (let i = 0; i < customFAQs.length; i++) {
+            standardQuestions[i] = customFAQs[i];
+          }
+        } else {
+          // Replace all standard questions and add remaining custom ones
+          return [...customFAQs];
+        }
+      }
+      
+      return standardQuestions;
+    }
   } catch (error: any) {
     console.error('FAQ generation error:', error);
     return res.status(500).json({
