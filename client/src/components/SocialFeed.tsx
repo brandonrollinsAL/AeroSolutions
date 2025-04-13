@@ -28,9 +28,9 @@ interface Post {
 
 interface FeedResponse {
   success: boolean;
-  feed?: Post[];
+  feed: Post[];
   rankedPosts?: Post[];
-  trending?: Post[];
+  trending: Post[];
   similarPosts?: Post[];
   reasoning?: string;
   preferences?: string;
@@ -64,13 +64,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   const { toast } = useToast();
   
   // Fetch personalized feed data
-  const { data: personalizedData, isLoading: isPersonalizedLoading } = useQuery({
+  const { data: personalizedData, isLoading: isPersonalizedLoading } = useQuery<FeedResponse>({
     queryKey: ['/api/feed/personalized'],
     enabled: activeTab === 'personalized',
   });
 
   // Fetch trending feed data
-  const { data: trendingData, isLoading: isTrendingLoading } = useQuery({
+  const { data: trendingData, isLoading: isTrendingLoading } = useQuery<FeedResponse>({
     queryKey: ['/api/feed/trending'],
     enabled: activeTab === 'trending',
   });
@@ -173,11 +173,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                   <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
                     {personalizedData?.feed && personalizedData.feed.length > 0 ? (
                       <>
-                        {personalizedData.feed.map((post, index) => (
+                        {personalizedData.feed.map((post: Post, index: number) => (
                           <PostCard 
                             key={post.id || index} 
                             post={post} 
-                            onAction={(action) => recordEngagement(post.id, action)}
+                            onAction={(action: string) => recordEngagement(post.id, action)}
                           />
                         ))}
                         
@@ -206,11 +206,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
                   <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
                     {trendingData?.trending && trendingData.trending.length > 0 ? (
                       <>
-                        {trendingData.trending.map((post, index) => (
+                        {trendingData.trending.map((post: Post, index: number) => (
                           <PostCard 
                             key={post.id || index} 
                             post={post} 
-                            onAction={(action) => recordEngagement(post.id, action)}
+                            onAction={(action: string) => recordEngagement(post.id, action)}
                           />
                         ))}
                       </>
@@ -354,7 +354,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       </Card>
       
       <div className="text-center mt-3 text-xs text-muted-foreground">
-        Follow us on social media to stay updated with our latest aviation technology solutions and industry insights.
+        Follow us on social media to stay updated with our latest web development insights and small business solutions.
       </div>
     </div>
   );
@@ -447,7 +447,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onAction }) => {
   );
 };
 
-const FeedSkeleton = ({ height = 500 }) => (
+interface FeedSkeletonProps {
+  height?: number;
+}
+
+const FeedSkeleton: React.FC<FeedSkeletonProps> = ({ height = 500 }) => (
   <div className="p-6 space-y-4" style={{ height: `${height}px` }}>
     <div className="flex items-center space-x-4">
       <Skeleton className="h-12 w-12 rounded-full" />
