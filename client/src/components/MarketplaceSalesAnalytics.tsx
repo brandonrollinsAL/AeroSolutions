@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoCircledIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { Info, RefreshCw } from "lucide-react";
 
 interface SalesAnalyticsData {
   totalSales: number;
@@ -165,12 +165,12 @@ const MarketplaceSalesAnalytics = () => {
           >
             {refreshing ? (
               <>
-                <ReloadIcon className="h-4 w-4 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 Refreshing...
               </>
             ) : (
               <>
-                <ReloadIcon className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 Refresh
               </>
             )}
@@ -265,7 +265,7 @@ const MarketplaceSalesAnalytics = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span>AI-Powered Insights</span>
-                  <InfoCircledIcon className="h-4 w-4 text-slate-500" />
+                  <Info className="h-4 w-4 text-slate-500" />
                 </CardTitle>
                 <CardDescription>
                   Generated using xAI Grok to analyze your sales data patterns

@@ -28,6 +28,7 @@ import FeedbackPage from "@/pages/FeedbackPage";
 import BlogPostPage from "@/pages/BlogPostPage";
 import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 import SeoTools from "@/pages/SeoTools";
+import MarketplaceAnalyticsPage from "@/pages/MarketplaceAnalyticsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -416,6 +417,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <SeoTools />
+            </>
+          )}
+        </Route>
+        <Route path="/marketplace/analytics">
+          {() => (
+            <>
+              <Helmet>
+                <title>Sales Analytics | Marketplace | Elevion</title>
+                <meta name="description" content="View comprehensive sales analytics and AI-driven insights for your marketplace offerings. Track performance, identify trends, and discover new opportunities." />
+                <meta name="robots" content="noindex, follow" />
+                <link rel="canonical" href="https://elevion.dev/marketplace/analytics" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <MarketplaceAnalyticsPage />
             </>
           )}
         </Route>
