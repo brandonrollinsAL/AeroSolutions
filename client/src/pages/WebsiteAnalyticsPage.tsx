@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WebsiteConversionAnalytics from '@/components/WebsiteConversionAnalytics';
+import MarketplaceServiceEngagement from '@/components/MarketplaceServiceEngagement';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
-import { BarChart4, LineChart, PieChart, Activity, RefreshCw } from 'lucide-react';
+import { BarChart4, LineChart, PieChart, Activity, RefreshCw, ShoppingBag } from 'lucide-react';
 
 const WebsiteAnalyticsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -132,6 +133,10 @@ const WebsiteAnalyticsPage: React.FC = () => {
               <BarChart4 className="h-4 w-4" />
               Engagement
             </TabsTrigger>
+            <TabsTrigger value="services" className="flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              Services
+            </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Performance
@@ -160,6 +165,10 @@ const WebsiteAnalyticsPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="services">
+            <MarketplaceServiceEngagement />
           </TabsContent>
           
           <TabsContent value="performance">

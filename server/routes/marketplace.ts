@@ -4,7 +4,7 @@ import { validate } from '../utils/validation';
 import { authenticate, authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
-import { insertMarketplaceItemSchema, users, mockupRequests, marketplaceItems, marketplaceOrders } from '@shared/schema';
+import { insertMarketplaceItemSchema, users, mockupRequests, marketplaceItems, marketplaceOrders, marketplaceServiceEngagement } from '@shared/schema';
 import { z } from 'zod';
 import { grokApi } from '../grok';
 import { db } from '../db';
@@ -1469,5 +1469,105 @@ marketplaceRouter.get('/suggest-social-posts/:userId', async (req: Request, res:
     });  
   }  
 });
+
+// Marketplace Service Engagement Analytics
+// Get marketplace service engagement metrics
+marketplaceRouter.get(
+  '/service-engagement',
+  authenticate,
+  async (req: Request, res: Response) => {
+    try {
+      // Fetch engagement data from storage
+      const engagementData = await storage.getMarketplaceServiceEngagement();
+      
+      return res.status(200).json({
+        success: true,
+        data: engagementData
+      });
+    } catch (error) {
+      console.error('Error fetching marketplace service engagement data:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve service engagement metrics'
+      });
+    }
+  }
+);
+
+// Track service click
+marketplaceRouter.post(
+  '/track/click/:serviceId',
+  async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId, 10);
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid service ID'
+        });
+      }
+      
+      // Update click count in database
+      const success = await storage.trackServiceClick(serviceId);
+      
+      if (!success) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to track service click'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Service click tracked successfully'
+      });
+    } catch (error) {
+      console.error('Error tracking service click:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error tracking service click'
+      });
+    }
+  }
+);
+
+// Track service inquiry
+marketplaceRouter.post(
+  '/track/inquiry/:serviceId',
+  async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId, 10);
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid service ID'
+        });
+      }
+      
+      // Update inquiry count in database
+      const success = await storage.trackServiceInquiry(serviceId);
+      
+      if (!success) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to track service inquiry'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Service inquiry tracked successfully'
+      });
+    } catch (error) {
+      console.error('Error tracking service inquiry:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error tracking service inquiry'
+      });
+    }
+  }
+);
 
 export default marketplaceRouter;
