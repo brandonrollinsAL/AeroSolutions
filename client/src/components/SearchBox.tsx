@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Search, Loader2, LayoutGrid } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Search, Loader2, LayoutGrid, BrainCircuit } from 'lucide-react';
 import { debounce } from 'lodash';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SearchResult {
   id: number;
@@ -78,6 +79,16 @@ export default function SearchBox() {
     }
   };
 
+  // Reference to search input for focusing
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Focus search input on component mount
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
+
   // Get suggested search terms
   const suggestions = searchResults?.suggestions || [];
 
@@ -92,6 +103,7 @@ export default function SearchBox() {
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
             className="pl-10"
+            ref={searchInputRef}
           />
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
@@ -158,9 +170,24 @@ export default function SearchBox() {
       {!isLoading && !isFetching && searchResults?.ranked_results && searchResults.ranked_results.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              {searchResults.ranked_results.length} results for "{debouncedSearchTerm}"
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">
+                {searchResults.ranked_results.length} results for "{debouncedSearchTerm}"
+              </h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs">
+                      <BrainCircuit className="mr-1 h-3 w-3 text-primary" />
+                      AI Powered
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Results ranked using xAI Grok technology for more accurate and relevant matches</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <LayoutGrid className="h-5 w-5 text-muted-foreground" />
           </div>
           
@@ -175,12 +202,21 @@ export default function SearchBox() {
                     </Badge>
                   </div>
                   {result.relevance_score && (
-                    <div className="w-full bg-secondary h-1.5 mt-2 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-primary h-full rounded-full" 
-                        style={{ width: `${Math.round(result.relevance_score * 100)}%` }} 
-                      />
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full bg-secondary h-1.5 mt-2 rounded-full overflow-hidden cursor-help">
+                            <div 
+                              className="bg-primary h-full rounded-full" 
+                              style={{ width: `${Math.round(result.relevance_score * 100)}%` }} 
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Relevance score: {Math.round(result.relevance_score * 100)}%</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </CardHeader>
                 <CardContent>
