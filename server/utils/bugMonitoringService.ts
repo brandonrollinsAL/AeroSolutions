@@ -1,12 +1,9 @@
-import { generateJson, generateText } from './xaiClient';
-import { db } from '../db';
-import { bug_reports, logs } from '@shared/schema';
-import { eq, and, desc, gt } from 'drizzle-orm';
+import { storage } from '../storage';
+import { callXAI, generateJson, generateText } from './xaiClient';
 import fs from 'fs';
 import path from 'path';
-import { storage } from '../storage';
+import { Logger } from '../middlewares/logger';
 
-// Interfaces
 interface BugAnalysisResult {
   isBug: boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
@@ -39,64 +36,56 @@ interface LogEntry {
  * Analyzes error logs using XAI to detect bugs
  */
 export async function analyzeErrorLogs(
-  timeframe: 'last_hour' | 'last_day' | 'last_week' = 'last_hour'
+  timeframe: 'last_hour' | 'last_day' | 'last_week' = 'last_day'
 ): Promise<BugAnalysisResult[]> {
   try {
-    // Get the timestamp for the timeframe
-    const startTime = new Date();
-    switch (timeframe) {
-      case 'last_hour':
-        startTime.setHours(startTime.getHours() - 1);
-        break;
-      case 'last_day':
-        startTime.setDate(startTime.getDate() - 1);
-        break;
-      case 'last_week':
-        startTime.setDate(startTime.getDate() - 7);
-        break;
-    }
-
-    // Fetch error logs from the database
-    const recentLogs = await db
-      .select()
-      .from(logs)
-      .where(
-        and(
-          eq(logs.level, 'error'),
-          gt(logs.timestamp, startTime)
-        )
-      )
-      .orderBy(desc(logs.timestamp))
-      .limit(50);
-
+    // Get logs from the specified timeframe
+    const recentLogs = await storage.getRecentLogs('error', 100);
+    
     if (recentLogs.length === 0) {
+      console.log('No error logs found for analysis');
       return [];
     }
-
-    // Transform logs for analysis
-    const logsForAnalysis = recentLogs.map(log => ({
-      id: log.id,
-      timestamp: log.timestamp.toISOString(),
-      message: log.message,
-      context: log.context ? JSON.stringify(log.context) : '',
-      source: log.source || 'unknown'
-    }));
-
-    // Group logs by common patterns
-    const groupedLogs = groupLogsByPatterns(logsForAnalysis);
     
-    // For each group, analyze with XAI
-    const bugAnalysisPromises = Object.entries(groupedLogs).map(
-      async ([pattern, logs]) => {
-        // Only analyze groups with more than one occurrence to focus on patterns
-        if (logs.length < 2) return null;
-        
-        return await analyzeBugPattern(pattern, logs);
-      }
+    // Group logs by patterns
+    const logGroups = groupLogsByPatterns(recentLogs);
+    
+    // Analyze each log group for potential bugs
+    const analysisPromises = Object.values(logGroups).map(logGroup => 
+      analyzeBugPattern(logGroup)
     );
-
-    const bugAnalysisResults = await Promise.all(bugAnalysisPromises);
-    return bugAnalysisResults.filter((result): result is BugAnalysisResult => result !== null);
+    
+    // Wait for all analyses to complete
+    const analysisResults = await Promise.all(analysisPromises);
+    
+    // Filter out null results and logs that aren't bugs
+    const bugAnalyses = analysisResults
+      .filter(result => result && result.isBug)
+      .filter(Boolean) as BugAnalysisResult[];
+    
+    // Log the results
+    console.log(`Bug analysis completed. Found ${bugAnalyses.length} potential bugs.`);
+    
+    // Store bug reports in the database
+    await Promise.all(
+      bugAnalyses.map(async (bugReport) => {
+        await storage.createBugReport({
+          source: 'log_analysis',
+          status: 'open',
+          description: bugReport.description,
+          title: `[Auto-Detected] ${bugReport.affectedComponent} Issue`,
+          severity: bugReport.severity,
+          affectedComponent: bugReport.affectedComponent,
+          suggestedFix: bugReport.suggestedFix,
+          canAutoFix: bugReport.canAutoFix,
+          autoFixCode: bugReport.autoFixCode,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      })
+    );
+    
+    return bugAnalyses;
   } catch (error) {
     console.error('Error analyzing error logs:', error);
     return [];
@@ -107,103 +96,94 @@ export async function analyzeErrorLogs(
  * Groups logs by common patterns to identify recurring issues
  */
 function groupLogsByPatterns(logs: LogEntry[]): Record<string, LogEntry[]> {
-  const patterns: Record<string, LogEntry[]> = {};
+  const errorPatterns: Record<string, LogEntry[]> = {};
   
   for (const log of logs) {
-    // Remove specific identifiers like IDs, timestamps from the message to find patterns
-    const normalizedMessage = log.message
-      .replace(/\b[0-9a-f]{8,}\b/g, '[ID]') // Replace UUIDs/IDs
-      .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, '[TIMESTAMP]') // Replace ISO timestamps
-      .replace(/\b\d+\b/g, '[NUMBER]') // Replace numbers
-      .replace(/(['"])(?:(?=(\\?))\2.)*?\1/g, '[STRING]'); // Replace string literals
-      
-    // Use the normalized message as the pattern key
-    if (!patterns[normalizedMessage]) {
-      patterns[normalizedMessage] = [];
+    // Strip out variable parts like timestamps, IDs, etc. to find the pattern
+    const patternKey = extractErrorPattern(log.message);
+    
+    if (!errorPatterns[patternKey]) {
+      errorPatterns[patternKey] = [];
     }
     
-    patterns[normalizedMessage].push(log);
+    errorPatterns[patternKey].push(log);
   }
   
-  return patterns;
+  // Only keep patterns with multiple occurrences (likely to be actual bugs)
+  return Object.fromEntries(
+    Object.entries(errorPatterns)
+      .filter(([_, logs]) => logs.length > 1)
+  );
+}
+
+/**
+ * Creates a normalized pattern from an error message
+ */
+function extractErrorPattern(message: string): string {
+  // Replace specific values like IDs, dates, etc. with placeholders
+  return message
+    .replace(/\d+/g, '<NUM>') // Replace numbers
+    .replace(/(['"])(?:(?=(\\?))\2.)*?\1/g, '<STR>') // Replace quoted strings
+    .replace(/\/[\w\/\.-]+/g, '<PATH>') // Replace file paths
+    .replace(/\w+@[\w\.-]+/g, '<EMAIL>') // Replace emails
+    .trim();
 }
 
 /**
  * Analyzes a group of similar logs to detect bugs
  */
 async function analyzeBugPattern(
-  pattern: string,
   logs: LogEntry[]
 ): Promise<BugAnalysisResult | null> {
   try {
-    const systemPrompt = `You are an expert software debugging AI. Your task is to analyze error logs and identify bugs.
-    Analyze the pattern and suggest a fix. Be precise in your diagnosis and recommendations.
-    For the canAutoFix field, only return true if the fix is simple, isolated, and has no side effects.
-    If canAutoFix is true, provide specific code in the autoFixCode field that could be applied to fix the issue automatically.`;
-
+    // Select a sample of logs to analyze (to keep the prompt size reasonable)
+    const logSample = logs.slice(0, 5);
+    
+    // Format logs for analysis prompt
+    const logText = logSample.map(log => 
+      `[${new Date(log.timestamp).toISOString()}] ${log.level.toUpperCase()}: ${log.message}\nContext: ${JSON.stringify(log.context)}\nSource: ${log.source}`
+    ).join('\n\n');
+    
+    // Create the analysis prompt for XAI
     const prompt = `
-    I need you to analyze this group of ${logs.length} similar error logs to identify if they represent a bug.
+    Analyze the following error logs and determine if they represent a bug in the system:
     
-    Error pattern: ${pattern}
+    ${logText}
     
-    Sample log entries (${Math.min(logs.length, 5)} out of ${logs.length}):
-    ${logs.slice(0, 5).map(log => 
-      `ID: ${log.id}
-      Timestamp: ${log.timestamp}
-      Source: ${log.source}
-      Message: ${log.message}
-      Context: ${log.context || 'N/A'}`
-    ).join('\n\n')}
+    There are ${logs.length} total occurrences of this error pattern.
     
-    Based on these logs, determine:
-    1. Is this a bug or expected behavior?
-    2. How severe is this issue (low, medium, high, critical)?
-    3. What's happening and what component is affected?
-    4. Can this be automatically fixed with a simple code change?
-    5. If auto-fixable, provide the exact code change needed
+    Please analyze these logs and determine:
+    1. Is this a bug in the system that needs to be fixed?
+    2. What is the severity level (low, medium, high, critical)?
+    3. What component is affected?
+    4. What might be causing this issue?
+    5. How would you suggest fixing it?
+    6. Could this be automatically fixed with code changes? If so, provide a code snippet that could fix it.
     
-    Return your analysis as a JSON object with the following structure:
+    Respond in JSON format with the following structure:
     {
-      "isBug": boolean,
-      "severity": "low" | "medium" | "high" | "critical",
-      "description": "Clear description of the issue",
-      "suggestedFix": "How to fix this issue",
-      "affectedComponent": "The component or area affected",
-      "canAutoFix": boolean,
-      "autoFixCode": "Code that could be applied to fix the issue" (only if canAutoFix is true)
-    }`;
-
-    const analysis = await generateJson<BugAnalysisResult>(prompt, {
-      systemPrompt,
-      model: 'grok-3',
-      temperature: 0.2,
-      maxTokens: 1500
-    });
-
-    // If the analysis confirms it's a bug, store the report
-    if (analysis.isBug) {
-      await storeBugReport({
-        source: 'automated-log-analysis',
-        title: `Auto-detected: ${analysis.description.substring(0, 100)}`,
-        description: analysis.description,
-        severity: analysis.severity,
-        status: 'open',
-        affectedComponent: analysis.affectedComponent,
-        suggestedFix: analysis.suggestedFix,
-        canAutoFix: analysis.canAutoFix,
-        autoFixCode: analysis.autoFixCode || null,
-        logIds: logs.map(log => log.id),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      // If it's auto-fixable and not critical (to be safe), apply the fix
-      if (analysis.canAutoFix && analysis.severity !== 'critical') {
-        await attemptAutoFix(analysis);
-      }
+      "isBug": true/false,
+      "severity": "low"/"medium"/"high"/"critical",
+      "description": "Description of the issue",
+      "affectedComponent": "The affected component or module",
+      "suggestedFix": "How to fix the issue",
+      "canAutoFix": true/false,
+      "autoFixCode": "Code snippet that could automatically fix the issue (if applicable)"
     }
-
-    return analysis;
+    
+    If this is not a bug (e.g., it's an expected error, user error, or external system issue), set isBug to false.
+    `;
+    
+    // Execute XAI analysis
+    const result = await generateJson(prompt, {
+      model: 'grok-3-mini',
+      systemPrompt: "You are an expert software engineer with deep experience debugging complex systems. Your task is to analyze error logs to identify bugs, determine their severity, and suggest fixes. Be precise, concise, and practical.",
+      temperature: 0.2,
+      maxTokens: 1000
+    });
+    
+    // Return the parsed analysis
+    return result as BugAnalysisResult;
   } catch (error) {
     console.error('Error analyzing bug pattern:', error);
     return null;
@@ -215,23 +195,43 @@ async function analyzeBugPattern(
  */
 export async function analyzeUserFeedback(): Promise<UserFeedbackAnalysis[]> {
   try {
-    // Get recent user feedback from the analytics endpoint data
-    const feedback = await storage.getRecentFeedback();
+    // Get recent user feedback
+    const recentFeedback = await storage.getRecentFeedback(20);
     
-    if (!feedback || feedback.length === 0) {
+    if (recentFeedback.length === 0) {
+      console.log('No user feedback found for analysis');
       return [];
     }
     
-    const feedbackAnalysisPromises = feedback.map(
-      async (item) => {
-        return await analyzeFeedbackItem(item);
-      }
+    // Analyze each feedback item
+    const analysisPromises = recentFeedback.map(item => 
+      analyzeFeedbackItem(item)
     );
-
-    const analysisResults = await Promise.all(feedbackAnalysisPromises);
-    return analysisResults.filter((result): result is UserFeedbackAnalysis => {
-      return result !== null && result.isBugReport;
-    });
+    
+    // Wait for all analyses to complete
+    const analyses = await Promise.all(analysisPromises);
+    
+    // Filter out null results
+    const validAnalyses = analyses.filter(Boolean) as UserFeedbackAnalysis[];
+    
+    // Store bug reports from feedback
+    await Promise.all(
+      validAnalyses
+        .filter(analysis => analysis.isBugReport)
+        .map(async (analysis) => {
+          await storage.createBugReport({
+            source: 'user_feedback',
+            status: 'open',
+            description: analysis.description,
+            title: `[User Reported] ${analysis.category} Issue`,
+            severity: mapPriorityToSeverity(analysis.priority),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        })
+    );
+    
+    return validAnalyses;
   } catch (error) {
     console.error('Error analyzing user feedback:', error);
     return [];
@@ -242,65 +242,46 @@ export async function analyzeUserFeedback(): Promise<UserFeedbackAnalysis[]> {
  * Analyzes a single feedback item to determine if it's reporting a bug
  */
 async function analyzeFeedbackItem(
-  feedbackItem: any
+  item: any
 ): Promise<UserFeedbackAnalysis | null> {
   try {
-    const systemPrompt = `You are an AI specialized in analyzing user feedback for software products.
-    Your task is to determine if user feedback is reporting a bug or issue versus general feedback or feature requests.
-    If it appears to be a bug report, extract relevant details that would help developers fix the issue.`;
-
+    // Format the feedback for analysis
     const prompt = `
-    Please analyze this user feedback to determine if it's reporting a bug or issue:
+    Analyze the following user feedback to determine if it's reporting a bug or issue:
     
-    User ID: ${feedbackItem.userId || 'Anonymous'}
-    Feedback Context: ${feedbackItem.context || 'General feedback'}
-    Feedback Text: "${feedbackItem.message}"
-    Submitted: ${feedbackItem.createdAt}
+    Feedback: "${item.content}"
+    Rating: ${item.rating}/5
+    User ID: ${item.userId || 'Anonymous'}
+    Page: ${item.page || 'Unknown'}
     
-    Analyze this feedback and determine:
-    1. Is this reporting a bug or technical issue? 
-    2. What is the sentiment of this feedback?
-    3. If it's a bug report, what priority should it have?
-    4. What category does this feedback fall into?
-    5. What specific issue is being described?
-    6. What action should be taken in response?
+    Please analyze this feedback and determine:
+    1. Is this reporting a bug or technical issue?
+    2. What is the sentiment of the feedback?
+    3. What category best describes this feedback?
+    4. What is the priority level?
+    5. What action should be taken?
     
-    Return your analysis as a JSON object with this structure:
+    Respond in JSON format with the following structure:
     {
-      "isBugReport": boolean,
-      "sentiment": "negative" | "neutral" | "positive",
-      "priority": "low" | "medium" | "high",
-      "category": "string describing category",
-      "description": "concise description of the issue",
-      "suggestedAction": "recommended action to take"
-    }`;
-
-    const analysis = await generateJson<UserFeedbackAnalysis>(prompt, {
-      systemPrompt,
-      model: 'grok-3-mini',
-      temperature: 0.3
-    });
-
-    // If it's a bug report, store it
-    if (analysis.isBugReport) {
-      await storeBugReport({
-        source: 'user-feedback',
-        title: `User Reported: ${analysis.description.substring(0, 100)}`,
-        description: analysis.description,
-        severity: analysis.priority === 'high' ? 'high' : 
-                 analysis.priority === 'medium' ? 'medium' : 'low',
-        status: 'open',
-        affectedComponent: analysis.category,
-        suggestedFix: analysis.suggestedAction,
-        canAutoFix: false,
-        autoFixCode: null,
-        feedbackId: feedbackItem.id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      "isBugReport": true/false,
+      "sentiment": "negative"/"neutral"/"positive",
+      "priority": "low"/"medium"/"high",
+      "category": "category of the feedback (e.g., UI, performance, feature request)",
+      "description": "Brief description of the issue or feedback",
+      "suggestedAction": "Suggested action to address the feedback"
     }
-
-    return analysis;
+    `;
+    
+    // Execute XAI analysis
+    const result = await generateJson(prompt, {
+      model: 'grok-3-mini',
+      systemPrompt: "You are an expert in analyzing user feedback for software products. Your task is to determine if feedback indicates a bug, the sentiment, and appropriate actions. Be precise, concise, and practical.",
+      temperature: 0.3,
+      maxTokens: 800
+    });
+    
+    // Return the parsed analysis
+    return result as UserFeedbackAnalysis;
   } catch (error) {
     console.error('Error analyzing feedback item:', error);
     return null;
@@ -311,47 +292,46 @@ async function analyzeFeedbackItem(
  * Attempts to automatically apply a fix for a bug
  */
 async function attemptAutoFix(bugAnalysis: BugAnalysisResult): Promise<boolean> {
-  try {
-    if (!bugAnalysis.canAutoFix || !bugAnalysis.autoFixCode) {
-      return false;
-    }
-
-    // Log the auto-fix attempt
-    console.log(`Attempting to auto-fix bug: ${bugAnalysis.description}`);
-    console.log(`Affected component: ${bugAnalysis.affectedComponent}`);
-    
-    // In a production system, we would have more sophisticated code to:
-    // 1. Identify the file(s) that need to be modified
-    // 2. Parse the bugAnalysis.autoFixCode to extract the changes
-    // 3. Apply those changes with appropriate backups
-    // 4. Run tests to verify the fix
-    // 5. Revert if tests fail
-    
-    // For this implementation, we'll just log the suggested fix
-    // and update the bug report to indicate the auto-fix was attempted
-    
-    // Update the bug report to show an auto-fix was attempted
-    await db
-      .update(bug_reports)
-      .set({
-        status: 'fix-attempted',
-        updatedAt: new Date(),
-        fixAttemptedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(bug_reports.description, bugAnalysis.description),
-          eq(bug_reports.status, 'open')
-        )
-      );
-    
-    // In a real implementation, apply the fix here
-    // This would involve file manipulation based on the autoFixCode
-    
-    return true;
-  } catch (error) {
-    console.error('Error attempting auto fix:', error);
+  // This is a placeholder - in a real implementation, you would:
+  // 1. Parse the autoFixCode to understand what file(s) need to be modified
+  // 2. Make a backup of the file(s)
+  // 3. Apply the suggested changes
+  // 4. Verify the changes (possibly by running tests)
+  // 5. Return success/failure
+  
+  if (!bugAnalysis.canAutoFix || !bugAnalysis.autoFixCode) {
     return false;
+  }
+  
+  try {
+    // Log the attempted fix
+    console.log(`Attempting to auto-fix bug: ${bugAnalysis.description}`);
+    console.log(`Fix code: ${bugAnalysis.autoFixCode}`);
+    
+    // This is where you would implement the actual file modification logic
+    
+    // For safety, we'll always return false in this demo version
+    // In a real implementation, you'd return true if the fix was successfully applied
+    return false;
+  } catch (error) {
+    console.error('Error attempting to auto-fix bug:', error);
+    return false;
+  }
+}
+
+/**
+ * Maps priority levels from feedback analysis to bug severity levels
+ */
+function mapPriorityToSeverity(priority: string): 'low' | 'medium' | 'high' | 'critical' {
+  switch (priority.toLowerCase()) {
+    case 'high':
+      return 'high';
+    case 'medium':
+      return 'medium';
+    case 'low':
+      return 'low';
+    default:
+      return 'medium';
   }
 }
 
@@ -360,8 +340,7 @@ async function attemptAutoFix(bugAnalysis: BugAnalysisResult): Promise<boolean> 
  */
 async function storeBugReport(bugReport: any): Promise<void> {
   try {
-    await db.insert(bug_reports).values(bugReport);
-    console.log(`Bug report stored: ${bugReport.title}`);
+    await storage.createBugReport(bugReport);
   } catch (error) {
     console.error('Error storing bug report:', error);
   }
@@ -373,72 +352,83 @@ async function storeBugReport(bugReport: any): Promise<void> {
 export async function generateBugSummaryReport(): Promise<string> {
   try {
     // Get recent bug reports
-    const recentBugs = await db
-      .select()
-      .from(bug_reports)
-      .orderBy(desc(bug_reports.createdAt))
-      .limit(20);
+    const openBugs = await storage.getBugReports('open');
+    const inProgressBugs = await storage.getBugReports('in-progress');
+    const resolvedBugs = await storage.getBugReports('resolved', 10);
     
-    if (recentBugs.length === 0) {
-      return "No bugs detected in the monitored period.";
-    }
+    // Get recent error logs for context
+    const recentErrors = await storage.getRecentLogs('error', 20);
     
-    const systemPrompt = `You are an AI assistant specialized in creating concise engineering reports.
-    Summarize the bug information into a well-structured report for a development team.
-    Be professional, clear, and actionable in your summary.`;
-
-    const bugData = recentBugs.map(bug => ({
-      title: bug.title,
-      description: bug.description,
-      severity: bug.severity,
-      component: bug.affectedComponent,
-      status: bug.status,
-      suggestedFix: bug.suggestedFix,
-      autoFixable: bug.canAutoFix,
-      createdAt: bug.createdAt.toISOString()
-    }));
-
+    // Build summary data for the prompt
+    const summaryData = {
+      openBugs: openBugs.length,
+      inProgressBugs: inProgressBugs.length,
+      resolvedBugs: resolvedBugs.length,
+      recentErrors: recentErrors.length,
+      openBugSamples: openBugs.slice(0, 5).map(bug => ({
+        title: bug.title,
+        severity: bug.severity,
+        component: bug.affectedComponent || 'Unknown',
+        created: new Date(bug.createdAt).toISOString()
+      })),
+      resolvedBugSamples: resolvedBugs.slice(0, 3).map(bug => ({
+        title: bug.title,
+        severity: bug.severity,
+        component: bug.affectedComponent || 'Unknown',
+        resolved: bug.resolvedAt ? new Date(bug.resolvedAt).toISOString() : 'Unknown'
+      }))
+    };
+    
+    // Create the report prompt for XAI
     const prompt = `
-    Generate a comprehensive bug summary report based on these ${recentBugs.length} recently detected issues:
+    Generate a concise executive summary of the current state of system bugs and maintenance.
     
-    ${JSON.stringify(bugData, null, 2)}
+    Current Bug Status:
+    - Open Bugs: ${summaryData.openBugs}
+    - In-Progress Bugs: ${summaryData.inProgressBugs}
+    - Recently Resolved Bugs: ${summaryData.resolvedBugs}
+    - Recent Error Log Entries: ${summaryData.recentErrors}
     
-    Please include:
-    1. An executive summary of the bug situation
-    2. Categorization of bugs by severity and affected components
-    3. Key patterns or trends observed
-    4. The most critical bugs that need immediate attention
-    5. Bugs that were automatically fixed or could be fixed automatically
-    6. Recommendations for the development team
+    Sample Open Bugs:
+    ${summaryData.openBugSamples.map(bug => `- [${bug.severity.toUpperCase()}] ${bug.title} (${bug.component})`).join('\n')}
     
-    Format this as a professional report with clear sections and actionable insights.`;
-
+    Sample Recently Resolved Bugs:
+    ${summaryData.resolvedBugSamples.map(bug => `- [${bug.severity.toUpperCase()}] ${bug.title} (${bug.component})`).join('\n')}
+    
+    Please provide:
+    1. A brief executive summary of the system health (2-3 sentences)
+    2. Key bug trends or patterns you observe
+    3. Recommendations for immediate action items (if any)
+    4. Maintenance priorities for the coming week
+    
+    The report should be concise, actionable, and appropriate for both technical and non-technical stakeholders.
+    `;
+    
+    // Generate the report
     const report = await generateText(prompt, {
-      systemPrompt,
-      model: 'grok-3',
-      temperature: 0.4,
-      maxTokens: 2000
+      model: 'grok-3-mini',
+      systemPrompt: "You are an expert software engineering manager with a focus on system reliability and maintenance. Your task is to provide clear, concise reports on bug status that highlight key issues without causing unnecessary alarm. Focus on actionable insights and prioritization.",
+      temperature: 0.3,
+      maxTokens: 1000
     });
-    
-    // Save the report to a file
-    const reportDir = path.join(__dirname, '../../reports');
-    if (!fs.existsSync(reportDir)) {
-      fs.mkdirSync(reportDir, { recursive: true });
-    }
-    
-    const filename = `bug-report-${new Date().toISOString().split('T')[0]}.md`;
-    fs.writeFileSync(path.join(reportDir, filename), report);
     
     return report;
   } catch (error) {
     console.error('Error generating bug summary report:', error);
-    return 'Error generating bug report. Please check the logs.';
+    return 'Error generating bug summary report. Please try again later.';
   }
 }
 
-// Export methods for scheduling
-export default {
-  analyzeErrorLogs,
-  analyzeUserFeedback,
-  generateBugSummaryReport
-};
+// Helper function to read source code files
+function readSourceFile(filePath: string): string | null {
+  try {
+    const fullPath = path.resolve(process.cwd(), filePath);
+    if (fs.existsSync(fullPath)) {
+      return fs.readFileSync(fullPath, 'utf8');
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading file ${filePath}:`, error);
+    return null;
+  }
+}

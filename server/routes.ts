@@ -28,7 +28,6 @@ import searchRouter from './routes/search';
 import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
 import moderationRouter from './routes/moderation';
-import achievementsRouter from './routes/achievements';
 import twitterRouter from './routes/twitter';
 import retentionRouter from './routes/retention';
 import landingPagesRouter from './routes/landing-pages';
@@ -45,6 +44,8 @@ import socialMediaRouter from './routes/socialMedia';
 import marketingCampaignsRouter from './routes/marketingCampaigns';
 import seoRouter from './routes/seo';
 import priceOptimizationRouter from './routes/priceOptimization';
+import { bugMonitoringRouter } from './routes/bugMonitoring';
+import { loggerMiddleware, registerGlobalErrorHandlers } from './middlewares/logger';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
@@ -129,6 +130,12 @@ setInterval(() => rateLimiter.cleanup(), 5 * 60 * 1000);
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup API routes - all prefixed with /api
   
+  // Apply logger middleware to all requests
+  app.use(loggerMiddleware());
+  
+  // Register global error handlers for uncaught exceptions
+  registerGlobalErrorHandlers();
+  
   // Apply rate limiting to all API routes
   app.use('/api', rateLimiter.middleware);
   
@@ -171,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/marketing', marketingCampaignsRouter);
   app.use('/api/seo', seoRouter);
   app.use('/api/price-optimization', priceOptimizationRouter);
+  app.use('/api/bug-monitoring', bugMonitoringRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

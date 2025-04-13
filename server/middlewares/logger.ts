@@ -1,178 +1,229 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { v4 as uuidv4 } from 'uuid';
 
-// Generate a request ID
+// Generate a unique ID for each request to correlate log entries
 function generateRequestId(): string {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
+  return uuidv4();
 }
 
-// Log middleware for Express
+// Global logger middleware that adds request tracking
 export function loggerMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Generate a unique request ID
-    const requestId = generateRequestId();
-    req.requestId = requestId;
+    // Generate unique request ID
+    req.requestId = generateRequestId();
     
-    // Store the start time
-    const startTime = Date.now();
+    // Log the request
+    const requestData = {
+      method: req.method,
+      url: req.originalUrl,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      requestId: req.requestId,
+      userId: req.isAuthenticated ? (req.isAuthenticated() ? req.user?.id : null) : null,
+    };
     
-    // Capture the original res.end method
+    Logger.info(`Request ${req.method} ${req.originalUrl}`, requestData, 'http');
+    
+    // Capture response time
+    const start = Date.now();
+    
+    // Capture original response end method
     const originalEnd = res.end;
     
-    // Override the res.end method to log when response is sent
-    res.end = function(...args: any[]) {
+    // Override end method to log response when it completes
+    res.end = function(chunk, encoding, callback) {
       // Calculate response time
-      const responseTime = Date.now() - startTime;
+      const responseTime = Date.now() - start;
       
-      // Log the request
-      const logEntry = {
-        timestamp: new Date(),
-        level: 'info',
-        message: `${req.method} ${req.path} ${res.statusCode} ${responseTime}ms`,
-        source: 'express',
-        context: {
-          method: req.method,
-          path: req.path,
-          statusCode: res.statusCode,
-          responseTime,
-          query: req.query,
-          headers: {
-            'user-agent': req.headers['user-agent'],
-            'referer': req.headers['referer'],
-          }
-        },
-        requestId,
-        ipAddress: req.ip || req.socket.remoteAddress,
-        userAgent: req.headers['user-agent'],
-        userId: req.user?.id
+      // Log the response
+      const responseData = {
+        statusCode: res.statusCode,
+        responseTime,
+        requestId: req.requestId,
+        userId: req.isAuthenticated ? (req.isAuthenticated() ? req.user?.id : null) : null,
       };
       
-      // Store log in database - don't await to avoid blocking response
-      storage.createLog(logEntry).catch(err => {
-        console.error('Failed to store log:', err);
-      });
+      // Log differently based on status code
+      if (res.statusCode >= 500) {
+        Logger.error(`Response ${res.statusCode} for ${req.method} ${req.originalUrl} (${responseTime}ms)`, 
+          undefined, responseData, 'http');
+      } else if (res.statusCode >= 400) {
+        Logger.warn(`Response ${res.statusCode} for ${req.method} ${req.originalUrl} (${responseTime}ms)`, 
+          responseData, 'http');
+      } else {
+        Logger.info(`Response ${res.statusCode} for ${req.method} ${req.originalUrl} (${responseTime}ms)`, 
+          responseData, 'http');
+      }
       
-      // Call the original end method
-      return originalEnd.apply(res, args);
-    };
+      // Call original end method
+      return originalEnd.apply(this, [chunk, encoding, callback]);
+    } as any;
     
     next();
   };
 }
 
-// Register global error handling for uncaught exceptions
+// Global error handler for uncaught exceptions
 export function registerGlobalErrorHandlers() {
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
-    const logEntry = {
-      timestamp: new Date(),
-      level: 'error',
-      message: `Uncaught Exception: ${error.message}`,
-      source: 'process',
-      context: {},
-      stackTrace: error.stack,
-    };
+    Logger.error('Uncaught exception', error, {}, 'system');
+    console.error('UNCAUGHT EXCEPTION:', error);
     
-    console.error('[UNCAUGHT EXCEPTION]', error);
-    
-    // Try to log to database
-    try {
-      storage.createLog(logEntry).catch(() => {
-        // Last resort fallback if database logging fails
-        console.error('Failed to log uncaught exception to database');
-      });
-    } catch (err) {
-      console.error('Error during error logging:', err);
-    }
+    // In production, you might want to try to gracefully restart
+    // rather than letting the application crash and burn
+    // process.exit(1);
   });
   
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
-    const logEntry = {
-      timestamp: new Date(),
-      level: 'error',
-      message: `Unhandled Promise Rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
-      source: 'process',
-      context: {},
-      stackTrace: reason instanceof Error ? reason.stack : undefined,
-    };
-    
-    console.error('[UNHANDLED REJECTION]', reason);
-    
-    // Try to log to database
-    try {
-      storage.createLog(logEntry).catch(() => {
-        // Last resort fallback if database logging fails
-        console.error('Failed to log unhandled rejection to database');
-      });
-    } catch (err) {
-      console.error('Error during error logging:', err);
-    }
+    Logger.error('Unhandled promise rejection', 
+      reason instanceof Error ? reason : new Error(String(reason)), 
+      { promise: String(promise) }, 'system');
+    console.error('UNHANDLED REJECTION:', reason);
+  });
+  
+  // Handle system warnings
+  process.on('warning', (warning) => {
+    Logger.warn('System warning', { 
+      name: warning.name,
+      message: warning.message,
+      stack: warning.stack
+    }, 'system');
   });
 }
 
-// Create a simplified global logger
+// Centralized logger class
 export class Logger {
   static async info(message: string, context: any = {}, source: string = 'app') {
-    await this.log('info', message, context, source);
+    // Log to console
+    console.log(`[INFO] [${source}] ${message}`);
+    
+    // Store in database
+    try {
+      await storage.createLog({
+        level: 'info',
+        message,
+        source,
+        context: typeof context === 'object' ? JSON.stringify(context) : String(context),
+        timestamp: new Date(),
+        userId: context?.userId || null,
+        sessionId: context?.sessionId || null,
+        requestId: context?.requestId || null,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+        stackTrace: null
+      });
+    } catch (error) {
+      console.error('Failed to store log in database:', error);
+    }
   }
   
   static async warn(message: string, context: any = {}, source: string = 'app') {
-    await this.log('warn', message, context, source);
+    // Log to console
+    console.warn(`[WARN] [${source}] ${message}`);
+    
+    // Store in database
+    try {
+      await storage.createLog({
+        level: 'warn',
+        message,
+        source,
+        context: typeof context === 'object' ? JSON.stringify(context) : String(context),
+        timestamp: new Date(),
+        userId: context?.userId || null,
+        sessionId: context?.sessionId || null,
+        requestId: context?.requestId || null,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+        stackTrace: null
+      });
+    } catch (error) {
+      console.error('Failed to store log in database:', error);
+    }
   }
   
   static async error(message: string, error?: Error, context: any = {}, source: string = 'app') {
-    const combinedContext = { ...context };
-    if (error) {
-      combinedContext.error = {
-        message: error.message,
-        name: error.name,
-      };
-    }
+    // Capture stack trace
+    const stackTrace = error?.stack || new Error().stack || null;
     
-    await this.log('error', message, combinedContext, source, error?.stack);
+    // Build error context
+    const errorContext = {
+      ...context,
+      errorMessage: error?.message,
+      errorName: error?.name,
+    };
+    
+    // Log to console
+    console.error(`[ERROR] [${source}] ${message}`, error);
+    
+    // Store in database
+    try {
+      await storage.createLog({
+        level: 'error',
+        message,
+        source,
+        context: typeof errorContext === 'object' ? JSON.stringify(errorContext) : String(errorContext),
+        timestamp: new Date(),
+        userId: context?.userId || null,
+        sessionId: context?.sessionId || null,
+        requestId: context?.requestId || null,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+        stackTrace
+      });
+    } catch (dbError) {
+      console.error('Failed to store log in database:', dbError);
+    }
   }
   
   static async debug(message: string, context: any = {}, source: string = 'app') {
-    await this.log('debug', message, context, source);
+    // Only log to database if in development
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+    
+    // Log to console
+    console.debug(`[DEBUG] [${source}] ${message}`);
+    
+    // Store in database
+    try {
+      await storage.createLog({
+        level: 'debug',
+        message,
+        source,
+        context: typeof context === 'object' ? JSON.stringify(context) : String(context),
+        timestamp: new Date(),
+        userId: context?.userId || null,
+        sessionId: context?.sessionId || null,
+        requestId: context?.requestId || null,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+        stackTrace: null
+      });
+    } catch (error) {
+      console.error('Failed to store log in database:', error);
+    }
   }
   
   private static async log(
     level: string,
     message: string,
     context: any = {},
-    source: string = 'app',
-    stackTrace?: string
+    source: string = 'app'
   ) {
-    try {
-      const logEntry = {
-        timestamp: new Date(),
-        level,
-        message,
-        source,
-        context,
-        stackTrace,
-      };
-      
-      // Log to console for immediate feedback
-      console[level](message, context);
-      
-      // Store in database
-      await storage.createLog(logEntry);
-    } catch (err) {
-      // Fallback to console if database logging fails
-      console.error('Failed to log to database:', err);
-      console[level](message, context);
-    }
+    // Abstraction for future use
+    const logMethod = (console as any)[level] || console.log;
+    logMethod(`[${level.toUpperCase()}] [${source}] ${message}`);
   }
 }
 
-// Add type definitions for Express Request
+// Extend Express Request interface to include the requestId property
 declare global {
-  namespace Express {
-    interface Request {
-      requestId?: string;
+    namespace Express {
+        interface Request {
+            requestId?: string;
+        }
     }
-  }
 }
