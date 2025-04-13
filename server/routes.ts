@@ -32,6 +32,7 @@ import achievementsRouter from './routes/achievements';
 import twitterRouter from './routes/twitter';
 import retentionRouter from './routes/retention';
 import landingPagesRouter from './routes/landing-pages';
+import checkoutOptimizationRouter from './routes/checkout-optimization';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
@@ -161,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/twitter', twitterRouter);
   app.use('/api/retention', retentionRouter);
   app.use('/api/landing-pages', landingPagesRouter);
+  app.use('/api/checkout-optimization', checkoutOptimizationRouter);
   app.use('/api/achievements', achievementsRouter);
   app.use('/api/social', socialMediaRouter);
   app.use('/api/marketing', marketingCampaignsRouter);
