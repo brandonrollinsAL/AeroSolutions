@@ -1,13 +1,15 @@
 import { Helmet } from 'react-helmet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WebsiteColorSuggestions from '@/components/WebsiteColorSuggestions';
+import WebsiteLayoutSuggestions from '@/components/WebsiteLayoutSuggestions';
 import { Separator } from '@/components/ui/separator';
 
 /**
  * DesignTools Page
  *
  * A collection of AI-powered tools for website design and branding
- * Currently includes website color suggestions with more tools to be added
+ * Currently includes website color suggestions and layout recommendations
+ * with more tools to be added
  */
 export default function DesignTools() {
   return (
@@ -16,7 +18,7 @@ export default function DesignTools() {
         <title>AI-Powered Design Tools | Elevion</title>
         <meta 
           name="description" 
-          content="Access Elevion's suite of AI-powered design tools for website color schemes, branding suggestions, and more." 
+          content="Access Elevion's suite of AI-powered design tools for website color schemes, layouts, branding suggestions, and more." 
         />
       </Helmet>
 
@@ -34,13 +36,17 @@ export default function DesignTools() {
       <Tabs defaultValue="colors" className="space-y-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-4 max-w-[600px]">
           <TabsTrigger value="colors">Color Schemes</TabsTrigger>
+          <TabsTrigger value="layouts">Layouts</TabsTrigger>
           <TabsTrigger value="typography">Typography</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="layouts">Layouts</TabsTrigger>
         </TabsList>
         
         <TabsContent value="colors" className="space-y-6">
           <WebsiteColorSuggestions />
+        </TabsContent>
+        
+        <TabsContent value="layouts" className="space-y-6">
+          <WebsiteLayoutSuggestions />
         </TabsContent>
         
         <TabsContent value="typography" className="space-y-6">
@@ -56,15 +62,6 @@ export default function DesignTools() {
           <div className="flex items-center justify-center p-12 border rounded-lg">
             <div className="text-center">
               <h3 className="text-lg font-medium mb-2">Branding Suggestions</h3>
-              <p className="text-muted-foreground">Coming soon</p>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="layouts" className="space-y-6">
-          <div className="flex items-center justify-center p-12 border rounded-lg">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Layout Recommendations</h3>
               <p className="text-muted-foreground">Coming soon</p>
             </div>
           </div>
@@ -85,6 +82,8 @@ export default function DesignTools() {
           <li>Current design trends and timeless principles</li>
           <li>Conversion optimization patterns</li>
           <li>Accessibility standards</li>
+          <li>Mobile responsiveness best practices</li>
+          <li>Page structure and information hierarchy guidelines</li>
         </ul>
         <p className="mt-4 text-sm text-muted-foreground">
           While our AI tools provide expert suggestions, we recommend working with a professional designer 
