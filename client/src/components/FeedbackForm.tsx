@@ -57,17 +57,14 @@ const FeedbackForm = () => {
     
     try {
       // Prepare the data to match the API's expectations
+      // Add name and email information to the message since the API doesn't have fields for them
+      const enhancedMessage = `Name: ${data.name}\nEmail: ${data.email}\n\n${data.message}`;
+      
       const feedbackData = {
-        message: data.message,
+        message: enhancedMessage,
         rating: data.rating,
         category: data.feedbackType, // Map feedbackType to category field
-        source: 'website',
-        // Include name and email as part of the message for now
-        // since API doesn't directly accept these fields
-        metadata: JSON.stringify({
-          name: data.name,
-          email: data.email
-        })
+        source: 'website'
       };
       
       const response = await apiRequest("POST", "/api/feedback", feedbackData);
