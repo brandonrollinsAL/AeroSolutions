@@ -33,6 +33,7 @@ import ContentAnalyticsPage from "@/pages/ContentAnalyticsPage";
 import MockupAnalyticsPage from "@/pages/MockupAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
+import DesignTools from "@/pages/DesignTools";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -421,6 +422,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <SeoTools />
+            </>
+          )}
+        </Route>
+        <Route path="/design-tools">
+          {() => (
+            <>
+              <Helmet>
+                <title>AI Design Tools | Elevion</title>
+                <meta name="description" content="Access Elevion's suite of AI-powered design tools for website color schemes, typography recommendations, branding guidelines, and layout suggestions." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/design-tools" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <DesignTools />
             </>
           )}
         </Route>
