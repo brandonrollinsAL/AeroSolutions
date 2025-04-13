@@ -102,7 +102,12 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     /^\/api\/contact$/,
     /^\/api\/copilot$/,
     /^\/api\/preview\/validate$/,
-    /^\/api\/test-xai$/
+    /^\/api\/test-xai$/,
+    // xAI integration API routes
+    /^\/api\/debug\/.*/,
+    /^\/api\/content\/.*/,
+    /^\/api\/ux\/.*/,
+    /^\/api\/intelligence\/.*/
   ];
   
   // Check if route is public
