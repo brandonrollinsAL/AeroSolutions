@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-white pt-16 border-t border-blue-900">
+    <footer className="bg-[#3B5B9D] text-white pt-16 border-t border-[#00D1D1]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-8">
           {/* Company Info */}
@@ -23,22 +23,22 @@ const Footer: React.FC = () => {
               {t('footer_tagline')}
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaFacebook className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaTwitter className="h-5 w-5" />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaLinkedin className="h-5 w-5" />
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaInstagram className="h-5 w-5" />
               </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaYoutube className="h-5 w-5" />
               </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-gray-400 hover:text-[#FF7043] transition-colors">
                 <FaGithub className="h-5 w-5" />
               </a>
             </div>
@@ -46,7 +46,7 @@ const Footer: React.FC = () => {
 
           {/* Navigation */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-300">{t('navigation')}</h3>
+            <h3 className="text-lg font-semibold mb-4 text-[#00D1D1]">{t('navigation')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/" className="text-gray-300 hover:text-white transition-colors">
@@ -83,7 +83,7 @@ const Footer: React.FC = () => {
 
           {/* Legal */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-300">{t('legal')}</h3>
+            <h3 className="text-lg font-semibold mb-4 text-[#00D1D1]">{t('legal')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
@@ -118,21 +118,21 @@ const Footer: React.FC = () => {
 
           {/* Contact */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-300">{t('contact_us')}</h3>
+            <h3 className="text-lg font-semibold mb-4 text-[#00D1D1]">{t('contact_us')}</h3>
             <ul className="space-y-3">
               <li className="flex items-start">
-                <FaMapMarkerAlt className="h-5 w-5 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                <FaMapMarkerAlt className="h-5 w-5 text-[#00D1D1] mt-0.5 mr-2 flex-shrink-0" />
                 <span className="text-gray-300">
                   123 Web Development Dr, Suite 200<br />
                   Atlanta, GA 30339
                 </span>
               </li>
               <li className="flex items-center">
-                <FaPhoneAlt className="h-4 w-4 text-blue-400 mr-2 flex-shrink-0" />
+                <FaPhoneAlt className="h-4 w-4 text-[#00D1D1] mr-2 flex-shrink-0" />
                 <span className="text-gray-300">+1 (800) 555-ELEV</span>
               </li>
               <li className="flex items-center">
-                <FaEnvelope className="h-4 w-4 text-blue-400 mr-2 flex-shrink-0" />
+                <FaEnvelope className="h-4 w-4 text-[#00D1D1] mr-2 flex-shrink-0" />
                 <span className="text-gray-300">info@elevion.dev</span>
               </li>
             </ul>
