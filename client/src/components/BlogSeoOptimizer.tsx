@@ -299,7 +299,7 @@ export default function BlogSeoOptimizer({ postId, preview = false }: BlogSeoOpt
                             <span>Consider adding these related keywords:</span>
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {seoAnalysis.keyword_analysis.missing_keywords.map((keyword, index) => (
+                            {seoAnalysis.keyword_analysis.missing_keywords.map((keyword: string, index: number) => (
                               <Badge key={index} variant="outline" className="bg-amber-50 border-amber-200 text-amber-700">
                                 {keyword}
                               </Badge>
@@ -350,7 +350,7 @@ export default function BlogSeoOptimizer({ postId, preview = false }: BlogSeoOpt
                   <div className="border rounded-md p-4">
                     <h3 className="font-medium text-lg mb-3">Improvement Suggestions</h3>
                     <ul className="space-y-2">
-                      {seoAnalysis.improvement_suggestions.map((suggestion, index) => (
+                      {seoAnalysis.improvement_suggestions.map((suggestion: string, index: number) => (
                         <li key={index} className="flex items-start gap-2">
                           <AlertCircle size={16} className="text-slate-blue-500 mt-0.5 shrink-0" />
                           <span className="text-slate-700">{suggestion}</span>
