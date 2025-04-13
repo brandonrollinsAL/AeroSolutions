@@ -312,7 +312,7 @@ router.post('/update-blog-seo/:postId', [
         schemaMarkup: schemaMarkup || undefined,
         focusKeyword: focusKeyword || undefined,
         canonicalUrl: canonicalUrl || undefined,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(posts.id, parseInt(postId)))
       .returning();
