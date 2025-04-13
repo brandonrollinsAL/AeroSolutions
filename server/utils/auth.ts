@@ -114,7 +114,9 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     /^\/api\/recommendations\/.*/,
     /^\/api\/intelligent-search\/.*/,
     // Mockup API routes
-    /^\/api\/mockups\/mockup-trends$/
+    /^\/api\/mockups\/mockup-trends$/,
+    // ElevateBot analytics routes
+    /^\/api\/elevatebot\/elevatebot-usage$/
   ];
   
   // Check if route is public

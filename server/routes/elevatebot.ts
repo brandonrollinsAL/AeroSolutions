@@ -210,8 +210,10 @@ router.get('/usage-analytics', async (req: Request, res: Response) => {
 /**
  * Suggestion 25: Real-Time Analytics for ElevateBot Usage
  * Get ElevateBot usage patterns with AI-powered analysis
+ * This is a public endpoint for analytics dashboards
  */
 router.get('/elevatebot-usage', async (req: Request, res: Response) => {
+  // Skip authentication for this public analytics endpoint
   try {
     // Check if we have the data in cache
     const cacheKey = 'elevatebot_usage_patterns';

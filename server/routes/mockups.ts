@@ -9,6 +9,8 @@ const router = Router();
 
 // Simple cache with 1-hour TTL
 const mockupSuggestionsCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
+// Cache for onboarding suggestions with 2-hour TTL
+const onboardingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -418,6 +420,187 @@ router.get('/mockup-trends', async (req: Request, res: Response) => {
       success: false,
       message: 'Mockup trend analysis failed', 
       error: error.message || 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Suggestion 26: Auto-Suggestions for Client Onboarding
+ * Suggest onboarding steps for new clients based on their business type
+ */
+router.post('/suggest-onboarding', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `onboarding_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedSteps = onboardingSuggestionsCache.get(cacheKey);
+    if (cachedSteps) {
+      console.log(`Returning cached onboarding steps for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        onboardingSteps: cachedSteps,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new onboarding steps for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    const prompt = `
+Create a comprehensive client onboarding plan for a ${normalizedBusinessType} business that is building a new website with Elevion.
+
+Please structure your response with these sections:
+
+## Initial Client Meeting (Week 1)
+List 3-5 key questions to ask during the initial meeting and important information to collect.
+
+## Information Gathering Phase (Week 1-2)
+Outline the specific content, assets, and information we need to collect from this type of business.
+
+## Project Setup (Week 2)
+Detail the technical setup steps our team needs to complete, including domain and hosting requirements specific to this business type.
+
+## Milestone Schedule
+Provide a timeline with key milestones for a typical ${normalizedBusinessType} business website project.
+
+## Client Approval Points
+List the critical points in the process where client approval should be obtained.
+
+## Website Launch Checklist
+Provide a pre-launch verification checklist specific to a ${normalizedBusinessType} business website.
+
+## Post-Launch Support
+Recommend 2-3 post-launch services or support options particularly valuable for this business type.
+`;
+    
+    // Generate onboarding steps using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a seasoned project manager at Elevion, specializing in client onboarding for web development projects. Provide practical, detailed onboarding plans based on business types.'
+        },
+        { 
+          role: 'user', 
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const onboardingSteps = response.choices[0].message.content;
+    
+    // Cache the successful response
+    onboardingSuggestionsCache.set(cacheKey, onboardingSteps);
+    
+    console.log(`Successfully generated onboarding steps for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      onboardingSteps,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating onboarding suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    // Fallback content for when API fails
+    const fallbackOnboarding = `
+## Initial Client Meeting (Week 1)
+- Understand business goals and target audience
+- Discuss project scope, timeline, and budget
+- Review competitor websites
+- Gather content requirements and branding materials
+- Set expectations and communication preferences
+
+## Information Gathering Phase (Week 1-2)
+- Collect brand assets (logos, images, brand guidelines)
+- Request content for key pages
+- Identify technical requirements and integrations
+- Conduct SEO keyword research
+- Review existing analytics (if applicable)
+
+## Project Setup (Week 2)
+- Register/transfer domain name if needed
+- Set up hosting environment
+- Configure development environment
+- Create project management workspace
+- Set up version control repository
+
+## Milestone Schedule
+- Week 3: Wireframes and sitemap approval
+- Week 5: Design mockups approval
+- Week 7: Development completion
+- Week 8: Testing and revisions
+- Week 9: Final approval and launch
+
+## Client Approval Points
+- Sitemap and information architecture
+- Design concepts and mockups
+- Content placement and formatting
+- Functionality testing
+- Pre-launch review
+
+## Website Launch Checklist
+- Cross-browser compatibility testing
+- Mobile responsiveness verification
+- Form functionality testing
+- SEO elements verification
+- Security checks
+- Performance optimization
+- 404 page and error handling
+- Analytics implementation
+
+## Post-Launch Support
+- 30-day support package
+- Content update training
+- Monthly maintenance plan
+- Analytics review and reporting
+`;
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate onboarding suggestions",
+      fallbackOnboarding,
+      error: error.message || "Unknown error"
     });
   }
 });

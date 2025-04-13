@@ -1,0 +1,61 @@
+Sub-Prompt 4: Implement Suggestions 26-50 for xAI API Integration
+Objective: Implement suggestions 26-50 of 50 ways to integrate the xAI API into Elevion, focusing on real-time applications like analytics, user engagement, and AI-driven features.
+
+Details:
+
+Elevion is a full-stack web development company using React, Node.js/Express, and PostgreSQL, with Stripe for payments, focused on empowering small businesses with AI-driven web solutions.
+We’ll complete the xAI API integrations with the remaining suggestions.
+Step 1: Implement Suggestions 26-35 (Analytics and AI Features)
+
+Suggestion 26: Auto-Suggestions for Client Onboarding
+
+Suggest onboarding steps for new clients based on their business type.
+
+Add to server/routes/mockups.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.post('/suggest-onboarding', async (req, res) => {  
+  const { businessType } = req.body;  
+  try {  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Suggest onboarding steps for a ${businessType} client` }],  
+    });  
+    res.json({ onboardingSteps: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Onboarding suggestion failed', error: error.message });  
+  }  
+});  
+Suggestion 27: Real-Time Analytics for Client Project Performance
+
+Analyze performance metrics for client projects (e.g., website traffic, conversions).
+
+Add to server/routes/analytics.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.get('/project-performance/:clientId', async (req, res) => {  
+  const { clientId } = req.params;  
+  try {  
+    const metrics = await pool.query('SELECT traffic, conversions FROM project_metrics WHERE client_id = $1', [clientId]);  
+    const metricData = metrics.rows.map(m => `Traffic: ${m.traffic}, Conversions: ${m.conversions}`).join('\n');  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Analyze project performance metrics:\n${metricData}` }],  
+    });  
+    res.json({ analysis: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Project performance analysis failed', error: error.message });  
+  }  
+});
