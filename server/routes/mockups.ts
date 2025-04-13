@@ -13,6 +13,8 @@ const mockupSuggestionsCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 })
 const onboardingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website copy suggestions with 2-hour TTL
 const websiteCopySuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for branding ideas with 2-hour TTL
+const brandingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -712,6 +714,116 @@ Make the copy professional, concise, and optimized for conversion. Use language 
     return res.status(500).json({
       success: false,
       message: "Failed to generate website copy",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 31: Auto-Suggestions for Client Branding
+ * Suggest branding ideas for clients based on their industry
+ */
+router.post('/suggest-branding', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `branding_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedBranding = brandingSuggestionsCache.get(cacheKey);
+    if (cachedBranding) {
+      console.log(`[Branding API] Returning cached branding ideas for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        brandingIdeas: cachedBranding,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`[Branding API] Generating new branding ideas for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (15 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 15 seconds')), 15000);
+    });
+    
+    // Generate branding ideas using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional branding expert specializing in creating comprehensive branding strategies for various business types. Provide thoughtful, industry-appropriate branding suggestions.'
+        },
+        { 
+          role: 'user', 
+          content: `Create comprehensive branding suggestions for a ${normalizedBusinessType} business. Include:
+
+1. Brand Name Ideas (3-5 creative but relevant options)
+2. Color Palette (primary, secondary, and accent colors with hex codes)
+3. Brand Voice (formal, conversational, technical, etc.)
+4. Logo Concept Ideas (3 distinct approaches)
+5. Typography Recommendations (header and body font pairings)
+6. Tagline Options (3-4 memorable options)
+7. Brand Values (3-5 core values that should guide the brand)
+8. Target Audience Description
+
+Make the suggestions professional, modern, and industry-appropriate. Consider current design trends and business goals for this specific industry.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const brandingIdeas = response.choices[0].message.content;
+    
+    // Cache the successful response
+    brandingSuggestionsCache.set(cacheKey, brandingIdeas);
+    
+    console.log(`[Branding API] Successfully generated branding ideas for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      brandingIdeas,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("[Branding API] Error generating branding ideas:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 15 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate branding ideas",
       error: error.message || "Unknown error"
     });
   }
