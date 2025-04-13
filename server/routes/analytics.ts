@@ -4,6 +4,10 @@ import { userSessions, contentViewMetrics, websiteMetrics } from "@shared/schema
 import { eq, and, or, sql, desc, gt, lt, between } from "drizzle-orm";
 import { storage } from "../storage";
 import { callXAI } from "../utils/xaiClient";
+import NodeCache from "node-cache";
+
+// Initialize API cache with standard TTL of 10 minutes
+const apiCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -703,6 +707,239 @@ Provide insights that would be valuable for optimizing the website.
         success: false,
         message: 'Behavior pattern analysis failed', 
         error: error.message || 'Unknown error'
+      });
+    }
+  });
+
+  /**
+   * Suggestion 27: Real-Time Analytics for Client Project Performance
+   * Analyze performance metrics for client projects (e.g., website traffic, conversions)
+   */
+  app.get("/api/analytics/project-performance/:clientId", async (req: Request, res: Response) => {
+    try {
+      const { clientId } = req.params;
+      
+      if (!clientId || isNaN(parseInt(clientId))) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid client ID" 
+        });
+      }
+      
+      // Check cache first (TTL: 15 minutes)
+      const cacheKey = `project_performance_${clientId}`;
+      const cachedAnalysis = apiCache.get(cacheKey);
+      
+      if (cachedAnalysis) {
+        return res.json({
+          success: true,
+          ...cachedAnalysis,
+          source: 'cache'
+        });
+      }
+      
+      // Fetch project metrics from database
+      const metrics = await db.select()
+        .from(websiteMetrics)
+        .where(eq(websiteMetrics.clientId, parseInt(clientId)))
+        .orderBy(desc(websiteMetrics.updatedAt));
+      
+      if (!metrics.rows || metrics.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No project metrics found for this client"
+        });
+      }
+      
+      // Format metrics for AI analysis
+      const metricData = metrics.rows.map(m => 
+        `Project ID: ${m.project_id}, Traffic: ${m.traffic}, Conversions: ${m.conversions}, ` +
+        `Bounce Rate: ${m.bounce_rate}%, Session Duration: ${m.average_session_duration} min, ` +
+        `Page Views: ${m.page_views}, Date: ${new Date(m.updated_at).toISOString().split('T')[0]}`
+      ).join('\n');
+      
+      // Set timeout for Grok call (30 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+      });
+      
+      try {
+        // Call Grok API for analysis
+        const grokPromise = callXAI('/chat/completions', {
+          model: 'grok-3',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are a web analytics expert specializing in analyzing project performance metrics. Provide detailed insights and recommendations based on website traffic, conversions, bounce rates, and other metrics. Format your response in markdown.'
+            },
+            { 
+              role: 'user', 
+              content: `Analyze the following project performance metrics for client ID ${clientId}:\n\n${metricData}\n\nProvide insights on performance trends, areas for improvement, and specific recommendations to boost conversions and user engagement. Include a brief summary at the beginning followed by detailed analysis.`
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 1500
+        });
+        
+        // Race between API call and timeout
+        const response: any = await Promise.race([grokPromise, timeoutPromise]);
+        
+        if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+          throw new Error('Invalid response from Grok API');
+        }
+        
+        const analysis = response.choices[0].message.content;
+        
+        // Calculate aggregate metrics
+        const totalTraffic = metrics.rows.reduce((sum, m) => sum + parseInt(m.traffic), 0);
+        const totalConversions = metrics.rows.reduce((sum, m) => sum + parseInt(m.conversions), 0);
+        const totalPageViews = metrics.rows.reduce((sum, m) => sum + parseInt(m.page_views), 0);
+        const avgBounceRate = metrics.rows.reduce((sum, m) => sum + parseFloat(m.bounce_rate), 0) / metrics.rows.length;
+        const avgSessionDuration = metrics.rows.reduce((sum, m) => sum + parseFloat(m.average_session_duration), 0) / metrics.rows.length;
+        const conversionRate = (totalConversions / totalTraffic) * 100;
+        
+        // Calculate trends (comparing most recent to previous)
+        const sorted = [...metrics.rows].sort((a, b) => 
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+        
+        let trafficTrend = 0;
+        let conversionTrend = 0;
+        
+        if (sorted.length >= 2) {
+          const recent = sorted[0];
+          const previous = sorted[1];
+          trafficTrend = ((recent.traffic - previous.traffic) / previous.traffic) * 100;
+          conversionTrend = ((recent.conversions - previous.conversions) / previous.conversions) * 100;
+        }
+        
+        // Prepare response
+        const result = {
+          clientId: parseInt(clientId),
+          projectCount: new Set(metrics.rows.map(m => m.project_id)).size,
+          aggregateMetrics: {
+            totalTraffic,
+            totalConversions,
+            totalPageViews,
+            avgBounceRate: avgBounceRate.toFixed(2) + '%',
+            avgSessionDuration: avgSessionDuration.toFixed(2) + ' min',
+            conversionRate: conversionRate.toFixed(2) + '%'
+          },
+          trends: {
+            traffic: trafficTrend.toFixed(2) + '%',
+            conversions: conversionTrend.toFixed(2) + '%'
+          },
+          projectMetrics: metrics.rows.map(m => ({
+            projectId: m.project_id,
+            traffic: m.traffic,
+            conversions: m.conversions,
+            bounceRate: m.bounce_rate + '%',
+            sessionDuration: m.average_session_duration + ' min',
+            pageViews: m.page_views,
+            updated: new Date(m.updated_at).toISOString()
+          })),
+          analysis,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Cache the result
+        apiCache.set(cacheKey, result, 900); // Cache for 15 minutes
+        
+        return res.json({
+          success: true,
+          ...result,
+          source: 'fresh'
+        });
+      } catch (error: any) {
+        console.error("Error calling Grok API:", error);
+        
+        // Prepare fallback analysis
+        const totalTraffic = metrics.rows.reduce((sum, m) => sum + parseInt(m.traffic), 0);
+        const totalConversions = metrics.rows.reduce((sum, m) => sum + parseInt(m.conversions), 0);
+        const totalPageViews = metrics.rows.reduce((sum, m) => sum + parseInt(m.page_views), 0);
+        const avgBounceRate = metrics.rows.reduce((sum, m) => sum + parseFloat(m.bounce_rate), 0) / metrics.rows.length;
+        const avgSessionDuration = metrics.rows.reduce((sum, m) => sum + parseFloat(m.average_session_duration), 0) / metrics.rows.length;
+        const conversionRate = (totalConversions / totalTraffic) * 100;
+        
+        // Calculate trends
+        const sorted = [...metrics.rows].sort((a, b) => 
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+        
+        let trafficTrend = 0;
+        let conversionTrend = 0;
+        
+        if (sorted.length >= 2) {
+          const recent = sorted[0];
+          const previous = sorted[1];
+          trafficTrend = ((recent.traffic - previous.traffic) / previous.traffic) * 100;
+          conversionTrend = ((recent.conversions - previous.conversions) / previous.conversions) * 100;
+        }
+        
+        // Generic fallback analysis
+        const fallbackAnalysis = `
+## Project Performance Analysis
+
+### Summary
+The client's projects have received a total of ${totalTraffic} visitors, resulting in ${totalConversions} conversions at a rate of ${conversionRate.toFixed(2)}%. The average bounce rate is ${avgBounceRate.toFixed(2)}% with users spending an average of ${avgSessionDuration.toFixed(2)} minutes per session.
+
+### Key Observations
+- Traffic trend is ${trafficTrend >= 0 ? 'positive' : 'negative'} at ${Math.abs(trafficTrend).toFixed(2)}% compared to the previous period
+- Conversion trend is ${conversionTrend >= 0 ? 'positive' : 'negative'} at ${Math.abs(conversionTrend).toFixed(2)}% compared to the previous period
+- Average bounce rate of ${avgBounceRate.toFixed(2)}% is ${avgBounceRate > 50 ? 'higher than optimal' : 'within acceptable range'}
+
+### Recommendations
+1. **User Engagement**: ${avgSessionDuration < 2 ? 'Implement strategies to increase session duration such as improved content organization and interactive elements' : 'Continue to optimize content to maintain good engagement'}
+2. **Conversion Optimization**: ${conversionRate < 3 ? 'Review and optimize call-to-action elements and conversion paths' : 'Current conversion rate is healthy, continue testing to further improve'}
+3. **Traffic Sources**: Analyze traffic sources to identify the most valuable channels and optimize marketing efforts accordingly
+4. **Content Strategy**: Review content performance metrics to identify topics and formats that resonate best with your audience
+`;
+
+        // Prepare response with fallback
+        const result = {
+          clientId: parseInt(clientId),
+          projectCount: new Set(metrics.rows.map(m => m.project_id)).size,
+          aggregateMetrics: {
+            totalTraffic,
+            totalConversions,
+            totalPageViews,
+            avgBounceRate: avgBounceRate.toFixed(2) + '%',
+            avgSessionDuration: avgSessionDuration.toFixed(2) + ' min',
+            conversionRate: conversionRate.toFixed(2) + '%'
+          },
+          trends: {
+            traffic: trafficTrend.toFixed(2) + '%',
+            conversions: conversionTrend.toFixed(2) + '%'
+          },
+          projectMetrics: metrics.rows.map(m => ({
+            projectId: m.project_id,
+            traffic: m.traffic,
+            conversions: m.conversions,
+            bounceRate: m.bounce_rate + '%',
+            sessionDuration: m.average_session_duration + ' min',
+            pageViews: m.page_views,
+            updated: new Date(m.updated_at).toISOString()
+          })),
+          analysis: fallbackAnalysis,
+          fallback: true,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Cache the fallback result
+        apiCache.set(cacheKey, result, 300); // Cache for 5 minutes (shorter for fallback)
+        
+        return res.json({
+          success: true,
+          ...result,
+          source: 'fallback'
+        });
+      }
+    } catch (error: any) {
+      console.error("Project performance analysis failed:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Project performance analysis failed", 
+        error: error.message || "Unknown error"
       });
     }
   });
