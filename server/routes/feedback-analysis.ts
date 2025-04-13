@@ -18,6 +18,57 @@ const router = express.Router();
 // Cache for feedback analysis results (TTL: 1 hour)
 const analysisCache = new NodeCache({ stdTTL: 3600 });
 
+/**
+ * Submit new feedback
+ * POST /api/feedback
+ * 
+ * Allows users to submit feedback about the platform
+ */
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    // Validate feedback data
+    const validatedData = FeedbackSubmissionSchema.parse(req.body);
+    
+    // Get the user ID if authenticated
+    const userId = req.isAuthenticated?.() ? req.user?.id : null;
+    
+    // Create feedback entry
+    const feedback = await storage.createFeedback({
+      ...validatedData,
+      userId,
+      status: 'new',
+    });
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Feedback submitted successfully',
+      data: feedback
+    });
+  } catch (error: any) {
+    console.error('Error submitting feedback:', error);
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Invalid feedback data',
+        details: error.errors
+      });
+    }
+    
+    return res.status(500).json({
+      error: error.message || 'Failed to submit feedback',
+      suggestion: 'Please try again later'
+    });
+  }
+});
+
+// Feedback submission schema
+const FeedbackSubmissionSchema = z.object({
+  message: z.string().min(10, { message: 'Feedback must be at least 10 characters long' }).max(5000),
+  source: z.string().default('website'),
+  category: z.string().optional(),
+  rating: z.number().min(1).max(5).optional(),
+});
+
 // Feedback analysis schema
 const FeedbackAnalysisSchema = z.object({
   feedbackId: z.number().optional(),
