@@ -364,6 +364,32 @@ export const insertWebsiteMetricSchema = createInsertSchema(websiteMetrics).omit
 export type WebsiteMetric = typeof websiteMetrics.$inferSelect;
 export type InsertWebsiteMetric = z.infer<typeof insertWebsiteMetricSchema>;
 
+// Website Engagement schema for tracking user interactions
+export const websiteEngagement = pgTable("website_engagement", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pageUrl: text("page_url").notNull(),
+  path: text("path").notNull(),
+  clicks: integer("clicks").default(0).notNull(),
+  timeOnPage: decimal("time_on_page", { precision: 10, scale: 2 }).default("0").notNull(), // Seconds
+  scrollDepth: decimal("scroll_depth", { precision: 5, scale: 2 }).default("0").notNull(), // Percentage
+  interactionCount: integer("interaction_count").default(0).notNull(),
+  dateCollected: timestamp("date_collected").defaultNow().notNull(),
+  deviceType: text("device_type"), // mobile, desktop, tablet
+  browser: text("browser"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWebsiteEngagementSchema = createInsertSchema(websiteEngagement).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type WebsiteEngagement = typeof websiteEngagement.$inferSelect;
+export type InsertWebsiteEngagement = z.infer<typeof insertWebsiteEngagementSchema>;
+
 // Mockup request schema for tracking client mockup generation requests
 export const mockupRequests = pgTable("mockup_requests", {
   id: serial("id").primaryKey(),

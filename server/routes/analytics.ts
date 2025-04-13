@@ -1,10 +1,11 @@
 import express, { Response, Request as ExpressRequest } from "express";
 import { db } from "../db";
-import { userSessions, contentViewMetrics, websiteMetrics } from "@shared/schema";
+import { userSessions, contentViewMetrics, websiteMetrics, websiteEngagement } from "@shared/schema";
 import { eq, and, or, sql, desc, gt, lt, between } from "drizzle-orm";
 import { storage } from "../storage";
 import { callXAI } from "../utils/xaiClient";
 import NodeCache from "node-cache";
+import { avg, sum } from "drizzle-orm/pg-core";
 
 // Initialize API cache with standard TTL of 10 minutes
 const apiCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
