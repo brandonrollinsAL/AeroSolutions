@@ -1138,6 +1138,7 @@ Format your response as a JSON object with these sections. For each recommendati
 /**
  * Suggestion 38: Auto-Suggestions for Client Blog Content
  * Suggest blog content for clients based on their business type
+ * Note: This endpoint is publicly accessible as a lead generation tool
  */
 router.post('/suggest-blog-content', async (req: Request, res: Response) => {
   try {
