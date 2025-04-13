@@ -77,7 +77,7 @@ export default function Platforms() {
           custom={0}
         >
           <h2 className="text-3xl font-bold font-montserrat text-primary mb-4">Our Platforms</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">Innovative solutions we've developed to transform the aviation and technology landscape.</p>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">Innovative solutions we've developed to transform your online presence and business growth.</p>
         </motion.div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -121,7 +121,7 @@ export default function Platforms() {
                   }}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "/images/aviation-tech.jpeg"; // Fallback image
+                    target.src = "/images/avatar-placeholder.jpeg"; // Fallback image
                   }}
                 />
                 {/* Visual indicator while loading */}

@@ -14,33 +14,33 @@ export default function Services() {
   const services = [
     {
       icon: <FaLaptopCode className="text-4xl mb-4 text-black" />,
-      title: "Aviation Software Development",
-      slug: "aviation-software-development",
-      description: "Custom aviation software solutions built by pilots who understand the unique challenges of flight operations, aircraft maintenance, and regulatory compliance.",
+      title: "Web Development",
+      slug: "web-development",
+      description: "Custom website solutions built by experienced developers who understand the unique challenges of establishing an effective online presence for small businesses.",
       features: [
-        "Flight management system development",
-        "Aircraft maintenance tracking software",
-        "Pilot logbook & training applications",
-        "Aviation compliance management tools"
+        "Responsive website design & development",
+        "E-commerce platforms & online stores",
+        "Content management systems",
+        "Performance optimization & SEO"
       ]
     },
     {
-      icon: <FaPlane className="text-4xl mb-4 text-black" />,
-      title: "Proprietary Aviation Platforms",
-      slug: "aviation-software-platforms",
-      description: "Our suite of aviation-specific platforms—AeroSync, AeroFlight, AeroOps, and ExecSync—designed to transform how you manage flight operations.",
+      icon: <FaGlobe className="text-4xl mb-4 text-black" />,
+      title: "Proprietary Web Platforms",
+      slug: "web-platforms",
+      description: "Our suite of specialized web platforms—WebCraft, EcomPro, ContentHub, AnalyticEdge, and AppForge—designed to transform your digital presence.",
       features: [
-        "AeroSync: Data synchronization across systems",
-        "AeroFlight: Advanced flight simulation",
-        "AeroOps: Operations management solution",
-        "ExecSync: Executive communication platform"
+        "WebCraft: Professional website design",
+        "EcomPro: Complete e-commerce solution",
+        "ContentHub: Easy content management",
+        "AnalyticEdge: Business intelligence tools"
       ]
     },
     {
       icon: <FaCreditCard className="text-4xl mb-4 text-black" />,
       title: "Zero-Risk Payment Model",
       slug: "no-upfront-payment-software",
-      description: "Our unique no-payment-until-satisfied model eliminates all financial risk. You only pay when your custom aviation software solution meets all your requirements.",
+      description: "Our unique no-payment-until-satisfied model eliminates all financial risk. You only pay when your custom web development solution meets all your requirements.",
       features: [
         "Zero upfront costs for development",
         "Pay only after complete satisfaction",
@@ -50,37 +50,37 @@ export default function Services() {
     },
     {
       icon: <FaServer className="text-4xl mb-4 text-black" />,
-      title: "Full-Stack Aviation Technologies",
-      slug: "aviation-fullstack-development",
-      description: "End-to-end development services covering every aspect of your aviation software project—from concept to deployment and beyond.",
+      title: "Full-Stack Web Technologies",
+      slug: "fullstack-development",
+      description: "End-to-end development services covering every aspect of your web project—from concept to deployment and beyond.",
       features: [
-        "React & Node.js for aviation dashboards",
-        "Cloud architecture for aviation applications",
+        "React & Node.js for dynamic websites",
+        "Cloud architecture for scalable applications",
         "Real-time data processing systems",
-        "Secure aviation database structures"
+        "Secure database design & implementation"
       ]
     },
     {
       icon: <FaHeadset className="text-4xl mb-4 text-black" />,
-      title: "Aviation Software Support",
-      slug: "aviation-software-maintenance",
-      description: "Comprehensive post-launch support and maintenance services ensuring your flight management and aviation operations software continues to deliver optimal performance.",
+      title: "Website Support & Maintenance",
+      slug: "website-maintenance",
+      description: "Comprehensive post-launch support and maintenance services ensuring your website continues to deliver optimal performance and stays up-to-date.",
       features: [
-        "24/7 critical aviation systems support",
-        "Regular software updates & security patches",
-        "Performance optimization for complex operations",
-        "Training for flight staff & technical teams"
+        "24/7 critical website support",
+        "Regular updates & security patches",
+        "Performance optimization",
+        "Training for your team"
       ]
     },
     {
       icon: <FaDatabase className="text-4xl mb-4 text-black" />,
-      title: "Aviation Data Integration",
-      slug: "aviation-data-integration",
-      description: "Seamlessly connect your existing aviation systems and data sources to create a unified ecosystem for improved operational efficiency.",
+      title: "Web & API Integration",
+      slug: "web-api-integration",
+      description: "Seamlessly connect your website with third-party services and APIs to create a unified ecosystem for improved business operations.",
       features: [
-        "Integration with major aviation platforms",
-        "Flight data analytics implementation",
-        "Legacy aviation system modernization",
+        "Integration with major business platforms",
+        "Website analytics implementation",
+        "Legacy system modernization",
         "Cross-platform data synchronization"
       ]
     }
@@ -97,9 +97,9 @@ export default function Services() {
           variants={fadeIn}
           custom={0}
         >
-          <h2 id="services-heading" className="text-3xl font-bold font-montserrat text-primary mb-4">Aviation Software Development Services</h2>
+          <h2 id="services-heading" className="text-3xl font-bold font-montserrat text-primary mb-4">Web Development Services</h2>
           <p className="text-xl text-gray-700 max-w-4xl mx-auto">
-            Aero Solutions offers specialized aviation software development services with our unique no-payment-until-satisfied guarantee. Our expertise spans flight management systems, aircraft maintenance tracking, and pilot training applications.
+            Elevion offers specialized web development services with our unique no-payment-until-satisfied guarantee. Our expertise spans responsive website design, e-commerce platforms, content management systems, and custom web applications.
           </p>
         </motion.header>
         
@@ -145,13 +145,13 @@ export default function Services() {
         >
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-xl font-bold font-montserrat text-primary mb-4">Why Choose Our Aviation Software?</h3>
+              <h3 className="text-xl font-bold font-montserrat text-primary mb-4">Why Choose Our Web Development Services?</h3>
               <ul className="space-y-3">
                 <li className="flex items-start">
-                  <FaPlane className="text-primary mr-3 mt-1 flex-shrink-0" />
+                  <FaLaptopCode className="text-primary mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <strong className="block text-gray-800">Built By Pilots For Pilots</strong>
-                    <p className="text-gray-700">Our development team includes professional pilots who understand aviation challenges firsthand.</p>
+                    <strong className="block text-gray-800">Built By Experts For Small Businesses</strong>
+                    <p className="text-gray-700">Our development team includes experienced professionals who understand small business needs firsthand.</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -164,29 +164,29 @@ export default function Services() {
                 <li className="flex items-start">
                   <FaDatabase className="text-primary mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <strong className="block text-gray-800">Aviation-Specific Focus</strong>
-                    <p className="text-gray-700">We specialize exclusively in aviation-related software, ensuring deep domain expertise.</p>
+                    <strong className="block text-gray-800">Small Business Focus</strong>
+                    <p className="text-gray-700">We specialize in web solutions for small businesses, ensuring relevant expertise for your growth.</p>
                   </div>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-bold font-montserrat text-primary mb-4">Our Software Development Process</h3>
+              <h3 className="text-xl font-bold font-montserrat text-primary mb-4">Our Web Development Process</h3>
               <ol className="space-y-3 list-decimal pl-5">
                 <li className="text-gray-700">
-                  <strong className="text-gray-800">Comprehensive Requirements Analysis</strong> - We work closely with your aviation team to understand operational challenges.
+                  <strong className="text-gray-800">Comprehensive Requirements Analysis</strong> - We work closely with your business team to understand your website goals and audience needs.
                 </li>
                 <li className="text-gray-700">
-                  <strong className="text-gray-800">Custom Solution Design</strong> - Tailored architecture development specific to aviation needs.
+                  <strong className="text-gray-800">Custom Solution Design</strong> - Tailored architecture and design development specific to your brand and business requirements.
                 </li>
                 <li className="text-gray-700">
-                  <strong className="text-gray-800">Agile Development & Testing</strong> - Iterative implementation with continuous QA in aviation contexts.
+                  <strong className="text-gray-800">Agile Development & Testing</strong> - Iterative implementation with continuous QA across all devices and browsers.
                 </li>
                 <li className="text-gray-700">
-                  <strong className="text-gray-800">Deployment & Integration</strong> - Seamless implementation with existing systems and thorough training.
+                  <strong className="text-gray-800">Deployment & Integration</strong> - Seamless implementation with existing systems and thorough training for your team.
                 </li>
                 <li className="text-gray-700">
-                  <strong className="text-gray-800">Ongoing Support & Evolution</strong> - Continuous improvements based on operational feedback.
+                  <strong className="text-gray-800">Ongoing Support & Evolution</strong> - Continuous improvements based on user feedback and business growth.
                 </li>
               </ol>
             </div>
@@ -204,29 +204,29 @@ export default function Services() {
           <a 
             href="#contact" 
             className="inline-block bg-black hover:bg-black/90 text-white font-semibold py-4 px-10 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
-            aria-label="Contact us to discuss your aviation software project"
+            aria-label="Contact us to discuss your web development project"
           >
-            Start Your Custom Aviation Software Project
+            Start Your Custom Web Development Project
           </a>
           <p className="mt-4 text-gray-600">No upfront costs. No risk. Only pay when you're 100% satisfied.</p>
         </motion.div>
         
         {/* Hidden SEO content */}
         <div className="sr-only">
-          <h2>Custom Aviation Software Development Services in Miami</h2>
-          <p>Specializing in flight management systems, aircraft maintenance tracking software, and pilot training applications with our unique no-payment-until-satisfied model.</p>
+          <h2>Custom Web Development Services for Small Businesses</h2>
+          <p>Specializing in responsive website design, e-commerce platforms, content management systems, and custom web applications with our unique no-payment-until-satisfied model.</p>
           
-          <h3>AeroSync Platform Features</h3>
-          <p>Real-time aviation data synchronization across multiple systems, ensuring consistent information for flight operations, maintenance tracking, and crew management.</p>
+          <h3>WebCraft Platform Features</h3>
+          <p>Professional website design and development for small businesses with mobile-responsive layouts, optimized user experience, and SEO best practices.</p>
           
-          <h3>AeroFlight System Benefits</h3>
-          <p>Advanced flight simulation and training software developed by pilots with realistic scenarios for improved proficiency and safety.</p>
+          <h3>EcomPro System Benefits</h3>
+          <p>Complete e-commerce solution with secure payment processing, inventory management, and customer relationship management tools.</p>
           
-          <h3>AeroOps Management Tools</h3>
-          <p>End-to-end aviation operations management for streamlining flight scheduling, maintenance planning, and regulatory compliance.</p>
+          <h3>ContentHub Management Tools</h3>
+          <p>Easy-to-use content management system allowing non-technical users to update website content, publish blog posts, and manage digital assets.</p>
           
-          <h3>ExecSync Communication Platform</h3>
-          <p>Executive productivity and communication tools designed specifically for aviation leadership teams and decision-makers.</p>
+          <h3>AnalyticEdge Dashboard Platform</h3>
+          <p>Business intelligence dashboard with visitor tracking, performance monitoring, and actionable insights to drive business growth.</p>
         </div>
       </div>
     </section>
