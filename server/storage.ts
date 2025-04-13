@@ -10,7 +10,7 @@ import {
   userSessions, contentViewMetrics, 
   type UserSession, type ContentViewMetric,
   type InsertUserSession, type InsertContentViewMetric,
-  posts, services
+  posts
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
@@ -467,6 +467,59 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(advertisements.id, id));
+  }
+  
+  // Search methods
+  async searchPosts(query: string): Promise<any[]> {
+    try {
+      // Search in posts table for matching content
+      return await db.select().from(posts).where(
+        or(
+          ilike(posts.title, `%${query}%`),
+          ilike(posts.content, `%${query}%`),
+          ilike(posts.tags, `%${query}%`)
+        )
+      ).limit(15);
+    } catch (error) {
+      console.error("Error searching posts:", error);
+      return [];
+    }
+  }
+  
+  async searchMarketplaceItems(query: string): Promise<any[]> {
+    try {
+      // Search in marketplace items for matching content
+      return await db.select().from(marketplaceItems).where(
+        or(
+          ilike(marketplaceItems.name, `%${query}%`),
+          ilike(marketplaceItems.description, `%${query}%`),
+          ilike(marketplaceItems.category, `%${query}%`)
+        )
+      ).limit(15);
+    } catch (error) {
+      console.error("Error searching marketplace items:", error);
+      return [];
+    }
+  }
+  
+  async searchServices(query: string): Promise<any[]> {
+    try {
+      // For this example, we'll assume a 'services' table exists
+      // In a real app, you might have a separate services table or reuse marketplaceItems
+      // Here we'll use similar fields to marketplaceItems
+      return await db.select().from(marketplaceItems).where(
+        and(
+          eq(marketplaceItems.category, 'service'),
+          or(
+            ilike(marketplaceItems.name, `%${query}%`),
+            ilike(marketplaceItems.description, `%${query}%`)
+          )
+        )
+      ).limit(15);
+    } catch (error) {
+      console.error("Error searching services:", error);
+      return [];
+    }
   }
 }
 
