@@ -30,6 +30,7 @@ import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 import SeoTools from "@/pages/SeoTools";
 import MarketplaceAnalyticsPage from "@/pages/MarketplaceAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
+import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -448,6 +449,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <SocialMediaSuggestionsPage />
+            </>
+          )}
+        </Route>
+        <Route path="/email-campaigns">
+          {() => (
+            <>
+              <Helmet>
+                <title>Email Campaigns | Elevion</title>
+                <meta name="description" content="Create and manage AI-powered email campaigns for your business with industry-specific templates and scheduling." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/email-campaigns" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <EmailCampaignsPage />
             </>
           )}
         </Route>

@@ -461,7 +461,18 @@ const CampaignManager = () => {
                   <div>
                     <CardTitle className="text-base">{campaign.subjectLine}</CardTitle>
                     <CardDescription className="text-xs">
-                      {campaign.industry} • {campaignTypes.find(t => t.value === campaign.campaignType)?.label || campaign.campaignType}
+                      {campaign.industry} • {
+                        [
+                          { value: 'welcome', label: 'Welcome Email' },
+                          { value: 'promotional', label: 'Promotional Offer' },
+                          { value: 'newsletter', label: 'Newsletter' },
+                          { value: 'announcement', label: 'Announcement' },
+                          { value: 'followup', label: 'Follow-up' },
+                          { value: 'reengagement', label: 'Re-engagement' },
+                          { value: 'seasonal', label: 'Seasonal' },
+                          { value: 'event', label: 'Event Invitation' }
+                        ].find(t => t.value === campaign.campaignType)?.label || campaign.campaignType
+                      }
                     </CardDescription>
                   </div>
                   <Badge 
