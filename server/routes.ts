@@ -30,6 +30,7 @@ import mockupsRouter from './routes/mockups';
 import moderationRouter from './routes/moderation';
 import twitterRouter from './routes/twitter';
 import retentionRouter from './routes/retention';
+import achievementsRouter from './routes/achievements';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
@@ -40,6 +41,7 @@ import userRouter from './routes/users';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
+import { schedulerService } from './utils/schedulerService';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -154,6 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/moderation', moderationRouter);
   app.use('/api/twitter', twitterRouter);
   app.use('/api/retention', retentionRouter);
+  app.use('/api/achievements', achievementsRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
