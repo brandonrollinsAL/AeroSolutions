@@ -783,6 +783,129 @@ function findSimilarPostsByKeywords(sourcePost: any, otherPosts: any[]): any[] {
     .map(item => item.post);
 }
 
+  // Feed engagement analysis endpoint
+  app.get('/api/feed/feed-engagement', async (req: Request, res: Response) => {
+    try {  
+      // Check if we have a cached version of the analysis
+      const cacheKey = "feed_engagement_analysis";
+      const cachedAnalysis = feedCache.get(cacheKey);
+      if (cachedAnalysis) {
+        return res.json({
+          success: true,
+          analysis: cachedAnalysis,
+          cached: true
+        });
+      }
+
+      // Get engagement data from the article_engagement table
+      const engagement = await db.select()
+        .from(articleEngagement)
+        .limit(100);
+      
+      if (engagement.length === 0) {
+        return res.json({
+          success: true,
+          analysis: "No engagement data available for analysis.",
+          engagementData: []
+        });
+      }
+      
+      // Format engagement data for xAI
+      const engagementData = engagement.map(e => 
+        `Post ${e.article_id}: ${e.likes} likes, ${e.comments} comments, ${e.views} views, ${e.shares} shares`
+      ).join('\n');
+      
+      // Call xAI to analyze the engagement metrics
+      try {
+        const response = await callXAI('/chat/completions', {  
+          model: 'grok-3',  
+          messages: [{ 
+            role: 'user', 
+            content: `As Elevion's AI analyst, analyze these feed engagement metrics for our web development platform:
+            
+            ${engagementData}
+            
+            Provide insights including:
+            1. Most engaging posts by likes and comments
+            2. Overall engagement trends
+            3. Recommendations to improve user engagement
+            4. Any significant patterns in user behavior
+            
+            Format your analysis in a clear, structured way suitable for our analytics dashboard.`
+          }],  
+        });
+        
+        // Cache the analysis for 60 minutes (3600 seconds)
+        const analysisResult = response.choices[0].message.content;
+        updateFeedCache(cacheKey, analysisResult, 3600);
+        
+        res.json({ 
+          success: true,
+          analysis: analysisResult,
+          dataPoints: engagement.length
+        });
+      } catch (xaiError) {
+        console.error("xAI analysis error:", xaiError);
+        
+        // Fallback to a basic statistical analysis
+        const totalLikes = engagement.reduce((sum, e) => sum + e.likes, 0);
+        const totalComments = engagement.reduce((sum, e) => sum + e.comments, 0);
+        const totalViews = engagement.reduce((sum, e) => sum + e.views, 0);
+        const totalShares = engagement.reduce((sum, e) => sum + e.shares, 0);
+        
+        const avgLikes = totalLikes / engagement.length;
+        const avgComments = totalComments / engagement.length;
+        const avgViews = totalViews / engagement.length;
+        const avgShares = totalShares / engagement.length;
+        
+        // Find most engaging posts
+        const sortedByLikes = [...engagement].sort((a, b) => b.likes - a.likes);
+        const sortedByComments = [...engagement].sort((a, b) => b.comments - a.comments);
+        
+        const topPostsByLikes = sortedByLikes.slice(0, 5).map(e => `Post ${e.article_id}: ${e.likes} likes`);
+        const topPostsByComments = sortedByComments.slice(0, 5).map(e => `Post ${e.article_id}: ${e.comments} comments`);
+        
+        const fallbackAnalysis = `
+        Feed Engagement Analysis:
+        
+        Overall Statistics:
+        - Total posts analyzed: ${engagement.length}
+        - Average likes per post: ${avgLikes.toFixed(2)}
+        - Average comments per post: ${avgComments.toFixed(2)}
+        - Average views per post: ${avgViews.toFixed(2)}
+        - Average shares per post: ${avgShares.toFixed(2)}
+        
+        Top Posts by Likes:
+        ${topPostsByLikes.join('\n')}
+        
+        Top Posts by Comments:
+        ${topPostsByComments.join('\n')}
+        
+        Recommendations:
+        - Focus on creating content similar to your top performing posts
+        - Encourage user interaction through calls-to-action
+        - Consider promoting posts with high view counts but low engagement
+        `;
+        
+        updateFeedCache(cacheKey, fallbackAnalysis, 3600);
+        
+        res.json({ 
+          success: true,
+          analysis: fallbackAnalysis,
+          dataPoints: engagement.length,
+          fallback: true
+        });
+      }
+    } catch (error) {  
+      console.error("Feed engagement analysis error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Feed engagement analysis failed', 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });  
+    }  
+  });
+
 /**
  * Helper function to update feed cache
  */
