@@ -1005,44 +1005,59 @@ router.get('/content-engagement', async (req, res) => {
     // Extract article IDs from results
     const articleIds = engagementData.rows.map(row => row.article_id);
     
-    // Join with posts to get titles - we need to format the array for SQL properly
-    // Create a parameter placeholder for each ID
-    const placeholders = articleIds.map((_, i) => `$${i + 1}`).join(',');
+    // If there are no article IDs, return empty data
+    if (articleIds.length === 0) {
+      return res.json({
+        success: true,
+        message: "No content engagement data available for analysis",
+        data: []
+      });
+    }
     
-    // Create the SQL query with proper parameter placeholders
-    const postsData = await db.execute(
-      sql`SELECT id, title, category FROM posts WHERE id IN (${sql.raw(placeholders)})`,
-      articleIds // Pass the array of IDs as parameters
-    );
+    // Use a raw SQL query with a JOIN to get both engagement and post data in one query
+    const rawQuery = `
+      SELECT 
+        ae.article_id, 
+        p.title,
+        p.category,
+        ae.views, 
+        ae.shares, 
+        ae.likes, 
+        ae.comments, 
+        ae.avgreadtime AS avg_read_time, 
+        ae.socialshares AS social_shares
+      FROM article_engagement ae
+      JOIN posts p ON ae.article_id = p.id
+      ORDER BY ae.views DESC
+    `;
     
-    // Create a map of post IDs to titles
-    const postTitleMap: Record<number, { title: string, category: string }> = {};
-    postsData.rows.forEach(post => {
-      postTitleMap[post.id] = {
-        title: post.title,
-        category: post.category || 'Uncategorized'
-      };
-    });
+    // Execute the raw query
+    const combinedData = await db.execute(sql.raw(rawQuery));
     
     // Format data for AI analysis
-    const formattedData = engagementData.rows.map(engagement => {
-      const postInfo = postTitleMap[engagement.article_id] || { title: `Article ${engagement.article_id}`, category: 'Unknown' };
-      
-      // Format social shares
+    const formattedData = combinedData.rows.map(row => {
+      // Format social shares if available
       let socialSharesText = '';
-      if (engagement.socialShares) {
-        const shares = engagement.socialShares;
-        socialSharesText = Object.keys(shares).map(platform => 
-          `${platform}: ${shares[platform]} shares`
-        ).join(', ');
+      try {
+        if (row.social_shares) {
+          const shares = typeof row.social_shares === 'string' 
+            ? JSON.parse(row.social_shares) 
+            : row.social_shares;
+            
+          socialSharesText = Object.keys(shares).map(platform => 
+            `${platform}: ${shares[platform]} shares`
+          ).join(', ');
+        }
+      } catch (err) {
+        console.warn('Error parsing social shares:', err);
       }
       
-      return `"${postInfo.title}" (ID: ${engagement.article_id}, Category: ${postInfo.category}): 
-        ${engagement.views} views, 
-        ${engagement.shares} shares, 
-        ${engagement.likes} likes, 
-        ${engagement.comments} comments, 
-        ${Number(engagement.avgReadTime).toFixed(2)} min avg read time
+      return `"${row.title}" (ID: ${row.article_id}, Category: ${row.category || 'Uncategorized'}): 
+        ${row.views} views, 
+        ${row.shares} shares, 
+        ${row.likes} likes, 
+        ${row.comments} comments, 
+        ${Number(row.avg_read_time).toFixed(2)} min avg read time
         ${socialSharesText ? `Social: ${socialSharesText}` : ''}`;
     }).join('\n\n');
     
@@ -1090,7 +1105,7 @@ router.get('/content-engagement', async (req, res) => {
     // Return the engagement data and analysis
     return res.json({
       success: true,
-      data: engagementData,
+      data: combinedData.rows,
       analysis,
       source: 'fresh'
     });
