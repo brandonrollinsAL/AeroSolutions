@@ -118,8 +118,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     /^\/api\/mockups\/suggest-onboarding$/,
     // ElevateBot analytics routes
     /^\/api\/elevatebot\/elevatebot-usage$/,
-    // Project analytics routes
-    /^\/api\/analytics\/project-performance\/\d+$/
+    // Website performance analytics routes
+    /^\/api\/analytics\/website-performance\/\d+$/
   ];
   
   // Check if route is public

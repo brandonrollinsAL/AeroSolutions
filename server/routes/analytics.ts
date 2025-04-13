@@ -428,7 +428,7 @@ export const registerAnalyticsRoutes = (app: express.Express) => {
       if (metrics.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "No performance metrics found for this client"
+          message: "No website performance metrics found for this client"
         });
       }
       
@@ -747,7 +747,7 @@ Provide insights that would be valuable for optimizing the website.
       if (!metrics || metrics.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "No website metrics found for this client"
+          message: "No website performance metrics found for this client"
         });
       }
       
