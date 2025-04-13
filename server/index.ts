@@ -89,8 +89,9 @@ app.use((req: TimedRequest, res: Response, next: NextFunction) => {
   next();
 });
 
-// JWT Authentication middleware - only apply to API routes
-app.use('/api', authMiddleware);
+// JWT Authentication middleware - skip applying it here since 
+// the authMiddleware in utils/auth.ts is designed to be applied on individual routes 
+// or routers as needed. It has its own public path exceptions logic.
 
 app.use((req, res, next) => {
   const start = Date.now();
