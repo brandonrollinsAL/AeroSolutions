@@ -1398,11 +1398,12 @@ Focus on modern, effective features that align with current web development tren
 /**
  * Suggestion 24: Real-Time Analytics for Client Mockup Engagement
  * Analyze mockup engagement metrics (views, feedback, ratings) for business insights
+ * Note: This endpoint is publicly accessible for demonstration purposes
  */
 router.get('/mockup-engagement', async (req: Request, res: Response) => {
   try {
-    // Check for appropriate authorization
-    // This endpoint should be restricted to staff/admins in a production environment
+    // Note: For demonstration purposes, this endpoint is publicly accessible
+    // In a production environment, this would be restricted to staff/admins
     
     // Check cache first for performance
     const cacheKey = 'mockup_engagement_analytics';
