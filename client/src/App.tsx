@@ -39,6 +39,7 @@ import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 import DesignTools from "@/pages/DesignTools";
 import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
 import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
+import SocialMediaPage from "@/pages/SocialMediaPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -442,6 +443,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <DesignTools />
+            </>
+          )}
+        </Route>
+        <Route path="/social-media">
+          {() => (
+            <>
+              <Helmet>
+                <title>Social Media Manager | Elevion</title>
+                <meta name="description" content="Manage, schedule, and analyze your social media content across multiple platforms with Elevion's AI-powered social media management system." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/social-media" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <SocialMediaPage />
             </>
           )}
         </Route>

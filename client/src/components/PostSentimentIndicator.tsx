@@ -1,142 +1,141 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Skeleton } from '@/components/ui/skeleton';
-import { FaSmile, FaMeh, FaFrown, FaInfoCircle } from 'react-icons/fa';
-import { useQuery } from '@tanstack/react-query';
-
-interface SentimentAnalysis {
-  overall_sentiment: 'positive' | 'neutral' | 'negative';
-  sentiment_score: number;
-  key_emotional_phrases: string[];
-  tone_analysis: string;
-  topic_sentiment: Record<string, 'positive' | 'neutral' | 'negative'>;
-}
-
-interface SentimentResponse {
-  success: boolean;
-  postId: string;
-  title: string;
-  sentimentAnalysis: SentimentAnalysis;
-  timestamp: string;
-}
+import { TrendingUp, TrendingDown, Minus, AlertCircle, Star, StarHalf, AlertTriangle } from 'lucide-react';
 
 interface PostSentimentIndicatorProps {
-  postId: number;
-  customLabel?: string;
-  showScore?: boolean;
+  engagement?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
   size?: 'sm' | 'md' | 'lg';
 }
 
-const PostSentimentIndicator = ({ 
-  postId, 
-  customLabel = 'Sentiment:', 
-  showScore = false,
+export function PostSentimentIndicator({
+  engagement,
+  likes,
+  comments,
+  shares,
   size = 'md'
-}: PostSentimentIndicatorProps) => {
-  const sizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg'
-  };
-  
-  const iconSizes = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl'
-  };
-
-  const { data, isLoading, error, isError } = useQuery({
-    queryKey: [`/api/content/post-sentiment/${postId}`],
-    enabled: !!postId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false
-  });
-
-  if (isLoading) {
+}: PostSentimentIndicatorProps) {
+  // Default to neutral if no data is provided
+  if (!engagement && !likes && !comments && !shares) {
     return (
-      <div className="flex items-center space-x-2">
-        <span className={`font-medium ${sizeClasses[size]}`}>{customLabel}</span>
-        <Skeleton className="h-5 w-20" />
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100">
+                <Minus
+                  className="h-3 w-3 text-gray-500"
+                  strokeWidth={2}
+                />
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>No engagement data available</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
-
-  if (isError || !data?.success) {
-    return null; // Don't show anything if there's an error
+  
+  // Calculate an engagement score if not provided directly
+  let calculatedEngagement = engagement;
+  if (!calculatedEngagement && (likes || comments || shares)) {
+    const totalLikes = likes || 0;
+    const totalComments = comments || 0;
+    const totalShares = shares || 0;
+    
+    // Simple weighted formula - can be adjusted
+    calculatedEngagement = (totalLikes * 1 + totalComments * 2 + totalShares * 3) / 100;
   }
-
-  const { sentimentAnalysis } = data as SentimentResponse;
-  const { overall_sentiment, sentiment_score, key_emotional_phrases, tone_analysis } = sentimentAnalysis;
-
-  // Use sentiment score to calculate a color gradient
-  const getColorFromScore = (score: number) => {
-    // Red for negative, yellow for neutral, green for positive
-    if (score <= -0.5) return 'text-red-500';
-    if (score < 0) return 'text-red-400';
-    if (score < 0.2) return 'text-amber-400';
-    if (score < 0.5) return 'text-green-400';
-    return 'text-green-500';
-  };
-
-  const getSentimentIcon = (sentiment: string, className: string) => {
-    switch (sentiment) {
-      case 'positive':
-        return <FaSmile className={className} />;
-      case 'neutral':
-        return <FaMeh className={className} />;
-      case 'negative':
-        return <FaFrown className={className} />;
-      default:
-        return <FaInfoCircle className={className} />;
+  
+  // Define sizing based on the size prop
+  const sizeClasses = {
+    sm: {
+      container: 'h-4 w-4',
+      icon: 'h-2.5 w-2.5'
+    },
+    md: {
+      container: 'h-5 w-5',
+      icon: 'h-3 w-3'
+    },
+    lg: {
+      container: 'h-6 w-6',
+      icon: 'h-4 w-4'
     }
   };
-
-  const scoreColor = getColorFromScore(sentiment_score);
-  const normalizedScore = Math.round((sentiment_score + 1) * 50); // Convert -1 to 1 scale to 0 to 100
-
+  
+  // Determine sentiment level based on engagement
+  let SentimentIcon = Minus;
+  let iconColor = 'text-gray-500';
+  let bgColor = 'bg-gray-100';
+  let tooltipText = 'Average engagement';
+  
+  if (calculatedEngagement) {
+    if (calculatedEngagement >= 0.2) {
+      SentimentIcon = TrendingUp;
+      iconColor = 'text-green-600';
+      bgColor = 'bg-green-100';
+      tooltipText = 'High engagement';
+    } else if (calculatedEngagement >= 0.1) {
+      SentimentIcon = StarHalf;
+      iconColor = 'text-blue-600';
+      bgColor = 'bg-blue-100';
+      tooltipText = 'Good engagement';
+    } else if (calculatedEngagement >= 0.05) {
+      SentimentIcon = Minus;
+      iconColor = 'text-amber-600';
+      bgColor = 'bg-amber-100';
+      tooltipText = 'Moderate engagement';
+    } else if (calculatedEngagement >= 0.01) {
+      SentimentIcon = AlertTriangle;
+      iconColor = 'text-orange-600';
+      bgColor = 'bg-orange-100';
+      tooltipText = 'Low engagement';
+    } else {
+      SentimentIcon = AlertCircle;
+      iconColor = 'text-red-600';
+      bgColor = 'bg-red-100';
+      tooltipText = 'Very low engagement';
+    }
+  }
+  
+  // Format as percentage
+  const formattedEngagement = calculatedEngagement 
+    ? `${(calculatedEngagement * 100).toFixed(1)}%` 
+    : 'N/A';
+  
+  const containerSize = sizeClasses[size].container;
+  const iconSize = sizeClasses[size].icon;
+  
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center space-x-2 cursor-help">
-            <span className={`font-medium ${sizeClasses[size]}`}>{customLabel}</span>
-            <span className={`flex items-center ${scoreColor}`}>
-              {getSentimentIcon(overall_sentiment, iconSizes[size])}
-              {showScore && (
-                <span className="ml-1 font-semibold">
-                  {normalizedScore}%
-                </span>
-              )}
-            </span>
+          <div className="flex items-center">
+            <div className={`flex ${containerSize} items-center justify-center rounded-full ${bgColor}`}>
+              <SentimentIcon
+                className={`${iconSize} ${iconColor}`}
+                strokeWidth={2}
+              />
+            </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent className="max-w-sm">
-          <div className="space-y-2">
-            <p className="font-semibold">Content Sentiment Analysis</p>
-            <p className="text-sm">
-              <span className="font-medium">Tone:</span> {tone_analysis}
-            </p>
-            {key_emotional_phrases.length > 0 && (
-              <div className="text-sm">
-                <p className="font-medium mb-1">Key phrases:</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  {key_emotional_phrases.slice(0, 3).map((phrase, idx) => (
-                    <li key={idx} className="text-xs">{phrase}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-              <div 
-                className={`h-1.5 rounded-full ${scoreColor.replace('text-', 'bg-')}`}
-                style={{ width: `${normalizedScore}%` }}
-              ></div>
-            </div>
+        <TooltipContent>
+          <div className="text-center">
+            <p className="font-medium">{tooltipText}</p>
+            <p className="text-sm text-muted-foreground">Engagement rate: {formattedEngagement}</p>
+            {likes !== undefined && <p className="text-xs">Likes: {likes}</p>}
+            {comments !== undefined && <p className="text-xs">Comments: {comments}</p>}
+            {shares !== undefined && <p className="text-xs">Shares: {shares}</p>}
           </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
-};
+}
 
+// Add default export to maintain compatibility with components that import this
 export default PostSentimentIndicator;

@@ -1,573 +1,557 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FaTwitter, FaFacebookF, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
-import { TbNews } from 'react-icons/tb';
-import { HiTrendingUp, HiOutlineBookmark, HiOutlineHeart, HiOutlineShare, HiLightningBolt } from 'react-icons/hi';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
-import SocialShareButtons from './SocialShareButtons';
-
-interface Post {
-  id: number;
-  title?: string;
-  content: string;
-  author?: string;
-  authorId?: number;
-  tags?: string[];
-  category?: string;
-  imageUrl?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface FeedResponse {
-  success: boolean;
-  feed: Post[];
-  rankedPosts?: Post[];
-  trending: Post[];
-  similarPosts?: Post[];
-  reasoning?: string;
-  preferences?: string;
-  message?: string;
-  cached?: boolean;
-  fallback?: boolean;
-}
-
-interface PostSuggestionResponse {
-  success: boolean;
-  suggestion: string;
-  source: 'generic' | 'activity-based' | 'fallback';
-  error?: string;
-}
+import { Link } from 'wouter';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Calendar, MoreHorizontal, Calendar as CalendarIcon, Check, Edit2, RefreshCcw, ExternalLink, Twitter, Instagram, Linkedin, Facebook, Share2, ThumbsUp, MessageSquare, Clock, SendHorizontal, AlertCircle, Info } from 'lucide-react';
+import { format, formatDistance } from 'date-fns';
+import { PostSentimentIndicator } from './PostSentimentIndicator';
+import { SocialShareButtons } from './SocialShareButtons';
 
 interface SocialFeedProps {
-  className?: string;
-  initialTab?: string;
-  type?: string;
-  username?: string;
+  showFilters?: boolean;
+  platformId?: number;
+  status?: string;
   limit?: number;
-  height?: number;
-  userId?: number;
 }
 
-const SocialFeed: React.FC<SocialFeedProps> = ({ 
-  className = '',
-  initialTab = 'personalized',
-  type,
-  username = 'elevion',
-  limit = 5,
-  height = 500,
-  userId,
-}) => {
-  const [activeTab, setActiveTab] = useState(type || initialTab);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showSuggestion, setShowSuggestion] = useState(false);
-  const feedHeight = `${height}px`;
-  const { toast } = useToast();
+export function SocialFeed({ 
+  showFilters = false, 
+  platformId,
+  status,
+  limit = 10
+}: SocialFeedProps) {
+  // State for filters
+  const [selectedPlatform, setSelectedPlatform] = useState<string>(platformId ? String(platformId) : 'all');
+  const [selectedStatus, setSelectedStatus] = useState<string>(status || 'all');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(limit);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Fetch personalized feed data
-  const { data: personalizedData, isLoading: isPersonalizedLoading } = useQuery<FeedResponse>({
-    queryKey: ['/api/feed/personalized'],
-    enabled: activeTab === 'personalized',
-  });
-
-  // Fetch trending feed data
-  const { data: trendingData, isLoading: isTrendingLoading } = useQuery<FeedResponse>({
-    queryKey: ['/api/feed/trending'],
-    enabled: activeTab === 'trending',
+  // Format query params
+  const queryParams = new URLSearchParams({
+    platform: selectedPlatform,
+    status: selectedStatus,
+    page: String(currentPage),
+    pageSize: String(pageSize),
+    sortBy,
+    sortOrder
   });
   
-  // Fetch post suggestions if userId is provided
-  const { data: suggestionData, isLoading: isSuggestionLoading } = useQuery<PostSuggestionResponse>({
-    queryKey: ['/api/feed/suggest-post', userId],
-    enabled: !!userId, // Only fetch if userId is provided
+  // Fetch social platforms for filter dropdown
+  const { 
+    data: platforms, 
+    isLoading: platformsLoading 
+  } = useQuery({
+    queryKey: ['/api/social/platforms'],
   });
-
-  // Record user engagement with the content
-  const recordEngagement = async (postId: number, action: string) => {
-    try {
-      await fetch('/api/feed/record-engagement', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          postId,
-          action,
-        }),
-      });
-      
-      // Show success notification for engagement
-      if (action === 'like') {
-        toast({
-          title: "Post liked",
-          description: "Your preferences have been updated.",
-          duration: 3000,
-        });
-      } else if (action === 'share') {
-        toast({
-          title: "Post shared",
-          description: "Thank you for sharing!",
-          duration: 3000,
-        });
-      } else if (action === 'bookmark') {
-        toast({
-          title: "Post saved",
-          description: "Added to your bookmarks.",
-          duration: 3000,
-        });
-      }
-    } catch (error) {
-      console.error('Error recording engagement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to record your interaction.",
-        variant: "destructive",
-        duration: 3000,
-      });
+  
+  // Fetch social posts with filters
+  const { 
+    data, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: [`/api/social/posts?${queryParams.toString()}`],
+  });
+  
+  // Platform icon mapping
+  const getPlatformIcon = (platformName: string) => {
+    switch (platformName?.toLowerCase()) {
+      case 'twitter':
+        return <Twitter className="h-4 w-4" />;
+      case 'instagram':
+        return <Instagram className="h-4 w-4" />;
+      case 'linkedin':
+        return <Linkedin className="h-4 w-4" />;
+      case 'facebook':
+        return <Facebook className="h-4 w-4" />;
+      default:
+        return <Share2 className="h-4 w-4" />;
     }
   };
-
-  // Simulating load time for embedded content
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [activeTab]);
-
-  // Reset loading state when tab changes
-  useEffect(() => {
-    setIsLoading(true);
-  }, [activeTab]);
-
+  
+  // Status badge color mapping
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'posted':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Posted</Badge>;
+      case 'scheduled':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Scheduled</Badge>;
+      case 'draft':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Draft</Badge>;
+      case 'processing':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Processing</Badge>;
+      case 'failed':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Failed</Badge>;
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">{status}</Badge>;
+    }
+  };
+  
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return format(date, 'MMM d, yyyy h:mm a');
+  };
+  
+  // Calculate time ago for relative time display
+  const timeAgo = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return formatDistance(date, new Date(), { addSuffix: true });
+  };
+  
+  // Filter posts by search query
+  const filteredPosts = data?.posts?.filter((post: any) => {
+    if (!searchQuery) return true;
+    
+    return post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (post.platform?.displayName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (post.hashTags || []).some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  });
+  
+  // Calculate stats based on metrics in posts
+  const calculateEngagementStats = () => {
+    if (!data?.posts?.length) {
+      return { totalPosts: 0, totalLikes: 0, totalShares: 0, totalComments: 0, avgEngagement: 0 };
+    }
+    
+    const stats = data.posts.reduce((acc: any, post: any) => {
+      if (post.metrics) {
+        acc.totalLikes += post.metrics.likes || 0;
+        acc.totalShares += post.metrics.shares || 0;
+        acc.totalComments += post.metrics.comments || 0;
+        if (post.metrics.engagement) {
+          acc.engagementSum += post.metrics.engagement;
+          acc.engagementCount += 1;
+        }
+      }
+      return acc;
+    }, { totalLikes: 0, totalShares: 0, totalComments: 0, engagementSum: 0, engagementCount: 0 });
+    
+    return {
+      totalPosts: data.posts.length,
+      totalLikes: stats.totalLikes,
+      totalShares: stats.totalShares,
+      totalComments: stats.totalComments,
+      avgEngagement: stats.engagementCount > 0 
+        ? Math.round((stats.engagementSum / stats.engagementCount) * 100) / 100
+        : 0
+    };
+  };
+  
+  const engagementStats = calculateEngagementStats();
+  
   return (
-    <div className={`${className}`}>
-      <Card className="overflow-hidden">
-        {!type ? (
-          <Tabs defaultValue={initialTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-6 h-14">
-              <TabsTrigger value="personalized" className="flex items-center space-x-2">
-                <TbNews className="h-4 w-4" />
-                <span className="hidden sm:inline">For You</span>
-              </TabsTrigger>
-              <TabsTrigger value="trending" className="flex items-center space-x-2">
-                <HiTrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Trending</span>
-              </TabsTrigger>
-              <TabsTrigger value="twitter" className="flex items-center space-x-2">
-                <FaTwitter className="h-4 w-4" />
-                <span className="hidden sm:inline">Twitter</span>
-              </TabsTrigger>
-              <TabsTrigger value="facebook" className="flex items-center space-x-2">
-                <FaFacebookF className="h-4 w-4" />
-                <span className="hidden sm:inline">Facebook</span>
-              </TabsTrigger>
-              <TabsTrigger value="linkedin" className="flex items-center space-x-2">
-                <FaLinkedinIn className="h-4 w-4" />
-                <span className="hidden sm:inline">LinkedIn</span>
-              </TabsTrigger>
-              <TabsTrigger value="instagram" className="flex items-center space-x-2">
-                <FaInstagram className="h-4 w-4" />
-                <span className="hidden sm:inline">Instagram</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <CardContent className="p-0">
-              <TabsContent value="personalized" className="m-0">
-                {isPersonalizedLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
-                    {personalizedData?.feed && personalizedData.feed.length > 0 ? (
-                      <>
-                        {personalizedData.feed.map((post: Post, index: number) => (
-                          <PostCard 
-                            key={post.id || index} 
-                            post={post} 
-                            onAction={(action: string) => recordEngagement(post.id, action)}
-                          />
-                        ))}
-                        
-                        {personalizedData.reasoning && (
-                          <div className="p-4 bg-muted/30 text-xs text-muted-foreground">
-                            <p className="font-semibold mb-1">Content recommendation reasoning:</p>
-                            <p>{personalizedData.reasoning}</p>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8 h-full text-muted-foreground">
-                        <TbNews className="h-12 w-12 mb-4 opacity-30" />
-                        <p className="text-center">No personalized content available yet.</p>
-                        <p className="text-center text-sm mt-2">Interact with more content to improve your recommendations.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="trending" className="m-0">
-                {isTrendingLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className="overflow-y-auto" style={{ maxHeight: feedHeight }}>
-                    {trendingData?.trending && trendingData.trending.length > 0 ? (
-                      <>
-                        {trendingData.trending.map((post: Post, index: number) => (
-                          <PostCard 
-                            key={post.id || index} 
-                            post={post} 
-                            onAction={(action: string) => recordEngagement(post.id, action)}
-                          />
-                        ))}
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center p-8 h-full text-muted-foreground">
-                        <HiTrendingUp className="h-12 w-12 mb-4 opacity-30" />
-                        <p className="text-center">No trending content available right now.</p>
-                        <p className="text-center text-sm mt-2">Check back soon for the latest popular posts.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="twitter" className="m-0">
-                {isLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Twitter Feed"
-                      src={`https://platform.twitter.com/widgets/timeline/profile?dnt=false&embedId=twitter-widget-0&frame=false&hideHeader=false&hideFooter=false&hideScrollBar=false&lang=en&maxHeight=${height}px&origin=https%3A%2F%2Faerosolutions.dev&sessionId=14e6a51ce8c8e4f83cbf8607640200b0ad31b789&showHeader=true&showReplies=false&transparent=false&userId=1594603974825263104`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="facebook" className="m-0">
-                {isLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Facebook Feed"
-                      src={`https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2F${username}&tabs=timeline&width=500&height=${height}&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="linkedin" className="m-0">
-                {isLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden flex items-center justify-center`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="LinkedIn Feed"
-                      src="https://www.linkedin.com/embed/feed/update/urn:li:share:7068948797174386688"
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                      frameBorder="0" allowFullScreen={true}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="instagram" className="m-0">
-                {isLoading ? (
-                  <FeedSkeleton height={height} />
-                ) : (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Instagram Feed"
-                      src={`https://www.instagram.com/${username}/embed`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
-              </TabsContent>
-            </CardContent>
-          </Tabs>
-        ) : (
-          <CardContent className="p-0">
-            {isLoading ? (
-              <FeedSkeleton height={height} />
-            ) : (
-              <>
-                {type === 'twitter' && (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Twitter Feed"
-                      src={`https://platform.twitter.com/widgets/timeline/profile?dnt=false&embedId=twitter-widget-0&frame=false&hideHeader=false&hideFooter=false&hideScrollBar=false&lang=en&maxHeight=${height}px&origin=https%3A%2F%2Faerosolutions.dev&sessionId=14e6a51ce8c8e4f83cbf8607640200b0ad31b789&showHeader=true&showReplies=false&transparent=false&userId=1594603974825263104`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
+    <div className="w-full">
+      {showFilters && (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">Filter Posts</CardTitle>
+            <CardDescription>
+              Find and sort your social media content
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="flex flex-col space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="platform">Platform</Label>
+                  <Select
+                    value={selectedPlatform}
+                    onValueChange={(value) => {
+                      setSelectedPlatform(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger id="platform">
+                      <SelectValue placeholder="Select Platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Platforms</SelectItem>
+                      {platforms?.map((platform: any) => (
+                        <SelectItem key={platform.id} value={String(platform.id)}>
+                          {platform.displayName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 
-                {type === 'facebook' && (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Facebook Feed"
-                      src={`https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2F${username}&tabs=timeline&width=500&height=${height}&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={(value) => {
+                      setSelectedStatus(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="posted">Posted</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 
-                {type === 'linkedin' && (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden flex items-center justify-center`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="LinkedIn Feed"
-                      src="https://www.linkedin.com/embed/feed/update/urn:li:share:7068948797174386688"
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                      frameBorder="0" allowFullScreen={true}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="search">Search</Label>
+                  <Input
+                    id="search"
+                    placeholder="Search by content or hashtags"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Sort By</Label>
+                  <RadioGroup
+                    value={sortBy}
+                    onValueChange={(value) => {
+                      setSortBy(value);
+                      setCurrentPage(1);
+                    }}
+                    className="flex flex-row space-x-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="createdAt" id="sort-created" />
+                      <Label htmlFor="sort-created">Created Date</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="scheduledTime" id="sort-scheduled" />
+                      <Label htmlFor="sort-scheduled">Scheduled Date</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="postedAt" id="sort-posted" />
+                      <Label htmlFor="sort-posted">Posted Date</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
                 
-                {type === 'instagram' && (
-                  <div className={`relative h-[${feedHeight}] overflow-hidden`}>
-                    <iframe 
-                      className="w-full h-full border-0"
-                      title="Instagram Feed"
-                      src={`https://www.instagram.com/${username}/embed`}
-                      style={{ maxWidth: '100%', height: feedHeight }}
-                    ></iframe>
-                    <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
-                  </div>
-                )}
-              </>
-            )}
+                <div className="space-y-2">
+                  <Label>Sort Order</Label>
+                  <RadioGroup
+                    value={sortOrder}
+                    onValueChange={(value) => {
+                      setSortOrder(value);
+                      setCurrentPage(1);
+                    }}
+                    className="flex flex-row space-x-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="desc" id="sort-desc" />
+                      <Label htmlFor="sort-desc">Newest First</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="asc" id="sort-asc" />
+                      <Label htmlFor="sort-asc">Oldest First</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center">
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Posts</div>
+                  <div className="text-xl font-semibold">{engagementStats.totalPosts}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Likes</div>
+                  <div className="text-xl font-semibold">{engagementStats.totalLikes}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Shares</div>
+                  <div className="text-xl font-semibold">{engagementStats.totalShares}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Comments</div>
+                  <div className="text-xl font-semibold">{engagementStats.totalComments}</div>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Avg. Engagement</div>
+                  <div className="text-xl font-semibold">{engagementStats.avgEngagement}%</div>
+                </div>
+              </div>
+            </div>
           </CardContent>
-        )}
-      </Card>
+          
+          <CardFooter className="justify-between border-t px-6 py-3">
+            <div className="flex items-center text-sm text-muted-foreground">
+              {isLoading ? 'Loading...' : `Showing ${filteredPosts?.length || 0} of ${data?.pagination?.totalItems || 0} posts`}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
       
-      {/* Post Suggestion Feature */}
-      {userId && suggestionData && !showSuggestion && (
-        <div className="mt-4">
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center gap-2 text-sm"
-            onClick={() => setShowSuggestion(true)}
-          >
-            <HiLightningBolt className="h-4 w-4 text-amber-500" />
-            Get Posting Ideas
-          </Button>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       )}
       
-      {/* Post Suggestion Display */}
-      {userId && suggestionData && showSuggestion && (
-        <Card className="mt-4 bg-muted/20 border-dashed">
-          <CardContent className="pt-4">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <HiLightningBolt className="h-5 w-5 text-amber-500" />
-                <h4 className="font-semibold text-sm">Suggested Post Idea</h4>
-              </div>
-              <Badge 
-                variant="outline" 
-                className="text-xs"
-              >
-                {suggestionData.source === 'activity-based' ? 'Personalized' : 
-                 suggestionData.source === 'generic' ? 'For Small Business' : 'Suggested'}
-              </Badge>
-            </div>
-            
-            <div className="bg-card p-3 rounded-md border border-border/50 my-2">
-              <p className="text-sm italic">"{suggestionData.suggestion}"</p>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs"
-                onClick={() => setShowSuggestion(false)}
-              >
-                Hide
+      {/* Error state */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <AlertCircle className="h-10 w-10 text-destructive mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Failed to load social posts</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              There was an error retrieving your social media content.
+            </p>
+            <Button variant="secondary" onClick={() => refetch()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* No posts state */}
+      {!isLoading && !error && (!data?.posts || data.posts.length === 0) && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <Info className="h-10 w-10 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No posts found</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              {searchQuery 
+                ? `No posts matching "${searchQuery}" were found.` 
+                : "You don't have any social media posts yet."}
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => {
+                setSearchQuery('');
+                setSelectedPlatform('all');
+                setSelectedStatus('all');
+              }}>
+                Clear Filters
               </Button>
-              
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="text-xs"
-                onClick={() => {
-                  navigator.clipboard.writeText(suggestionData.suggestion);
-                  toast({
-                    title: "Copied to clipboard",
-                    description: "Post idea copied to your clipboard",
-                    duration: 3000,
-                  });
-                }}
-              >
-                Use This Idea
+              <Button>
+                Create New Post
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
       
-      <div className="text-center mt-3 text-xs text-muted-foreground">
-        Follow us on social media to stay updated with our latest web development insights and small business solutions.
-      </div>
-    </div>
-  );
-};
-
-interface PostCardProps {
-  post: Post;
-  onAction: (action: string) => void;
-}
-
-const PostCard: React.FC<PostCardProps> = ({ post, onAction }) => {
-  const { title, content, author, category, imageUrl, tags, createdAt } = post;
-  const formattedDate = createdAt ? formatDistanceToNow(new Date(createdAt), { addSuffix: true }) : '';
-
-  return (
-    <Card className="mb-4 overflow-hidden">
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            {title && <CardTitle className="text-lg mb-1">{title}</CardTitle>}
-            <div className="flex items-center text-sm text-muted-foreground">
-              {author && <span className="mr-2">{author}</span>}
-              {formattedDate && <span className="text-xs">{formattedDate}</span>}
-            </div>
-          </div>
-          {category && (
-            <Badge variant="outline" className="text-xs">
-              {category}
-            </Badge>
-          )}
+      {/* Post feed */}
+      {!isLoading && !error && filteredPosts && filteredPosts.length > 0 && (
+        <div className="grid gap-6">
+          {filteredPosts.map((post: any) => (
+            <Card key={post.id} className="overflow-hidden">
+              <CardHeader className="pb-2 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {getPlatformIcon(post.platform?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{post.platform?.displayName || 'Unknown Platform'}</span>
+                        {getStatusBadge(post.status)}
+                      </div>
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        {post.status === 'posted' && post.postedAt && (
+                          <>
+                            <span>{timeAgo(post.postedAt)}</span>
+                            <span className="mx-1">•</span>
+                            <span>{formatDate(post.postedAt)}</span>
+                          </>
+                        )}
+                        
+                        {post.status === 'scheduled' && post.scheduledTime && (
+                          <>
+                            <CalendarIcon className="h-3 w-3 mr-1" />
+                            <span>Scheduled for {formatDate(post.scheduledTime)}</span>
+                          </>
+                        )}
+                        
+                        {!post.postedAt && !post.scheduledTime && (
+                          <>
+                            <span>{timeAgo(post.createdAt)}</span>
+                            <span className="mx-1">•</span>
+                            <span>{formatDate(post.createdAt)}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {post.status === 'posted' && post.metrics && (
+                      <PostSentimentIndicator 
+                        engagement={post.metrics.engagement} 
+                        likes={post.metrics.likes}
+                        comments={post.metrics.comments}
+                        shares={post.metrics.shares}
+                      />
+                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pb-3">
+                <p className="whitespace-pre-line">{post.content}</p>
+                
+                {/* Hashtags */}
+                {post.hashTags && post.hashTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {post.hashTags.map((tag: string, index: number) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Media content */}
+                {post.mediaUrls && post.mediaUrls.length > 0 && (
+                  <div className={`grid gap-2 mt-3 ${post.mediaUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {post.mediaUrls.map((url: string, index: number) => (
+                      <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden">
+                        <img
+                          src={url}
+                          alt={`Post media ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Post metrics */}
+                {post.status === 'posted' && post.metrics && (
+                  <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                    <div className="flex items-center">
+                      <ThumbsUp className="h-4 w-4 mr-1" />
+                      <span>{post.metrics.likes || 0}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      <span>{post.metrics.comments || 0}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Share2 className="h-4 w-4 mr-1" />
+                      <span>{post.metrics.shares || 0}</span>
+                    </div>
+                    {post.metrics.impressions && (
+                      <div className="flex items-center ml-auto">
+                        <span>{post.metrics.impressions.toLocaleString()} views</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+              
+              <CardFooter className="flex justify-between pt-1 pb-3">
+                <div className="flex gap-2">
+                  {post.status === 'draft' && (
+                    <Button variant="outline" size="sm">
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                  
+                  {post.status === 'scheduled' && (
+                    <Button variant="outline" size="sm">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Reschedule
+                    </Button>
+                  )}
+                  
+                  {post.status === 'posted' && post.platform?.name && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="#" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        View on {post.platform.displayName}
+                      </a>
+                    </Button>
+                  )}
+                </div>
+                
+                {post.status === 'posted' && (
+                  <SocialShareButtons
+                    url={`https://elevion.dev/social-posts/${post.id}`}
+                    title={post.content.substring(0, 100)}
+                    variant="compact"
+                  />
+                )}
+              </CardFooter>
+            </Card>
+          ))}
         </div>
-        
-        <CardContent className="p-0 mb-3">
-          <p className="text-sm mt-2">{content}</p>
-        </CardContent>
-        
-        {imageUrl && (
-          <div className="mb-4 rounded-md overflow-hidden">
-            <img
-              src={imageUrl}
-              alt={title || "Post image"}
-              className="w-full h-48 object-cover"
-            />
-          </div>
-        )}
-        
-        {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-        
-        <CardFooter className="flex justify-between items-center p-0 pt-2 border-t">
-          <div className="flex space-x-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground"
-              onClick={() => onAction('like')}
-            >
-              <HiOutlineHeart className="mr-1 h-4 w-4" />
-              <span className="text-xs">Like</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground"
-              onClick={() => onAction('bookmark')}
-            >
-              <HiOutlineBookmark className="mr-1 h-4 w-4" />
-              <span className="text-xs">Save</span>
-            </Button>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-muted-foreground"
-            onClick={() => onAction('share')}
+      )}
+      
+      {/* Pagination controls */}
+      {!isLoading && !error && data?.pagination && data.pagination.totalPages > 1 && (
+        <div className="flex justify-between items-center mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
           >
-            <HiOutlineShare className="mr-1 h-4 w-4" />
-            <span className="text-xs">Share</span>
+            Previous
           </Button>
-        </CardFooter>
-      </div>
-    </Card>
+          
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage} of {data.pagination.totalPages}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(data.pagination.totalPages, prev + 1))}
+            disabled={currentPage === data.pagination.totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 
-interface FeedSkeletonProps {
-  height?: number;
-}
-
-const FeedSkeleton: React.FC<FeedSkeletonProps> = ({ height = 500 }) => (
-  <div className="p-6 space-y-4" style={{ height: `${height}px` }}>
-    <div className="flex items-center space-x-4">
-      <Skeleton className="h-12 w-12 rounded-full" />
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[200px]" />
-        <Skeleton className="h-4 w-[160px]" />
-      </div>
-    </div>
-    
-    <Skeleton className="h-4 w-full" />
-    <Skeleton className="h-4 w-full" />
-    <Skeleton className="h-4 w-3/4" />
-    
-    <Skeleton className="h-48 w-full mt-6" />
-    
-    <div className="flex space-x-4 mt-6">
-      <Skeleton className="h-10 w-20" />
-      <Skeleton className="h-10 w-20" />
-      <Skeleton className="h-10 w-20" />
-    </div>
-    
-    <div className="mt-8 border-t pt-8">
-      <div className="flex items-center space-x-4">
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-4 w-[160px]" />
-        </div>
-      </div>
-      <div className="mt-4">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full mt-2" />
-        <Skeleton className="h-4 w-2/3 mt-2" />
-      </div>
-    </div>
-  </div>
-);
-
+// Add default export to maintain compatibility with components that import this
 export default SocialFeed;
