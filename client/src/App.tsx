@@ -44,6 +44,7 @@ import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
 import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
 import OptimizedLandingPage from "@/pages/OptimizedLandingPage";
 import CheckoutOptimizationPage from "@/pages/CheckoutOptimizationPage";
+import PriceOptimizationPage from "@/pages/PriceOptimizationPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -508,6 +509,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <CheckoutOptimizationPage />
+            </>
+          )}
+        </Route>
+        <Route path="/price-optimization">
+          {() => (
+            <>
+              <Helmet>
+                <title>Price Optimization | Elevion</title>
+                <meta name="description" content="Optimize your subscription pricing with AI-powered market analysis and user behavior insights. Make data-driven pricing decisions." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/price-optimization" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <PriceOptimizationPage />
             </>
           )}
         </Route>
