@@ -98,6 +98,15 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedback(id: number): Promise<Feedback | undefined>;
   getAllFeedback(limit?: number, status?: string): Promise<Feedback[]>;
+  
+  // Logging and bug monitoring methods
+  createLog(log: InsertLog): Promise<Log>;
+  getRecentLogs(level?: string, limit?: number): Promise<Log[]>;
+  getErrorLogs(options?: { limit?: number, level?: string }): Promise<Log[]>;
+  createBugReport(report: InsertBugReport): Promise<BugReport>;
+  getBugReports(filters?: Record<string, string>): Promise<BugReport[]>;
+  getBugReport(id: number): Promise<BugReport | undefined>;
+  updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined>;
   updateFeedbackStatus(id: number, status: string): Promise<Feedback | undefined>;
   getRecentFeedback(limit?: number): Promise<Feedback[]>;
   
@@ -937,19 +946,53 @@ export class DatabaseStorage implements IStorage {
       
     return results;
   }
+  
+  async getErrorLogs(options?: { limit?: number, level?: string }): Promise<Log[]> {
+    const limit = options?.limit || 100;
+    const level = options?.level || 'error';
+    
+    // Query for error logs
+    const errorLogs = await db.select().from(logs)
+      .where(eq(logs.level, level))
+      .orderBy(desc(logs.timestamp))
+      .limit(limit);
+      
+    return errorLogs;
+  }
 
   async createBugReport(report: InsertBugReport): Promise<BugReport> {
     const [bugReport] = await db.insert(bug_reports).values(report).returning();
     return bugReport;
   }
 
-  async getBugReports(status?: string, limit: number = 50): Promise<BugReport[]> {
+  async getBugReports(filters?: Record<string, string> | string, limit: number = 50): Promise<BugReport[]> {
     // Build the query based on parameters
     let query = db.select().from(bug_reports);
     
-    // Add status filter if provided
-    if (status) {
-      query = query.where(eq(bug_reports.status, status));
+    // Handle both string status and filter object for backward compatibility
+    if (typeof filters === 'string') {
+      // Legacy usage with status string
+      query = query.where(eq(bug_reports.status, filters));
+    } else if (filters && Object.keys(filters).length > 0) {
+      // Build filters dynamically
+      const conditions = [];
+      
+      if (filters.status) {
+        conditions.push(eq(bug_reports.status, filters.status));
+      }
+      
+      if (filters.severity) {
+        conditions.push(eq(bug_reports.severity, filters.severity));
+      }
+      
+      if (filters.source) {
+        conditions.push(eq(bug_reports.source, filters.source));
+      }
+      
+      // Apply all conditions with AND logic
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
     }
     
     // Execute the query with ordering and limit

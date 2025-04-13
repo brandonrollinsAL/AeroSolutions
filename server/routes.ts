@@ -44,7 +44,7 @@ import socialMediaRouter from './routes/socialMedia';
 import marketingCampaignsRouter from './routes/marketingCampaigns';
 import seoRouter from './routes/seo';
 import priceOptimizationRouter from './routes/priceOptimization';
-import { bugMonitoringRouter } from './routes/bugMonitoring';
+import bugMonitoringRouter from './routes/bugMonitoring';
 import { loggerMiddleware, registerGlobalErrorHandlers } from './middlewares/logger';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';

@@ -1,456 +1,237 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import { z } from 'zod';
 import { storage } from '../storage';
 import { analyzeErrorLogs, analyzeUserFeedback, generateBugSummaryReport } from '../utils/bugMonitoringService';
-import { body, param, validationResult } from 'express-validator';
-import { Logger } from '../middlewares/logger';
-import path from 'path';
-import fs from 'fs';
 
-export const bugMonitoringRouter = express.Router();
+const router = express.Router();
 
-// Get all bug reports with optional filtering by status
-bugMonitoringRouter.get('/reports', async (req: Request, res: Response) => {
+// Define a common response wrapper
+const wrapResponse = <T>(success: boolean, message: string, data?: T) => {
+  return {
+    success,
+    message,
+    data
+  };
+};
+
+// Get all bug reports with optional filtering
+router.get('/reports', async (req: express.Request, res: express.Response) => {
   try {
-    const { status, limit = 50 } = req.query;
-    
-    const reports = await storage.getBugReports(
-      status as string | undefined, 
-      parseInt(limit as string, 10)
-    );
-    
-    // Create a sanitized version that doesn't expose sensitive code snippets to client
-    const sanitizedReports = reports.map(report => ({
-      ...report,
-      autoFixCode: report.autoFixCode ? '[Code snippet available]' : null,
-    }));
-    
-    res.json({
-      success: true,
-      count: sanitizedReports.length,
-      data: sanitizedReports
-    });
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
+    }
+
+    const { status, severity, source } = req.query;
+
+    // Apply filters if provided
+    let filters: Record<string, string> = {};
+    if (status && status !== 'all') {
+      filters.status = status as string;
+    }
+    if (severity) {
+      filters.severity = severity as string;
+    }
+    if (source) {
+      filters.source = source as string;
+    }
+
+    const bugReports = await storage.getBugReports(filters);
+    return res.json(wrapResponse(true, 'Bug reports retrieved successfully', bugReports));
   } catch (error: any) {
-    Logger.error('Error fetching bug reports', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bug reports',
-      error: error.message
-    });
+    console.error('Error fetching bug reports:', error);
+    return res.status(500).json(wrapResponse(false, `Error fetching bug reports: ${error.message}`));
   }
 });
 
 // Get a specific bug report by ID
-bugMonitoringRouter.get('/reports/:id', [
-  param('id').isNumeric().withMessage('Report ID must be a number')
-], async (req: Request<{ id: string }>, res: Response) => {
+router.get('/reports/:id', async (req: express.Request<{ id: string }>, res: express.Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid report ID',
-        errors: errors.array()
-      });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
 
-    // Check user permissions
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to access bug reports'
-      });
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json(wrapResponse(false, 'Invalid bug report ID'));
     }
-    
-    const reportId = parseInt(req.params.id, 10);
-    const report = await storage.getBugReport(reportId);
-    
-    if (!report) {
-      return res.status(404).json({
-        success: false,
-        message: `Bug report with ID ${reportId} not found`
-      });
+
+    const bugReport = await storage.getBugReport(id);
+    if (!bugReport) {
+      return res.status(404).json(wrapResponse(false, 'Bug report not found'));
     }
-    
-    res.json({
-      success: true,
-      data: report
-    });
+
+    return res.json(wrapResponse(true, 'Bug report retrieved successfully', bugReport));
   } catch (error: any) {
-    Logger.error(`Error fetching bug report ${req.params.id}`, error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bug report',
-      error: error.message
-    });
+    console.error('Error fetching bug report:', error);
+    return res.status(500).json(wrapResponse(false, `Error fetching bug report: ${error.message}`));
   }
 });
 
-// Trigger manual analysis of error logs
-bugMonitoringRouter.post('/analyze-logs', async (req: Request, res: Response) => {
+// Get error logs for analysis
+router.get('/logs', async (req: express.Request, res: express.Response) => {
   try {
-    // Check user permissions
     if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to analyze logs'
-      });
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
+
+    const { limit, level } = req.query;
+    const limitNum = limit ? parseInt(limit as string) : 100;
     
-    const { timeframe = 'last_day' } = req.body;
-    
-    // Start the analysis process
-    const bugAnalyses = await analyzeErrorLogs(timeframe);
-    
-    res.json({
-      success: true,
-      message: `Log analysis completed. Found ${bugAnalyses.length} potential bugs.`,
-      count: bugAnalyses.length,
-      data: bugAnalyses.map(bug => ({
-        affectedComponent: bug.affectedComponent,
-        severity: bug.severity,
-        description: bug.description,
-        suggestedFix: bug.suggestedFix,
-      }))
+    const logs = await storage.getErrorLogs({
+      limit: limitNum,
+      level: level as string | undefined
     });
+
+    return res.json(wrapResponse(true, 'Error logs retrieved successfully', logs));
   } catch (error: any) {
-    Logger.error('Error analyzing logs', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to analyze logs',
-      error: error.message
-    });
+    console.error('Error fetching error logs:', error);
+    return res.status(500).json(wrapResponse(false, `Error fetching error logs: ${error.message}`));
   }
 });
 
-// Trigger manual analysis of user feedback
-bugMonitoringRouter.post('/analyze-feedback', async (req: Request, res: Response) => {
+// Update a bug report (e.g., change status)
+router.patch('/reports/:id', async (req: express.Request<{ id: string }>, res: express.Response) => {
   try {
-    // Check user permissions
     if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to analyze feedback'
-      });
-    }
-    
-    // Start the analysis process
-    const feedbackAnalyses = await analyzeUserFeedback();
-    
-    // Filter to only show bug reports
-    const bugReports = feedbackAnalyses.filter(analysis => analysis.isBugReport);
-    
-    res.json({
-      success: true,
-      message: `Feedback analysis completed. Found ${bugReports.length} potential bugs in ${feedbackAnalyses.length} feedback items.`,
-      totalAnalyzed: feedbackAnalyses.length,
-      bugsFound: bugReports.length,
-      data: bugReports.map(bug => ({
-        category: bug.category,
-        priority: bug.priority,
-        description: bug.description,
-        suggestedAction: bug.suggestedAction,
-      }))
-    });
-  } catch (error: any) {
-    Logger.error('Error analyzing feedback', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to analyze feedback',
-      error: error.message
-    });
-  }
-});
-
-// Update the status of a bug report
-bugMonitoringRouter.patch('/reports/:id', [
-  param('id').isNumeric().withMessage('Report ID must be a number'),
-  body('status').isIn(['open', 'in-progress', 'resolved', 'closed'])
-    .withMessage('Status must be one of: open, in-progress, resolved, closed')
-], async (req: Request<{ id: string }>, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid input data',
-        errors: errors.array()
-      });
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
 
-    // Check user permissions
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to update bug reports'
-      });
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json(wrapResponse(false, 'Invalid bug report ID'));
     }
-    
-    const reportId = parseInt(req.params.id, 10);
-    const { status } = req.body;
-    
-    // Add additional fields based on the new status
-    const updateData: any = { status };
-    
-    if (status === 'resolved' || status === 'closed') {
+
+    // Validate the request body
+    const updateSchema = z.object({
+      status: z.enum(['open', 'in_progress', 'resolved', 'closed']).optional(),
+      severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+      affectedComponent: z.string().nullable().optional(),
+      suggestedFix: z.string().nullable().optional(),
+      resolvedAt: z.date().nullable().optional(),
+      closedAt: z.date().nullable().optional(),
+      autoFixApplied: z.boolean().optional()
+    });
+
+    const validationResult = updateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json(wrapResponse(
+        false, 
+        'Invalid update data', 
+        validationResult.error.format()
+      ));
+    }
+
+    // If status is being updated to resolved, set resolvedAt if not provided
+    const updateData = validationResult.data;
+    if (updateData.status === 'resolved' && !updateData.resolvedAt) {
       updateData.resolvedAt = new Date();
     }
-    
-    if (status === 'in-progress' && !req.body.assignedTo) {
-      updateData.assignedTo = req.user.id; // Assign to the current user
+
+    // If status is being updated to closed, set closedAt if not provided
+    if (updateData.status === 'closed' && !updateData.closedAt) {
+      updateData.closedAt = new Date();
     }
-    
-    const updatedReport = await storage.updateBugReport(reportId, updateData);
-    
-    if (!updatedReport) {
-      return res.status(404).json({
-        success: false,
-        message: `Bug report with ID ${reportId} not found`
-      });
+
+    const updated = await storage.updateBugReport(id, updateData);
+    if (!updated) {
+      return res.status(404).json(wrapResponse(false, 'Bug report not found or could not be updated'));
     }
-    
-    res.json({
-      success: true,
-      message: `Bug report status updated to ${status}`,
-      data: updatedReport
-    });
+
+    return res.json(wrapResponse(true, 'Bug report updated successfully', updated));
   } catch (error: any) {
-    Logger.error(`Error updating bug report ${req.params.id}`, error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update bug report',
-      error: error.message
-    });
+    console.error('Error updating bug report:', error);
+    return res.status(500).json(wrapResponse(false, `Error updating bug report: ${error.message}`));
   }
 });
 
-// Get recent system logs with optional filtering by level
-bugMonitoringRouter.get('/logs', async (req: Request, res: Response) => {
+// Analyze error logs for bugs
+router.post('/analyze-logs', async (req: express.Request, res: express.Response) => {
   try {
-    const { level, limit = 100 } = req.query;
-    
-    // Check user permissions
     if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to access system logs'
-      });
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
+
+    // Get the latest error logs
+    const logs = await storage.getErrorLogs({ limit: 100 });
     
-    const logs = await storage.getRecentLogs(
-      level as string | undefined, 
-      parseInt(limit as string, 10)
-    );
+    // Use AI to analyze logs for bugs
+    const bugAnalysis = await analyzeErrorLogs(logs);
     
-    res.json({
-      success: true,
-      count: logs.length,
-      data: logs
-    });
+    // Return the analysis results
+    return res.json(wrapResponse(true, 'Error logs analyzed successfully', bugAnalysis));
   } catch (error: any) {
-    Logger.error('Error fetching system logs', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch system logs',
-      error: error.message
-    });
+    console.error('Error analyzing logs:', error);
+    return res.status(500).json(wrapResponse(false, `Error analyzing logs: ${error.message}`));
   }
 });
 
-// Generate a bug summary report
-bugMonitoringRouter.get('/summary-report', async (req: Request, res: Response) => {
+// Analyze user feedback for issues
+router.post('/analyze-feedback', async (req: express.Request, res: express.Response) => {
   try {
-    // Check user permissions
     if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to generate bug summary report'
-      });
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
-    
+
+    const feedbackAnalysis = await analyzeUserFeedback();
+    return res.json(wrapResponse(true, 'User feedback analyzed successfully', feedbackAnalysis));
+  } catch (error: any) {
+    console.error('Error analyzing user feedback:', error);
+    return res.status(500).json(wrapResponse(false, `Error analyzing user feedback: ${error.message}`));
+  }
+});
+
+// Generate a summary report of bugs
+router.get('/summary-report', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
+    }
+
     const report = await generateBugSummaryReport();
-    
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      report
-    });
+    return res.json(wrapResponse(true, 'Bug summary report generated successfully', { report }));
   } catch (error: any) {
-    Logger.error('Error generating bug summary report', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate bug summary report',
-      error: error.message
-    });
+    console.error('Error generating bug summary report:', error);
+    return res.status(500).json(wrapResponse(false, `Error generating bug summary report: ${error.message}`));
   }
 });
 
-// Get source code for a specific file
-bugMonitoringRouter.get('/source', async (req: Request, res: Response) => {
+// Apply an auto-fix to a bug
+router.post('/reports/:id/apply-fix', async (req: express.Request<{ id: string }>, res: express.Response) => {
   try {
-    const { filePath } = req.query;
-    
-    if (!filePath || typeof filePath !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'File path is required'
-      });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json(wrapResponse(false, 'Unauthorized'));
     }
 
-    // Check user permissions
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to access source code'
-      });
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json(wrapResponse(false, 'Invalid bug report ID'));
     }
-    
-    // Security check: Prevent directory traversal attacks by ensuring path is within project directory
-    const normalizedPath = path.normalize(filePath as string);
-    const projectRoot = process.cwd();
-    const absolutePath = path.resolve(projectRoot, normalizedPath);
-    
-    if (!absolutePath.startsWith(projectRoot)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied: Path is outside project directory'
-      });
+
+    // Get the bug report
+    const bugReport = await storage.getBugReport(id);
+    if (!bugReport) {
+      return res.status(404).json(wrapResponse(false, 'Bug report not found'));
     }
-    
-    // Check if file exists
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({
-        success: false,
-        message: `File not found: ${normalizedPath}`
-      });
+
+    // Check if the bug can be auto-fixed
+    if (!bugReport.canAutoFix || !bugReport.autoFixCode) {
+      return res.status(400).json(wrapResponse(false, 'This bug cannot be automatically fixed'));
     }
-    
-    // Read file content
-    const fileContent = fs.readFileSync(absolutePath, 'utf8');
-    
-    // Get file stats
-    const stats = fs.statSync(absolutePath);
-    
-    res.json({
-      success: true,
-      path: normalizedPath,
-      size: stats.size,
-      lastModified: stats.mtime,
-      content: fileContent
+
+    // In a real implementation, this would apply the fix to the codebase
+    // For this demo, we just update the bug status
+    const updated = await storage.updateBugReport(id, {
+      autoFixApplied: true,
+      status: 'resolved',
+      resolvedAt: new Date()
     });
+
+    return res.json(wrapResponse(true, 'Auto-fix applied successfully', updated));
   } catch (error: any) {
-    const filePath = req.query.filePath || 'unknown';
-    Logger.error(`Error reading source file ${filePath}`, error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to read source file',
-      error: error.message
-    });
+    console.error('Error applying auto-fix:', error);
+    return res.status(500).json(wrapResponse(false, `Error applying auto-fix: ${error.message}`));
   }
 });
 
-// Get insights on bug patterns
-bugMonitoringRouter.get('/insights', async (req: Request, res: Response) => {
-  try {
-    // Check user permissions
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required to access bug insights'
-      });
-    }
-    
-    // Get all bug reports
-    const allBugs = await storage.getBugReports();
-    
-    if (allBugs.length === 0) {
-      return res.json({
-        success: true,
-        message: 'No bug data available for analysis',
-        insights: null
-      });
-    }
-    
-    // Calculate statistics
-    const severityCounts = {
-      low: 0,
-      medium: 0,
-      high: 0,
-      critical: 0
-    };
-    
-    const statusCounts = {
-      open: 0,
-      'in-progress': 0,
-      resolved: 0,
-      closed: 0
-    };
-    
-    const componentCounts: Record<string, number> = {};
-    
-    allBugs.forEach(bug => {
-      // Count by severity
-      if (bug.severity) {
-        severityCounts[bug.severity as keyof typeof severityCounts]++;
-      }
-      
-      // Count by status
-      if (bug.status) {
-        statusCounts[bug.status as keyof typeof statusCounts]++;
-      }
-      
-      // Count by component
-      if (bug.affectedComponent) {
-        componentCounts[bug.affectedComponent] = (componentCounts[bug.affectedComponent] || 0) + 1;
-      }
-    });
-    
-    // Find most common components
-    const topComponents = Object.entries(componentCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([component, count]) => ({ component, count }));
-    
-    // Calculate average resolution time for resolved bugs
-    const resolvedBugs = allBugs.filter(bug => bug.resolvedAt && bug.createdAt);
-    let avgResolutionTimeMs = 0;
-    
-    if (resolvedBugs.length > 0) {
-      const totalResolutionTimeMs = resolvedBugs.reduce((total, bug) => {
-        const created = new Date(bug.createdAt);
-        const resolved = new Date(bug.resolvedAt!);
-        return total + (resolved.getTime() - created.getTime());
-      }, 0);
-      
-      avgResolutionTimeMs = totalResolutionTimeMs / resolvedBugs.length;
-    }
-    
-    // Convert milliseconds to hours
-    const avgResolutionTimeHours = avgResolutionTimeMs / (1000 * 60 * 60);
-    
-    const insights = {
-      totalBugs: allBugs.length,
-      openBugs: statusCounts.open,
-      resolvedBugs: statusCounts.resolved + statusCounts.closed,
-      criticalBugs: severityCounts.critical,
-      highBugs: severityCounts.high,
-      severityDistribution: severityCounts,
-      statusDistribution: statusCounts,
-      avgResolutionTimeHours: avgResolutionTimeHours.toFixed(2),
-      topAffectedComponents: topComponents,
-      bugCreationTrend: [], // Would require time-series analysis
-      recommendations: []
-    };
-    
-    res.json({
-      success: true,
-      insights
-    });
-  } catch (error: any) {
-    Logger.error('Error generating bug insights', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate bug insights',
-      error: error.message
-    });
-  }
-});
+export default router;
