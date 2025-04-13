@@ -45,6 +45,7 @@ import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
 import OptimizedLandingPage from "@/pages/OptimizedLandingPage";
 import CheckoutOptimizationPage from "@/pages/CheckoutOptimizationPage";
 import PriceOptimizationPage from "@/pages/PriceOptimizationPage";
+import BugMonitoringPage from "@/pages/BugMonitoringPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
