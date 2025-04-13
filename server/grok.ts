@@ -135,6 +135,42 @@ class GrokApi {
       throw new Error(`Grok image analysis failed: ${error.message}`);
     }
   }
+  
+  /**
+   * Create a chat completion using conversation messages
+   * @param messages Array of conversation messages with roles (system, user, assistant)
+   * @param options Additional options (model, temperature, etc.)
+   */
+  async createChatCompletion(
+    messages: Array<{role: string; content: string | Array<{type: string; text?: string; image_url?: {url: string}}>}>,
+    options: {
+      model?: string;
+      temperature?: number;
+      max_tokens?: number;
+      response_format?: {type: string};
+    } = {}
+  ): Promise<any> {
+    try {
+      const { model = 'grok-3-mini', temperature = 0.7, max_tokens = 500, response_format = undefined } = options;
+      
+      const apiOptions: any = {
+        model,
+        messages,
+        temperature,
+        max_tokens
+      };
+      
+      if (response_format) {
+        apiOptions.response_format = response_format;
+      }
+      
+      const response = await callXAI('/chat/completions', apiOptions);
+      return response;
+    } catch (error) {
+      console.error('Error creating chat completion with Grok:', error);
+      throw new Error(`Grok chat completion failed: ${error.message}`);
+    }
+  }
 }
 
 // Create a singleton instance

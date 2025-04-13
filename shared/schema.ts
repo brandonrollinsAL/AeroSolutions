@@ -385,6 +385,28 @@ export type InsertContentComplianceScan = z.infer<typeof insertContentCompliance
 export type ContentComplianceAlert = typeof contentComplianceAlerts.$inferSelect;
 export type InsertContentComplianceAlert = z.infer<typeof insertContentComplianceAlertSchema>;
 
+// ElevateBot queries for tracking AI interactions
+export const elevatebotQueries = pgTable("elevatebot_queries", {
+  id: serial("id").primaryKey(),
+  query: text("query").notNull(),
+  response: text("response"),
+  user_id: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  model_used: text("model_used").default("grok-3-mini").notNull(),
+  tokens_used: integer("tokens_used"),
+  response_time: integer("response_time"), // in milliseconds
+  session_id: text("session_id"),
+  containsRecommendation: boolean("contains_recommendation").default(false),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertElevatebotQuerySchema = createInsertSchema(elevatebotQueries).omit({
+  id: true,
+  created_at: true
+});
+
+export type ElevatebotQuery = typeof elevatebotQueries.$inferSelect;
+export type InsertElevatebotQuery = z.infer<typeof insertElevatebotQuerySchema>;
+
 // User data change logs for compliance and audit
 export const userDataChangeLogs = pgTable("user_data_change_logs", {
   id: serial("id").primaryKey(),
