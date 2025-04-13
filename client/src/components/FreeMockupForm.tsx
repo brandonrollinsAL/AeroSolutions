@@ -98,7 +98,15 @@ export default function FreeMockupForm() {
     }
 
     try {
-      await apiRequest('POST', '/api/contact', formData);
+      // Create a contact submission format object from the form data
+      const contactData = {
+        name: formData.name,
+        email: formData.email,
+        company: formData.businessType,
+        message: `Mockup request: ${formData.industry} - ${formData.desiredFeatures.join(', ')} - ${formData.message || 'No additional details'}`
+      };
+      
+      await apiRequest('POST', '/api/contact', contactData);
       
       setSubmitted(true);
       toast({
@@ -106,6 +114,7 @@ export default function FreeMockupForm() {
         description: "We'll create your free mockup and reach out within 24 hours."
       });
     } catch (error) {
+      console.error("Form submission error:", error);
       toast({
         title: "Submission Error",
         description: "There was a problem submitting your request. Please try again.",
