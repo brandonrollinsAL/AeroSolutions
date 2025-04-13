@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 import { OpenAI } from 'openai';
 import { grokApi } from '../grok';
-import { auth } from '../utils/auth';
+import * as authUtils from '../utils/auth';
 
 // Use xAI as the primary suggestion engine with OpenAI as fallback
 const useXai = process.env.XAI_API_KEY ? true : false;
@@ -30,7 +30,7 @@ const router = express.Router();
 /**
  * Generate email campaign suggestions based on industry and type
  */
-router.post('/suggestions', auth.requireAuth, async (req: Request, res: Response) => {
+router.post('/suggestions', authUtils.authenticate, async (req: Request, res: Response) => {
   try {
     const { industry, campaignType } = req.body;
     
@@ -76,7 +76,7 @@ router.post('/suggestions', auth.requireAuth, async (req: Request, res: Response
 /**
  * Save a generated campaign to the database
  */
-router.post('/save', auth.requireAuth, async (req: Request, res: Response) => {
+router.post('/save', authUtils.authenticate, async (req: Request, res: Response) => {
   try {
     const { name, industry, campaignType, subject, content, template, scheduledFor, audienceSize } = req.body;
     
@@ -120,7 +120,7 @@ router.post('/save', auth.requireAuth, async (req: Request, res: Response) => {
 /**
  * Get all campaigns for the current user
  */
-router.get('/user-campaigns', auth.requireAuth, async (req: Request, res: Response) => {
+router.get('/user-campaigns', authUtils.authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     
@@ -144,7 +144,7 @@ router.get('/user-campaigns', auth.requireAuth, async (req: Request, res: Respon
 /**
  * Update campaign status (draft, scheduled, sent)
  */
-router.patch('/status/:id', auth.requireAuth, async (req: Request, res: Response) => {
+router.patch('/status/:id', authUtils.authenticate, async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
     const { status, scheduledFor, sentAt } = req.body;
@@ -202,7 +202,7 @@ router.patch('/status/:id', auth.requireAuth, async (req: Request, res: Response
 /**
  * Delete a campaign
  */
-router.delete('/:id', auth.requireAuth, async (req: Request, res: Response) => {
+router.delete('/:id', authUtils.authenticate, async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
     const userId = req.user.id;
