@@ -15,6 +15,9 @@ const marketplaceRouter = Router();
 // Create a cache for recommendations to avoid unnecessary AI calls
 const recommendationCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 
+// Create a cache for listing descriptions to avoid unnecessary AI calls
+const listingDescriptionCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
+
 // Get all marketplace items
 marketplaceRouter.get('/', async (req: Request, res: Response) => {
   try {
@@ -503,6 +506,85 @@ marketplaceRouter.get('/suggest-features/:userId', authenticate, async (req: Req
       success: false,
       message: 'Feature suggestion failed',
       error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Suggest a listing description for marketplace items
+marketplaceRouter.post('/suggest-listing', async (req: Request, res: Response) => {
+  try {
+    const { serviceName } = req.body;
+    
+    if (!serviceName || typeof serviceName !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Service name is required'
+      });
+    }
+    
+    // Check cache first to avoid unnecessary API calls
+    const cacheKey = `listing_description_${serviceName.toLowerCase().replace(/\s+/g, '_')}`;
+    const cachedDescription = listingDescriptionCache.get(cacheKey);
+    
+    if (cachedDescription) {
+      return res.status(200).json({
+        success: true,
+        description: cachedDescription,
+        cached: true
+      });
+    }
+    
+    // Prepare prompt for the AI
+    const messages = [
+      {
+        role: 'system' as const,
+        content: 'You are an expert web development service copywriter who specializes in creating compelling marketplace listings. Create a professional, detailed, and persuasive description for the following web development service. Focus on benefits, key features, and unique selling points. Keep the description between 100-200 words.'
+      },
+      {
+        role: 'user' as const,
+        content: `Create a marketplace listing description for: ${serviceName}`
+      }
+    ];
+    
+    try {
+      // Make the AI call with a timeout
+      const aiResponse = await Promise.race([
+        grokApi.createChatCompletion(messages, {
+          model: 'grok-3-mini',
+          temperature: 0.7
+        }),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('AI description generation timed out')), 30000)
+        )
+      ]);
+      
+      const description = aiResponse.choices[0].message.content;
+      
+      // Cache the successful response
+      listingDescriptionCache.set(cacheKey, description);
+      
+      return res.status(200).json({
+        success: true,
+        description,
+        cached: false
+      });
+    } catch (error) {
+      console.error("AI description generation error:", error);
+      
+      // Fallback response with generic description
+      const fallbackDescription = `${serviceName} - Professional web development service tailored to meet your business needs. Our team of experts will create a custom solution that helps your business thrive online with modern design and powerful functionality. We focus on responsive design, user experience, and performance optimization to ensure your website stands out from the competition.`;
+      
+      return res.status(200).json({
+        success: true,
+        description: fallbackDescription,
+        fallback: true
+      });
+    }
+  } catch (error) {
+    console.error('Error generating listing description:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to generate listing description'
     });
   }
 });
