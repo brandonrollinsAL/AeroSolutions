@@ -29,6 +29,7 @@ import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
 import moderationRouter from './routes/moderation';
 import twitterRouter from './routes/twitter';
+import retentionRouter from './routes/retention';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
@@ -38,6 +39,7 @@ import authRouter from './routes/auth';
 import userRouter from './routes/users';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
+import { retentionService } from './utils/retentionService';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -151,6 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/compliance', complianceRouter);
   app.use('/api/moderation', moderationRouter);
   app.use('/api/twitter', twitterRouter);
+  app.use('/api/retention', retentionRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
@@ -809,6 +812,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Twitter post scheduler initialized successfully');
   } catch (error) {
     console.error('Failed to initialize Twitter post scheduler:', error);
+  }
+  
+  // Setup user retention system using XAI
+  // Analyze user activity and automatically engage inactive users
+  try {
+    console.log('Setting up user retention system...');
+    // Run a daily check for inactive users at 2 AM
+    const runRetentionCheck = async () => {
+      try {
+        console.log('Running user retention check...');
+        const result = await retentionService.runRetentionCampaign({
+          messageType: 'email',
+          dryRun: false,
+          maxUsers: 50
+        });
+        console.log(`Retention campaign completed: identified ${result.totalIdentified} at-risk users, sent ${result.messagesSent} messages, ${result.errors} errors`);
+      } catch (error) {
+        console.error('Error in retention campaign:', error);
+      }
+    };
+    
+    // Schedule the retention check to run daily
+    const now = new Date();
+    const nextRun = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + (now.getHours() >= 2 ? 1 : 0),
+      2, 0, 0, 0
+    );
+    const timeUntilNextRun = nextRun.getTime() - now.getTime();
+    
+    // Set up the daily scheduler
+    setTimeout(() => {
+      runRetentionCheck();
+      // Then run it every 24 hours
+      setInterval(runRetentionCheck, 24 * 60 * 60 * 1000);
+    }, timeUntilNextRun);
+    
+    console.log(`User retention system scheduled to run daily at 2 AM (next run in ${Math.round(timeUntilNextRun / (60 * 60 * 1000))} hours)`);
+  } catch (error) {
+    console.error('Failed to set up user retention system:', error);
   }
   
   return httpServer;
