@@ -277,6 +277,16 @@ const Navbar: React.FC = () => {
                             <span>Manage Client Previews</span>
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Link href="/website-analytics" className="w-full flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="mr-2 h-4 w-4 text-blue-600" viewBox="0 0 16 16">
+                              <path d="M4.5 11a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+                              <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0z"/>
+                              <path d="M8 3.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5H4a.5.5 0 0 1 0-1h3.5V4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                            <span>Website Analytics</span>
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                       </>
                     )}
@@ -387,6 +397,18 @@ const Navbar: React.FC = () => {
                           >
                             <Users className="h-4 w-4 inline mr-2" />
                             Manage Client Previews
+                          </Link>
+                          <Link
+                            href="/website-analytics"
+                            className="block rounded-md px-3 py-2 text-base font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="h-4 w-4 inline mr-2" viewBox="0 0 16 16">
+                              <path d="M4.5 11a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+                              <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0z"/>
+                              <path d="M8 3.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5H4a.5.5 0 0 1 0-1h3.5V4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                            Website Analytics
                           </Link>
                         </>
                       )}

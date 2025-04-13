@@ -1,339 +1,370 @@
-import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Progress } from '@/components/ui/progress';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  LineChart,
-  Line
-} from 'recharts';
-
-// Get date range for default selection
-const getDateRange = (days: number) => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - days);
-  return {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0]
-  };
-};
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { apiRequest } from '@/lib/queryClient';
+import { LineChart, BarChart, PieChart } from 'lucide-react';
 
 interface WebsiteConversionAnalyticsProps {
   clientId: number;
 }
 
-const WebsiteConversionAnalytics = ({ clientId }: WebsiteConversionAnalyticsProps) => {
-  const [timeframe, setTimeframe] = useState<'7' | '30' | '90'>('30');
-  const [conversionType, setConversionType] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  // Get date range based on selected timeframe
-  const dateRange = getDateRange(Number(timeframe));
+interface ConversionDataItem {
+  id: number;
+  clientId: number;
+  conversionType: string;
+  conversionCount: number;
+  conversionRate: string;
+  date: string;
+  source: string;
+  campaign: string;
+  landingPage: string;
+  exitPage: string;
+  averageTimeToConvert: string;
+  deviceType: string;
+  location: string;
+  aiInsights: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  // Fetch conversion data with react-query
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/analytics/website-conversions', clientId, dateRange.startDate, dateRange.endDate, conversionType],
+const WebsiteConversionAnalytics: React.FC<WebsiteConversionAnalyticsProps> = ({ clientId }) => {
+  const [period, setPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['/api/analytics/website-conversions', clientId, period],
     queryFn: async () => {
-      let url = `/api/analytics/website-conversions/${clientId}?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
-      if (conversionType) {
-        url += `&conversionType=${conversionType}`;
-      }
-      const response = await apiRequest('GET', url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversion analytics');
-      }
+      const response = await apiRequest('GET', `/api/analytics/website-conversions/${clientId}?period=${period}`);
       return response.json();
     },
     enabled: !!clientId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error loading conversion analytics",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
-      });
+  // Helper function to calculate total conversions
+  const getTotalConversions = (data: ConversionDataItem[]) => {
+    return data?.reduce((total, item) => total + item.conversionCount, 0) || 0;
+  };
+
+  // Helper function to calculate average conversion rate
+  const getAverageConversionRate = (data: ConversionDataItem[]) => {
+    if (!data?.length) return '0%';
+    
+    const sum = data.reduce((total, item) => {
+      const rate = parseFloat(item.conversionRate.replace('%', ''));
+      return total + rate;
+    }, 0);
+    
+    return (sum / data.length).toFixed(2) + '%';
+  };
+
+  // Helper function to get most popular conversion type
+  const getMostPopularConversionType = (data: ConversionDataItem[]) => {
+    if (!data?.length) return 'N/A';
+    
+    const conversionTypes: Record<string, number> = {};
+    
+    data.forEach(item => {
+      if (conversionTypes[item.conversionType]) {
+        conversionTypes[item.conversionType] += item.conversionCount;
+      } else {
+        conversionTypes[item.conversionType] = item.conversionCount;
+      }
+    });
+    
+    let maxCount = 0;
+    let popularType = 'N/A';
+    
+    for (const type in conversionTypes) {
+      if (conversionTypes[type] > maxCount) {
+        maxCount = conversionTypes[type];
+        popularType = type;
+      }
     }
-  }, [error, toast]);
-
-  // Handle timeframe change
-  const handleTimeframeChange = (value: string) => {
-    setTimeframe(value as '7' | '30' | '90');
+    
+    return popularType;
   };
 
-  // Handle conversion type change
-  const handleConversionTypeChange = (value: string) => {
-    setConversionType(value === 'all' ? null : value);
+  // Helper function to get most effective source
+  const getMostEffectiveSource = (data: ConversionDataItem[]) => {
+    if (!data?.length) return 'N/A';
+    
+    const sources: Record<string, { count: number, rate: number }> = {};
+    
+    data.forEach(item => {
+      const rate = parseFloat(item.conversionRate.replace('%', ''));
+      
+      if (sources[item.source]) {
+        sources[item.source].count += item.conversionCount;
+        sources[item.source].rate = (sources[item.source].rate + rate) / 2; // Average rate
+      } else {
+        sources[item.source] = { count: item.conversionCount, rate };
+      }
+    });
+    
+    let maxEffectiveness = 0;
+    let effectiveSource = 'N/A';
+    
+    for (const source in sources) {
+      // Effectiveness = count * rate (weighted metric)
+      const effectiveness = sources[source].count * sources[source].rate;
+      
+      if (effectiveness > maxEffectiveness) {
+        maxEffectiveness = effectiveness;
+        effectiveSource = source;
+      }
+    }
+    
+    return effectiveSource;
   };
 
-  // Get unique conversion types for filter
-  const conversionTypes = data?.byType?.map((item: any) => item.type) || [];
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-3/4" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+        <Skeleton className="h-[300px] w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-red-500">Error Loading Conversion Analytics</CardTitle>
+          <CardDescription>
+            There was a problem fetching the conversion data. Please try again later.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Error details: {(error as Error).message || 'Unknown error'}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Since we're in early implementation, handle the case where data isn't available yet
+  const conversionData = data?.data || [];
+  const hasData = conversionData.length > 0;
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl">Website Conversion Analytics</CardTitle>
-        <CardDescription>
-          Real-time analytics for client website conversions
-        </CardDescription>
-        <div className="flex flex-col md:flex-row gap-4 mt-4">
-          <Select value={timeframe} onValueChange={handleTimeframeChange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={conversionType || 'all'} onValueChange={handleConversionTypeChange}>
-            <SelectTrigger className="w-52">
-              <SelectValue placeholder="Filter by conversion type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All conversion types</SelectItem>
-              {conversionTypes.map((type: string) => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex flex-col gap-4 items-center justify-center h-96">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-muted-foreground">Loading conversion analytics...</p>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-semibold">Website Conversion Analytics</h3>
+        <Tabs defaultValue="30d" value={period} onValueChange={(value) => setPeriod(value as any)} className="w-auto">
+          <TabsList>
+            <TabsTrigger value="7d">7 Days</TabsTrigger>
+            <TabsTrigger value="30d">30 Days</TabsTrigger>
+            <TabsTrigger value="90d">90 Days</TabsTrigger>
+            <TabsTrigger value="all">All Time</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {hasData ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium flex items-center">
+                  <LineChart className="h-5 w-5 mr-2 text-electric-cyan" />
+                  Total Conversions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{getTotalConversions(conversionData)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {period === '7d' ? 'Past week' : 
+                   period === '30d' ? 'Past month' : 
+                   period === '90d' ? 'Past 3 months' : 'All time'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium flex items-center">
+                  <PieChart className="h-5 w-5 mr-2 text-electric-cyan" />
+                  Avg. Conversion Rate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{getAverageConversionRate(conversionData)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {period === '7d' ? 'Past week' : 
+                   period === '30d' ? 'Past month' : 
+                   period === '90d' ? 'Past 3 months' : 'All time'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium flex items-center">
+                  <BarChart className="h-5 w-5 mr-2 text-electric-cyan" />
+                  Most Effective Source
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold truncate">{getMostEffectiveSource(conversionData)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on conversion count and rate
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        ) : !data ? (
-          <div className="flex flex-col gap-2 items-center justify-center h-96">
-            <p className="text-muted-foreground">No conversion data available for the selected timeframe.</p>
-          </div>
-        ) : (
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-8">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="by-type">By Type</TabsTrigger>
-              <TabsTrigger value="by-sources">By Sources</TabsTrigger>
-              <TabsTrigger value="trends">Trends</TabsTrigger>
-            </TabsList>
-            
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Total Conversions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-4xl font-bold">{data.overview.totalConversions}</div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      in the last {data.timeframe.days} days
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Total Value</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-4xl font-bold">${data.overview.totalValue}</div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      estimated conversion value
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Average Bounce Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-4xl font-bold">{data.overview.avgBounceRate}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Visit to Conversion</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-4xl font-bold">{data.overview.avgVisitToConversion}</div>
-                  </CardContent>
-                </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Conversion Breakdown</CardTitle>
+              <CardDescription>
+                Detailed analysis of conversions by type, source, and page
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="byType">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="byType">By Conversion Type</TabsTrigger>
+                  <TabsTrigger value="bySource">By Source</TabsTrigger>
+                  <TabsTrigger value="byPage">By Landing Page</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="byType">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left pb-2">Conversion Type</th>
+                          <th className="text-left pb-2">Count</th>
+                          <th className="text-left pb-2">Rate</th>
+                          <th className="text-left pb-2">Avg. Time to Convert</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {conversionData.map((item, index) => (
+                          <tr key={index} className="border-b last:border-0">
+                            <td className="py-3">{item.conversionType}</td>
+                            <td className="py-3">{item.conversionCount}</td>
+                            <td className="py-3">{item.conversionRate}</td>
+                            <td className="py-3">{item.averageTimeToConvert}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="bySource">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left pb-2">Source</th>
+                          <th className="text-left pb-2">Campaign</th>
+                          <th className="text-left pb-2">Conversions</th>
+                          <th className="text-left pb-2">Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {conversionData.map((item, index) => (
+                          <tr key={index} className="border-b last:border-0">
+                            <td className="py-3">{item.source}</td>
+                            <td className="py-3">{item.campaign || 'N/A'}</td>
+                            <td className="py-3">{item.conversionCount}</td>
+                            <td className="py-3">{item.conversionRate}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="byPage">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left pb-2">Landing Page</th>
+                          <th className="text-left pb-2">Exit Page</th>
+                          <th className="text-left pb-2">Conversions</th>
+                          <th className="text-left pb-2">Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {conversionData.map((item, index) => (
+                          <tr key={index} className="border-b last:border-0">
+                            <td className="py-3">{item.landingPage}</td>
+                            <td className="py-3">{item.exitPage}</td>
+                            <td className="py-3">{item.conversionCount}</td>
+                            <td className="py-3">{item.conversionRate}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>AI-Powered Insights</CardTitle>
+              <CardDescription>
+                Intelligent analysis of your conversion data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 bg-slate-50 rounded-md border border-slate-200">
+                <h4 className="font-semibold mb-2">Summary</h4>
+                <p className="text-sm text-slate-700 mb-4">
+                  {data?.aiInsights?.summary || "AI-powered insights are being generated for your data. This feature uses Grok AI to analyze patterns and provide actionable recommendations."}
+                </p>
+                
+                <h4 className="font-semibold mb-2">Recommendations</h4>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-slate-700">
+                  {data?.aiInsights?.recommendations ? (
+                    data.aiInsights.recommendations.map((rec: string, i: number) => (
+                      <li key={i}>{rec}</li>
+                    ))
+                  ) : (
+                    <>
+                      <li>Focus on optimizing your {getMostPopularConversionType(conversionData)} conversion path to increase overall conversions.</li>
+                      <li>Consider allocating more resources to {getMostEffectiveSource(conversionData)} as it's your most effective traffic source.</li>
+                      <li>Test different call-to-action messages on your landing pages to improve conversion rates.</li>
+                    </>
+                  )}
+                </ul>
               </div>
-            </TabsContent>
-            
-            {/* By Type Tab */}
-            <TabsContent value="by-type" className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Conversion Types</CardTitle>
-                    <CardDescription>Breakdown by conversion type</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={data.byType}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="type" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="conversions" fill="#3B5B9D" name="Conversions" />
-                          <Bar dataKey="value" fill="#00D1D1" name="Value ($)" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <Separator className="my-6" />
-                    <div className="space-y-6">
-                      {data.byType.map((type: any) => (
-                        <div key={type.type} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="font-medium">{type.type}</div>
-                            <div className="text-sm text-muted-foreground">{type.conversions} conversions ({type.percentage})</div>
-                          </div>
-                          <Progress value={parseFloat(type.percentage)} className="h-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            {/* By Sources Tab */}
-            <TabsContent value="by-sources" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Traffic Sources</CardTitle>
-                  <CardDescription>Conversion breakdown by traffic source</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={data.bySources}
-                        layout="vertical"
-                        margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="source" type="category" />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="conversions" fill="#3B5B9D" name="Conversions" />
-                        <Bar dataKey="value" fill="#00D1D1" name="Value ($)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <Separator className="my-6" />
-                  <div className="space-y-4">
-                    {data.bySources.map((source: any, index: number) => (
-                      <div key={source.source} className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full mr-2 bg-primary opacity-${100 - (index * 10)}`}></div>
-                          <span>{source.source}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">{source.conversions} conversions (${source.value})</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            {/* Trends Tab */}
-            <TabsContent value="trends" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Conversion Trends</CardTitle>
-                  <CardDescription>Daily conversion trends over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={data.trends.daily}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip />
-                        <Legend />
-                        <Line
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="conversions"
-                          stroke="#3B5B9D"
-                          activeDot={{ r: 8 }}
-                          name="Conversions"
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#00D1D1"
-                          name="Value ($)"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
-      </CardContent>
-      {data?.analysis && (
-        <CardFooter className="flex flex-col items-start">
-          <h3 className="text-lg font-medium mb-2">AI Analysis</h3>
-          <div className="p-4 bg-muted rounded-md w-full">
-            {data.analysis.split('\n').map((paragraph: string, i: number) => (
-              <p key={i} className={i > 0 ? 'mt-2' : ''}>{paragraph}</p>
-            ))}
-          </div>
-        </CardFooter>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>No Conversion Data Available</CardTitle>
+            <CardDescription>
+              We don't have any conversion data for this client yet. This could be because:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>The conversion tracking has just been set up</li>
+              <li>The website hasn't received enough traffic</li>
+              <li>There's an issue with the tracking implementation</li>
+            </ul>
+            <p className="mt-4">
+              Ensure conversion tracking is properly implemented on the client's website to collect data.
+            </p>
+          </CardContent>
+        </Card>
       )}
-    </Card>
+    </div>
   );
 };
 

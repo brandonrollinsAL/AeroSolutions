@@ -34,6 +34,7 @@ import MockupAnalyticsPage from "@/pages/MockupAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 import DesignTools from "@/pages/DesignTools";
+import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -437,6 +438,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <DesignTools />
+            </>
+          )}
+        </Route>
+        <Route path="/website-analytics">
+          {() => (
+            <>
+              <Helmet>
+                <title>Website Analytics | Elevion</title>
+                <meta name="description" content="Track and analyze website performance, engagement metrics, and conversion rates with Elevion's AI-powered analytics platform." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/website-analytics" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <WebsiteAnalyticsPage />
             </>
           )}
         </Route>
