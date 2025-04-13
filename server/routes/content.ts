@@ -145,4 +145,69 @@ router.get('/recommendations/:userId', async (req, res) => {
   }
 });
 
+// Auto-publish content articles
+router.post('/publish-content', async (req, res) => {
+  const { contentItem, title = '' } = req.body;
+  
+  if (!contentItem) {
+    return res.status(400).json({
+      success: false,
+      message: 'Content item is required'
+    });
+  }
+  
+  try {
+    // Generate a full blog article from the content item using xAI
+    const prompt = `Rewrite this content as a professional Elevion blog article with the following:
+                    1. An engaging headline (if not already provided)
+                    2. 3-5 subheadings to organize the content
+                    3. A brief introduction
+                    4. Detailed actionable content under each subheading
+                    5. A conclusion with call-to-action
+                    6. Use a professional tone appropriate for small business owners
+                    
+                    Content to expand: ${contentItem}
+                    ${title ? `Suggested title: ${title}` : ''}`;
+    
+    const response = await callXAI('/chat/completions', {
+      model: 'grok-3-latest',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const articleContent = response.choices[0].message.content;
+    
+    // Extract title from the article
+    const titleMatch = articleContent.match(/^#\s+(.+?)(?:\n|$)/) || articleContent.match(/^(.+?)(?:\n|$)/);
+    const extractedTitle = titleMatch ? titleMatch[1].trim() : 'Untitled Article';
+    
+    // Store in the database - this is a simplified version
+    // In a real implementation, we would use a proper ORM and schema
+    // For now, we'll just return the generated content
+    
+    // Timestamp for the article
+    const now = new Date();
+    
+    // Sample response with the article data
+    res.json({
+      success: true,
+      message: 'Article generated successfully',
+      article: {
+        id: `article-${Date.now()}`, // Placeholder ID
+        title: extractedTitle,
+        content: articleContent,
+        author: 'Elevion Team',
+        publishedAt: now.toISOString(),
+        status: 'published'
+      }
+    });
+  } catch (error: any) {
+    console.error('Article publishing failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Article publishing failed',
+      error: error.message
+    });
+  }
+});
+
 export default router;

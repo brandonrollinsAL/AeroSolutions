@@ -5,11 +5,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import MainLayout from '@/layouts/MainLayout';
 import BusinessContentFeed from '@/components/BusinessContentFeed';
 import TrendingTopics from '@/components/TrendingTopics';
+import PublishContentForm from '@/components/PublishContentForm';
 import SEOHead from '@/components/SEOHead';
-import { Newspaper, TrendingUp, Lightbulb, Zap } from 'lucide-react';
+import { Newspaper, TrendingUp, Lightbulb, Zap, FileText } from 'lucide-react';
 
 const ContentHubPage = () => {
   const [activeTab, setActiveTab] = useState('insights');
+  const [publishedArticles, setPublishedArticles] = useState<any[]>([]);
+  
+  const handlePublishedArticle = (article: any) => {
+    setPublishedArticles((prev) => [article, ...prev]);
+  };
   
   return (
     <MainLayout>
@@ -38,7 +44,7 @@ const ContentHubPage = () => {
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid grid-cols-3 mb-8">
+                <TabsList className="grid grid-cols-4 mb-8">
                   <TabsTrigger value="insights" className="flex items-center gap-2">
                     <Newspaper className="h-4 w-4" />
                     <span>Business Insights</span>
@@ -46,6 +52,10 @@ const ContentHubPage = () => {
                   <TabsTrigger value="trending" className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
                     <span>Trending Topics</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="publish" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>Publish Content</span>
                   </TabsTrigger>
                   <TabsTrigger value="recommendations" className="flex items-center gap-2">
                     <Lightbulb className="h-4 w-4" />
@@ -59,6 +69,10 @@ const ContentHubPage = () => {
                 
                 <TabsContent value="trending" className="mt-0">
                   <TrendingTopics />
+                </TabsContent>
+                
+                <TabsContent value="publish" className="mt-0">
+                  <PublishContentForm onPublish={handlePublishedArticle} />
                 </TabsContent>
                 
                 <TabsContent value="recommendations" className="mt-0">
@@ -78,7 +92,7 @@ const ContentHubPage = () => {
             </CardContent>
           </Card>
           
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -106,6 +120,21 @@ const ContentHubPage = () => {
               </CardHeader>
               <CardContent className="text-slate-600">
                 <p>Get ahead of the curve with AI-generated trending topics tailored to your industry and interests. Perfect for planning your content strategy.</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Publish Content
+                </CardTitle>
+                <CardDescription>
+                  Generate full articles from brief notes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-slate-600">
+                <p>Transform your ideas, bullet points, or rough drafts into polished blog articles using our AI content expansion and publishing tools.</p>
               </CardContent>
             </Card>
             
