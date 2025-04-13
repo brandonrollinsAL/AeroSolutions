@@ -1,10 +1,19 @@
-import { useState, useEffect } from "react";
-import { FaRocket, FaTimes, FaSmile, FaCode, FaDesktop, FaPalette, FaMobileAlt } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaRocket, FaTimes, FaPaperPlane, FaCode, FaDesktop, FaPalette, FaMobileAlt, FaUser } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
 
 interface ElevateBotProps {
   isOpen?: boolean;
   initialOption?: string | null;
+}
+
+interface ChatMessage {
+  id: number;
+  text: string;
+  sender: 'bot' | 'user';
+  isProcessing?: boolean;
 }
 
 export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: ElevateBotProps = {}) {
@@ -12,23 +21,27 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
   const [activeOption, setActiveOption] = useState<string | null>(initialOption || null);
   const [isTyping, setIsTyping] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
   // Handle external props changes
   useEffect(() => {
-    console.log("ElevateBot props changed:", { externalIsOpen, initialOption });
-    
     if (externalIsOpen !== undefined) {
       setIsOpen(externalIsOpen);
       
       if (externalIsOpen) {
         // When opening from external source
-        console.log("Opening chatbot from external source");
         setIsTyping(true);
         setTypingComplete(false);
         
         // If initialOption is provided, skip showing options and go straight to response
         if (initialOption) {
-          console.log("Setting active option:", initialOption);
           setActiveOption(initialOption);
         }
         
@@ -45,34 +58,167 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
     setIsOpen(!isOpen);
     if (!isOpen) {
       // Reset states when opening
-      setActiveOption(null);
-      setIsTyping(true);
-      setTypingComplete(false);
-      
-      // Simulate typing
-      setTimeout(() => {
-        setIsTyping(false);
-        setTypingComplete(true);
-      }, 2500);
+      if (messages.length === 0) {
+        setActiveOption(null);
+        setIsTyping(true);
+        setTypingComplete(false);
+        
+        // Simulate typing
+        setTimeout(() => {
+          setIsTyping(false);
+          setTypingComplete(true);
+        }, 1500);
+      }
     }
   };
 
-  const handleOptionClick = (option: string) => {
+  const handleOptionClick = async (option: string) => {
     setActiveOption(option);
+    
+    // Add user message
+    const userMessage = {
+      id: Date.now(),
+      text: getOptionText(option),
+      sender: 'user' as const
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Prepare bot response
+    const botMessage: ChatMessage = {
+      id: Date.now() + 1,
+      text: '',
+      sender: 'bot',
+      isProcessing: true
+    };
+    
+    setMessages(prev => [...prev, botMessage]);
+    
+    try {
+      // Send request to Grok API via our backend
+      const response = await apiRequest("POST", "/api/copilot", { 
+        message: `User selected option: ${option}. ${getOptionText(option)}` 
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to get response from AI");
+      }
+      
+      const data = await response.json();
+      
+      // Update the message with AI response
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === botMessage.id 
+            ? { ...msg, text: data.response, isProcessing: false } 
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Update with error message
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === botMessage.id 
+            ? { 
+                ...msg, 
+                text: "Sorry, I'm having trouble connecting right now. Please try again later or contact our team directly.", 
+                isProcessing: false 
+              } 
+            : msg
+        )
+      );
+      
+      toast({
+        title: "Error",
+        description: "Failed to get response from ElevateBot",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getResponseText = () => {
-    switch (activeOption) {
+  const getOptionText = (option: string): string => {
+    switch (option) {
       case "website-design":
-        return "Great choice! Our web design services combine beautiful aesthetics with user-friendly functionality. We'll create a custom design that perfectly represents your brand and engages your visitors. Would you like to see some samples of our recent work?";
+        return "I'd like to learn more about website design";
       case "web-development":
-        return "Excellent! Our development team specializes in creating robust, scalable websites using the latest technologies. From simple landing pages to complex web applications, we can build exactly what your business needs.";
+        return "Tell me about your web development services";
       case "mobile-optimization":
-        return "Smart decision! With over 60% of web traffic coming from mobile devices, having a responsive website is essential. We'll ensure your site looks and functions perfectly on all devices - smartphones, tablets, and desktops.";
+        return "How can you help with mobile optimization?";
       case "branding-design":
-        return "Perfect! A cohesive brand identity is crucial for business success. Our design team will create a comprehensive visual system including logo, color palette, typography, and design elements that make your business memorable.";
+        return "I need help with branding and identity";
       default:
-        return "";
+        return "Tell me more about Elevion's services";
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!message.trim()) return;
+    
+    const userInput = message.trim();
+    setMessage("");
+    
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now(),
+      text: userInput,
+      sender: 'user'
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Add bot processing message
+    const botMessage: ChatMessage = {
+      id: Date.now() + 1,
+      text: '',
+      sender: 'bot',
+      isProcessing: true
+    };
+    
+    setMessages(prev => [...prev, botMessage]);
+    
+    try {
+      // Send request to Grok AI
+      const response = await apiRequest("POST", "/api/copilot", { message: userInput });
+      
+      if (!response.ok) {
+        throw new Error("Failed to get response from AI");
+      }
+      
+      const data = await response.json();
+      
+      // Update the message with AI response
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === botMessage.id 
+            ? { ...msg, text: data.response, isProcessing: false } 
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Update with error message
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === botMessage.id 
+            ? { 
+                ...msg, 
+                text: "Sorry, I'm having trouble connecting right now. Please try again later or contact our team directly.", 
+                isProcessing: false 
+              } 
+            : msg
+        )
+      );
+      
+      toast({
+        title: "Error",
+        description: "Failed to get response from ElevateBot",
+        variant: "destructive"
+      });
     }
   };
 
@@ -125,28 +271,30 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
 
             {/* Chat Content */}
             <div className="flex-grow overflow-y-auto p-4 bg-[#EDEFF2]">
-              {/* Intro Message */}
-              <div className="flex mb-4">
-                <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
-                  <FaRocket className="text-[#00D1D1]" />
+              {/* Welcome Message - Only shown if no messages yet */}
+              {messages.length === 0 && (
+                <div className="flex mb-4">
+                  <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
+                    <FaRocket className="text-[#00D1D1]" />
+                  </div>
+                  <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
+                    {isTyping ? (
+                      <div className="flex space-x-2 items-center py-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                      </div>
+                    ) : typingComplete ? (
+                      <p className="text-gray-800 font-lato">
+                        Hello! I'm ElevateBot, your web development assistant powered by Grok AI. How can I help your business succeed online today?
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
-                  {isTyping ? (
-                    <div className="flex space-x-2 items-center py-2">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
-                    </div>
-                  ) : typingComplete ? (
-                    <p className="text-gray-800 font-lato">
-                      Hello! I'm ElevateBot, your web development assistant. How can I help your business succeed online today?
-                    </p>
-                  ) : null}
-                </div>
-              </div>
+              )}
 
-              {/* Options */}
-              {typingComplete && !activeOption && (
+              {/* Options - only shown initially if no messages */}
+              {messages.length === 0 && typingComplete && !activeOption && (
                 <div className="flex flex-col space-y-2 pl-10">
                   <button
                     onClick={() => handleOptionClick("website-design")}
@@ -179,46 +327,65 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
                 </div>
               )}
 
-              {/* User Selection */}
-              {activeOption && (
-                <div className="flex justify-end mb-4">
-                  <div className="bg-[#3B5B9D] text-white p-3 rounded-lg rounded-tr-none max-w-[80%]">
-                    <p className="font-inter">
-                      {activeOption === "website-design" && "I'd like to learn more about website design"}
-                      {activeOption === "web-development" && "Tell me about your web development services"}
-                      {activeOption === "mobile-optimization" && "How can you help with mobile optimization?"}
-                      {activeOption === "branding-design" && "I need help with branding and identity"}
-                    </p>
+              {/* Chat Messages */}
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex mb-4 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                  {msg.sender === 'bot' && (
+                    <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
+                      <FaRocket className="text-[#00D1D1]" />
+                    </div>
+                  )}
+                  
+                  <div 
+                    className={`${
+                      msg.sender === 'bot' 
+                        ? 'bg-white rounded-lg rounded-tl-none shadow-sm' 
+                        : 'bg-[#00D1D1] text-white rounded-lg rounded-tr-none'
+                    } p-3 max-w-[80%]`}
+                  >
+                    {msg.isProcessing ? (
+                      <div className="flex space-x-2 items-center py-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                      </div>
+                    ) : (
+                      <p className={`${msg.sender === 'bot' ? 'text-gray-800 font-lato' : 'text-white font-inter'}`}>
+                        {msg.text}
+                      </p>
+                    )}
                   </div>
+                  
+                  {msg.sender === 'user' && (
+                    <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center ml-2 flex-shrink-0">
+                      <FaUser />
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* Response */}
-              {activeOption && (
-                <div className="flex mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
-                    <FaRocket className="text-[#00D1D1]" />
-                  </div>
-                  <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
-                    <p className="text-gray-800 font-lato">{getResponseText()}</p>
-                  </div>
-                </div>
-              )}
+              ))}
+              
+              {/* Reference element for auto-scrolling */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
             <div className="p-3 border-t border-gray-200 bg-white">
-              <div className="flex items-center">
+              <form onSubmit={handleSubmit} className="flex items-center">
                 <input
                   type="text"
-                  placeholder={activeOption ? "Type your response..." : "Select an option above..."}
-                  disabled
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type your message..."
                   className="flex-grow border border-gray-300 rounded-full py-2 px-4 mr-2 focus:outline-none focus:border-[#3B5B9D] font-inter"
                 />
-                <button className="bg-[#00D1D1] text-white rounded-full p-2 hover:bg-[#00AEAE] disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                  <FaSmile />
+                <button 
+                  type="submit"
+                  className="bg-[#00D1D1] text-white rounded-full p-2 hover:bg-[#00AEAE] disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!message.trim()}
+                >
+                  <FaPaperPlane />
                 </button>
-              </div>
+              </form>
             </div>
           </motion.div>
         )}
