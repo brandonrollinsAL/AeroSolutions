@@ -21,6 +21,8 @@ const navigationSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 12
 const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for blog content suggestions with 2-hour TTL
 const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website feature suggestions with 2-hour TTL
+const websiteFeatureSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -1265,6 +1267,127 @@ Make the suggestions specific to the ${businessType} industry, addressing common
     return res.status(500).json({
       success: false,
       message: "Failed to generate blog content suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Auto-Suggestions for Client Website Features
+ * Suggest website features for clients based on their business type
+ */
+router.post('/suggest-website-features', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `website_features_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedFeatures = websiteFeatureSuggestionsCache.get(cacheKey);
+    if (cachedFeatures) {
+      console.log(`Returning cached website feature suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        features: cachedFeatures,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new website feature suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    // Generate website feature suggestions using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a website feature expert specializing in identifying the most effective and innovative features for different business types. Provide detailed, practical feature recommendations with clear benefits and implementation considerations.'
+        },
+        { 
+          role: 'user', 
+          content: `Suggest the most effective and innovative website features for a "${normalizedBusinessType}" business. 
+
+Please provide a detailed list of at least 8-10 features in JSON format with the following structure:
+[
+  {
+    "featureName": "Feature name",
+    "description": "Brief description of the feature",
+    "businessBenefit": "How this feature benefits the business",
+    "customerBenefit": "How this feature benefits customers",
+    "implementationComplexity": "Low/Medium/High",
+    "priority": "Essential/Recommended/Nice-to-have",
+    "competitiveAdvantage": "How this feature provides an edge over competitors"
+  }
+]
+
+Focus on modern, effective features that align with current web development trends and user expectations. Include both standard features that are essential for this business type as well as innovative features that could set them apart from competitors.`
+        }
+      ],
+      temperature: 0.6,
+      max_tokens: 2500,
+      response_format: { type: 'json_object' }
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    let features;
+    try {
+      features = JSON.parse(response.choices[0].message.content);
+    } catch (parseError) {
+      console.error("Error parsing JSON from Grok response:", parseError);
+      features = { error: "Failed to parse response", rawContent: response.choices[0].message.content };
+    }
+    
+    // Cache the successful response
+    websiteFeatureSuggestionsCache.set(cacheKey, features);
+    
+    console.log(`Successfully generated website feature suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      features,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating website feature suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate website feature suggestions",
       error: error.message || "Unknown error"
     });
   }
