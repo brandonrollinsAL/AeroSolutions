@@ -14,6 +14,7 @@ import PrivacyConsentBanner from "@/components/PrivacyConsentBanner";
 import LanguageMetaTags from "@/components/LanguageMetaTags";
 import SubscriptionsPage from "@/pages/SubscriptionsPage";
 import MarketplacePage from "@/pages/MarketplacePage";
+import CreateMarketplaceItemPage from "@/pages/CreateMarketplaceItemPage";
 import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import MarketplaceCheckoutPage from "@/pages/MarketplaceCheckoutPage";
 import PremiumPage from "@/pages/PremiumPage";
