@@ -100,12 +100,12 @@ export default function App() {
         {/* Apple specific */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <meta name="apple-mobile-web-app-title" content="Aero Solutions" />
+        <meta name="apple-mobile-web-app-title" content="Elevion" />
         
         {/* Microsoft specific */}
-        <meta name="msapplication-TileColor" content="#1E3A8A" />
+        <meta name="msapplication-TileColor" content="#3B5B9D" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
-        <meta name="theme-color" content="#1E3A8A" />
+        <meta name="theme-color" content="#3B5B9D" />
         
         {/* Application manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -136,10 +136,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Privacy Policy | Aero Solutions Aviation Software</title>
-                <meta name="description" content="Learn about how Aero Solutions handles your data, our privacy practices, and your rights under GDPR and other privacy regulations." />
+                <title>Privacy Policy | Elevion Web Development</title>
+                <meta name="description" content="Learn about how Elevion handles your data, our privacy practices, and your rights under GDPR and other privacy regulations." />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/privacy-policy" />
+                <link rel="canonical" href="https://elevion.dev/privacy-policy" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -151,10 +151,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Terms of Service | Aero Solutions Aviation Software</title>
-                <meta name="description" content="Review Aero Solutions' terms of service, usage policy, and legal agreement for our aviation software services and platforms." />
+                <title>Terms of Service | Elevion Web Development</title>
+                <meta name="description" content="Review Elevion's terms of service, usage policy, and legal agreement for our web development services and platforms." />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/terms" />
+                <link rel="canonical" href="https://elevion.dev/terms" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -166,10 +166,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Security Policy | Aero Solutions Aviation Software</title>
-                <meta name="description" content="Learn about Aero Solutions' industry-leading security practices, data protection measures, and compliance with security standards." />
+                <title>Security Policy | Elevion Web Development</title>
+                <meta name="description" content="Learn about Elevion's industry-leading security practices, data protection measures, and compliance with security standards." />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/security" />
+                <link rel="canonical" href="https://elevion.dev/security" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -181,10 +181,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>{t('premium_title')} | Aero Solutions</title>
+                <title>{t('premium_title')} | Elevion</title>
                 <meta name="description" content={t('premium_desc')} />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/premium" />
+                <link rel="canonical" href="https://elevion.dev/premium" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -196,10 +196,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>{t('history_title')} | Aero Solutions</title>
+                <title>{t('history_title')} | Elevion</title>
                 <meta name="description" content={t('history_intro')} />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/history" />
+                <link rel="canonical" href="https://elevion.dev/history" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -211,10 +211,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>{t('subscriptions')} | Aero Solutions</title>
-                <meta name="description" content="Discover premium subscription plans for aviation software solutions. Access advanced features, priority support, and specialized tools." />
+                <title>{t('subscriptions')} | Elevion</title>
+                <meta name="description" content="Discover premium subscription plans for web development solutions. Access advanced features, priority support, and specialized tools." />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/subscriptions" />
+                <link rel="canonical" href="https://elevion.dev/subscriptions" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -226,8 +226,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Checkout | Aero Solutions</title>
-                <meta name="description" content="Complete your subscription purchase securely with Aero Solutions." />
+                <title>Checkout | Elevion</title>
+                <meta name="description" content="Complete your subscription purchase securely with Elevion." />
                 <meta name="robots" content="noindex, nofollow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
@@ -240,10 +240,10 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>{t('marketplace')} | Aero Solutions</title>
-                <meta name="description" content="Browse aviation software tools, extensions, and specialized solutions in our marketplace. Find the perfect tools for your aviation needs." />
+                <title>{t('marketplace')} | Elevion</title>
+                <meta name="description" content="Browse web development tools, extensions, and specialized solutions in our marketplace. Find the perfect tools for your website needs." />
                 <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://aerosolutions.dev/marketplace" />
+                <link rel="canonical" href="https://elevion.dev/marketplace" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>

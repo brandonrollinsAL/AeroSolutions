@@ -1,0 +1,80 @@
+Update client/src/App.jsx to include the footer:
+jsx
+
+Collapse
+
+Wrap
+
+Copy
+import Header from './components/Header';  
+import Footer from './components/Footer';  
+import ElevateBot from './components/ElevateBot';  
+import Home from './pages/Home';  
+import WebDevelopment from './pages/WebDevelopment';  
+import GrowthSolutions from './pages/GrowthSolutions';  
+import CompetitiveAnalysis from './pages/CompetitiveAnalysis';  
+import Pricing from './pages/Pricing';  
+import GetStarted from './pages/GetStarted';  
+import Resources from './pages/Resources';  
+import Contact from './pages/Contact';  
+import About from './pages/About';  
+import Login from './pages/Login';  
+import Dashboard from './pages/Dashboard';  
+import { Route } from 'wouter';  
+
+const App = () => (  
+  <div className="flex flex-col min-h-screen">  
+    <Header />  
+    <main className="flex-1">  
+      <Route path="/" component={Home} />  
+      <Route path="/web-development" component={WebDevelopment} />  
+      <Route path="/growth-solutions" component={GrowthSolutions} />  
+      <Route path="/competitive-analysis" component={CompetitiveAnalysis} />  
+      <Route path="/pricing" component={Pricing} />  
+      <Route path="/get-started" component={GetStarted} />  
+      <Route path="/resources" component={Resources} />  
+      <Route path="/contact" component={Contact} />  
+      <Route path="/about" component={About} />  
+      <Route path="/login" component={Login} />  
+      <Route path="/dashboard" component={Dashboard} />  
+      <Route path="/dashboard/:section" component={Dashboard} />  
+    </main>  
+    <Footer />  
+    <ElevateBot />  
+  </div>  
+);  
+export default App;  
+Step 5: Test
+
+Run npm start in the project root.
+Verify all Aero Solutions-specific features are removed:
+No references to AeroSync, AeroOps, AeroFlight, ExecSync, AeroLink, or the "Click Here If You Hate The NC DOT" button.
+Confirm the admin dashboard and AI chatbot reflect Elevion’s branding:
+Admin dashboard with Slate Blue sidebar, Electric Cyan title, and Light Gray links.
+ElevateBot with Electric Cyan button, Slate Blue header, and Light Gray background.
+Check the footer for professionalism and ensure the website has a polished, best-in-class design.
+Step 6: Deploy
+
+Build: npm install && cd client && npm run build
+Start: cd server && node index.js
+Deploy on Render:
+bash
+
+Collapse
+
+Wrap
+
+Copy
+git add .  
+git commit -m "Finalized Elevion rebranding, updated admin dashboard, AI chatbot, and polished website"  
+git push origin main  
+Clear build cache and deploy.
+Deliverables:
+
+Updated Dashboard.jsx and ElevateBot.jsx with Elevion’s branding.
+Removed all remaining Aero Solutions-specific features.
+Added a professional footer and polished the website design.
+Testing report confirming the final rebranding and design.
+Success Criteria:
+
+All Aero Solutions features are removed, admin dashboard and AI chatbot reflect Elevion’s branding, website is polished and professional, deployment succeeds.
