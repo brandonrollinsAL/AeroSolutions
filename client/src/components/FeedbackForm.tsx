@@ -56,7 +56,21 @@ const FeedbackForm = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await apiRequest("POST", "/api/feedback", data);
+      // Prepare the data to match the API's expectations
+      const feedbackData = {
+        message: data.message,
+        rating: data.rating,
+        category: data.feedbackType, // Map feedbackType to category field
+        source: 'website',
+        // Include name and email as part of the message for now
+        // since API doesn't directly accept these fields
+        metadata: JSON.stringify({
+          name: data.name,
+          email: data.email
+        })
+      };
+      
+      const response = await apiRequest("POST", "/api/feedback", feedbackData);
       
       if (response.ok) {
         toast({
@@ -72,7 +86,7 @@ const FeedbackForm = () => {
         
         toast({
           title: t('feedback_error_title', 'Submission Failed'),
-          description: errorData.message || t('feedback_error_message', 'There was an error submitting your feedback. Please try again.'),
+          description: errorData.error || t('feedback_error_message', 'There was an error submitting your feedback. Please try again.'),
           variant: "destructive",
         });
       }
