@@ -180,8 +180,11 @@ export const grokApi = {
 
   /**
    * Generate a JSON response with Grok
+   * @param prompt The prompt to send to the model
+   * @param systemPrompt Optional system prompt to guide the model's behavior
+   * @param model Optional model name (defaults to grok-3-latest, can use grok-3-mini for faster responses)
    */
-  async generateJson<T = any>(prompt: string, systemPrompt?: string): Promise<T> {
+  async generateJson<T = any>(prompt: string, systemPrompt?: string, model = 'grok-3-latest'): Promise<T> {
     const messages: GrokChatMessage[] = systemPrompt 
       ? [
           { role: 'system', content: systemPrompt },
@@ -190,9 +193,11 @@ export const grokApi = {
       : [
           { role: 'user', content: prompt }
         ];
+    
+    console.log(`Using Grok model: ${model} for JSON generation`);
 
     const response = await this.createChatCompletion(messages, {
-      model: 'grok-3-latest',
+      model: model,
       temperature: 0.2,
       response_format: { type: 'json_object' }
     });

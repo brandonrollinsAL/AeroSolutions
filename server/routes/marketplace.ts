@@ -956,12 +956,53 @@ marketplaceRouter.post(
         "additional_tips": ["list", "of", "3-5", "content", "marketing", "tips", "for", "this", "business", "type"]
       }`;
       
-      // Call the Grok AI API with a timeout
+      // First check if we have recommendations for a similar/related business type in cache
+      // This helps with faster responses and handling system load
+      const similarBusinessTypes = {
+        "dentist": "dental clinic",
+        "dental office": "dental clinic",
+        "lawyer": "law firm",
+        "attorney": "law firm",
+        "legal office": "law firm",
+        "restaurant": "local restaurant",
+        "cafe": "local restaurant",
+        "eatery": "local restaurant",
+        "store": "retail shop",
+        "shop": "retail shop",
+        "boutique": "retail shop",
+        "salon": "beauty salon",
+        "beauty parlor": "beauty salon",
+        "spa": "beauty salon",
+        "gym": "fitness center",
+        "fitness studio": "fitness center",
+        "workout studio": "fitness center",
+      };
+
+      // Normalize the business type for better cache hits
+      const normalizedType = businessType.toLowerCase();
+      const mappedType = (similarBusinessTypes as any)[normalizedType] || normalizedType;
+      const mappedCacheKey = `content-marketing-${mappedType}`;
+      
+      // Check if we have a cached result for the mapped business type
+      const mappedCachedResult = contentMarketingCache.get(mappedCacheKey);
+      if (mappedCachedResult) {
+        console.log(`[Content Marketing API] Using cached result for similar business type: ${mappedType}`);
+        // Return the cached result but update the business type in the response
+        return res.json({
+          ...mappedCachedResult,
+          businessType: businessType, // Use the original business type in the response
+          similarTypeCacheHit: true,
+          mappedFrom: mappedType
+        });
+      }
+      
+      // Call the Grok AI API with a reduced timeout (10 seconds for faster response)
       try {
+        console.log(`[Content Marketing API] Generating suggestions for business type: ${businessType}`);
         const response = await Promise.race([
-          grokApi.generateJson(prompt, "You are an expert content marketer who specializes in creating tailored content strategies for different business types."),
+          grokApi.generateJson(prompt, "You are an expert content marketer who specializes in creating tailored content strategies for different business types. Be efficient and straight to the point.", "grok-3-mini"),
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('AI content marketing suggestions timed out')), 30000)
+            setTimeout(() => reject(new Error('AI content marketing suggestions timed out')), 10000)
           )
         ]);
         
@@ -978,8 +1019,8 @@ marketplaceRouter.post(
         
         // Return the content marketing suggestions
         return res.json(result);
-      } catch (aiError) {
-        console.error('Error generating content marketing suggestions with AI:', aiError);
+      } catch (aiError: any) {
+        console.error('Error generating content marketing suggestions with AI:', aiError?.message || aiError);
         
         // Prepare fallback content marketing suggestions for reliability
         const fallbackSuggestions = {
