@@ -25,6 +25,7 @@ import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
 import ContentHubPage from "@/pages/ContentHubPage";
 import AIServices from "@/pages/AIServices";
 import FeedbackPage from "@/pages/FeedbackPage";
+import BlogPostPage from "@/pages/BlogPostPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -368,6 +369,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <FeedbackPage />
+            </>
+          )}
+        </Route>
+        <Route path="/blog/:postId">
+          {(params) => (
+            <>
+              <Helmet>
+                <title>Blog | Elevion</title>
+                <meta name="description" content="Expert insights and knowledge from Elevion web development professionals on latest web trends, technologies, and strategies for small businesses." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href={`https://elevion.dev/blog/${params.postId}`} />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <BlogPostPage />
             </>
           )}
         </Route>
