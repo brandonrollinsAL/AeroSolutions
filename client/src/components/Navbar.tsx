@@ -90,6 +90,13 @@ const Navbar: React.FC = () => {
     { name: 'AnalyticEdge', path: '/platforms/analyticedge', description: 'Data analytics and business intelligence' },
     { name: 'AppForge', path: '/platforms/appforge', description: 'Mobile app development solutions' },
   ];
+  
+  const marketingLinks = [
+    { name: 'Marketing Campaigns', path: '/marketing-campaigns', description: 'Create strategic AI-powered marketing campaigns for multiple channels' },
+    { name: 'Social Media', path: '/social-media', description: 'Manage and schedule posts across social platforms' },
+    { name: 'Email Campaigns', path: '/email-campaigns', description: 'Design and send engaging email marketing campaigns' },
+    { name: 'Social Media Suggestions', path: '/social-media-suggestions', description: 'Get AI-powered post ideas for social media' },
+  ];
 
   return (
     <>
@@ -169,6 +176,36 @@ const Navbar: React.FC = () => {
                               <div className="text-sm font-medium leading-none">{platform.name}</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 {platform.description}
+                              </p>
+                            </NavigationMenuLink>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger 
+                    className={`group h-10 px-4 py-2 text-sm font-medium ${
+                      location.startsWith('/marketing-campaigns') || 
+                      location.startsWith('/social-media') || 
+                      location.startsWith('/email-campaigns') || 
+                      location.startsWith('/social-media-suggestions') 
+                        ? 'bg-accent text-accent-foreground' : ''
+                    }`}
+                  >
+                    Marketing
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {marketingLinks.map((item) => (
+                        <li key={item.path}>
+                          <Link href={item.path}>
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">{item.name}</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {item.description}
                               </p>
                             </NavigationMenuLink>
                           </Link>
@@ -338,6 +375,25 @@ const Navbar: React.FC = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     {route.label}
+                  </Link>
+                ))}
+                
+                {/* Mobile Marketing Menu */}
+                <div className="mt-2 mb-1 px-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Marketing</h3>
+                </div>
+                {marketingLinks.map((item) => (
+                  <Link 
+                    key={item.path} 
+                    href={item.path}
+                    className={`block rounded-md px-3 py-2 text-base font-medium ${
+                      location === item.path 
+                        ? 'bg-accent text-accent-foreground' 
+                        : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
                   </Link>
                 ))}
                 
