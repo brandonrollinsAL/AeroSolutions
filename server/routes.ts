@@ -11,6 +11,7 @@ import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSub
 import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
+import quoteRouter from './routes/quote';
 
 // Performance optimization: Cache for API responses
 // - TTL: 300 seconds (5 minutes)
@@ -91,6 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/subscriptions', subscriptionRouter);
   app.use('/api/marketplace', marketplaceRouter);
   app.use('/api/ads', advertisementRouter);
+  app.use('/api', quoteRouter);
   
   // Stripe configuration endpoint (provides publishable key for client-side)
   app.get('/api/stripe/config', (req: Request, res: Response) => {

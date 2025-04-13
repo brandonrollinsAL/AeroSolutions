@@ -12,6 +12,8 @@ import Copilot from '@/components/Copilot';
 import SEOHead from '@/components/SEOHead';
 import StructuredData from '@/components/StructuredData';
 import FreeMockupForm from '@/components/FreeMockupForm';
+import QuoteGenerator from '@/components/QuoteGenerator';
+import ElevateBot from '@/components/ElevateBot';
 
 export default function HomePage() {
   // Professional service data for structured data
@@ -183,12 +185,26 @@ export default function HomePage() {
         <Hero />
         <Services />
         <FreeMockupForm />
+        <div id="instant-quote" className="bg-slate-50 py-16 border-t border-b border-slate-200">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl md:text-4xl font-bold font-poppins text-[#3B5B9D] mb-4">Get An Instant AI-Powered Quote</h2>
+              <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+                Our AI analyzes market rates and business requirements to offer you competitive pricing at 40% below industry average.
+              </p>
+            </div>
+            <QuoteGenerator />
+          </div>
+        </div>
         <Ownership />
         <Platforms />
         <About />
         <Testimonials />
         <Blog />
         <Contact />
+        <div className="fixed bottom-0 left-0 right-0 z-20">
+          <ElevateBot />
+        </div>
       </main>
       <Footer />
       <Copilot />
