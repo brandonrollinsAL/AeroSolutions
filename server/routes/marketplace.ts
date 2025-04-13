@@ -10,6 +10,7 @@ import { grokApi } from '../grok';
 import { db } from '../db';
 import { eq, desc, inArray } from 'drizzle-orm';
 import NodeCache from 'node-cache';
+import { moderateContent } from '../utils/contentModeration';
 
 const marketplaceRouter = Router();
 
@@ -81,6 +82,8 @@ marketplaceRouter.post(
     body('images').isArray().optional(),
     body('isAvailable').isBoolean().optional(),
   ]),
+  // Apply content moderation to check listing content before saving
+  moderateContent('description', 'marketplace_listing', 'name', 'id'),
   async (req: Request, res: Response) => {
     try {
       const sellerId = req.user.id;
@@ -518,7 +521,10 @@ marketplaceRouter.get('/suggest-features/:userId', authenticate, async (req: Req
 });
 
 // Suggest a listing description for marketplace items
-marketplaceRouter.post('/suggest-listing', async (req: Request, res: Response) => {
+marketplaceRouter.post('/suggest-listing', 
+  // Apply content moderation to check serviceName before processing
+  moderateContent('serviceName', 'service_listing_name'),
+  async (req: Request, res: Response) => {
   try {
     const { serviceName } = req.body;
     

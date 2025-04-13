@@ -4,6 +4,7 @@ import { db } from '../db';
 import { posts, users, articleEngagement } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import NodeCache from 'node-cache';
+import { moderateContent } from '../utils/contentModeration';
 
 // Cache for sentiment analysis results (5 minutes TTL)
 const sentimentCache = new NodeCache({ stdTTL: 300 });
@@ -156,7 +157,10 @@ router.get('/recommendations/:userId', async (req, res) => {
 });
 
 // Auto-publish content articles
-router.post('/publish-content', async (req, res) => {
+router.post('/publish-content',
+  // Apply content moderation to check user-submitted content before processing
+  moderateContent('contentItem', 'blog_article', 'title'),
+  async (req, res) => {
   const { contentItem, title = '' } = req.body;
   
   if (!contentItem) {
