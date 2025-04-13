@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WebsiteColorSuggestions from '@/components/WebsiteColorSuggestions';
 import WebsiteLayoutSuggestions from '@/components/WebsiteLayoutSuggestions';
+import WebsiteCtaSuggestions from '@/components/WebsiteCtaSuggestions';
 import { Separator } from '@/components/ui/separator';
 
 /**
@@ -34,9 +35,10 @@ export default function DesignTools() {
       <Separator className="my-6" />
 
       <Tabs defaultValue="colors" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 max-w-[600px]">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 max-w-[750px]">
           <TabsTrigger value="colors">Color Schemes</TabsTrigger>
           <TabsTrigger value="layouts">Layouts</TabsTrigger>
+          <TabsTrigger value="ctas">CTAs</TabsTrigger>
           <TabsTrigger value="typography">Typography</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
         </TabsList>
@@ -47,6 +49,10 @@ export default function DesignTools() {
         
         <TabsContent value="layouts" className="space-y-6">
           <WebsiteLayoutSuggestions />
+        </TabsContent>
+        
+        <TabsContent value="ctas" className="space-y-6">
+          <WebsiteCtaSuggestions />
         </TabsContent>
         
         <TabsContent value="typography" className="space-y-6">
@@ -80,7 +86,7 @@ export default function DesignTools() {
           <li>Industry best practices for web design</li>
           <li>Color psychology and user experience research</li>
           <li>Current design trends and timeless principles</li>
-          <li>Conversion optimization patterns</li>
+          <li>Conversion optimization patterns and effective CTA strategies</li>
           <li>Accessibility standards</li>
           <li>Mobile responsiveness best practices</li>
           <li>Page structure and information hierarchy guidelines</li>

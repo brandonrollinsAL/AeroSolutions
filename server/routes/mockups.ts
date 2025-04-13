@@ -23,6 +23,8 @@ const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 
 const websiteLayoutSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for blog content suggestions with 2-hour TTL
 const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website CTA suggestions with 2-hour TTL
+const ctaSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website feature suggestions with 2-hour TTL
 const websiteFeatureSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website color suggestions with 2-hour TTL
@@ -1273,6 +1275,111 @@ Make the suggestions specific to the ${businessType} industry, addressing common
     return res.status(500).json({
       success: false,
       message: "Failed to generate blog content suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 46: Auto-Suggestions for Client Website CTAs
+ * Suggest call-to-action (CTA) ideas for client websites based on their business type
+ */
+router.post('/suggest-cta', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `cta_suggestion_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedSuggestions = ctaSuggestionsCache.get(cacheKey);
+    if (cachedSuggestions) {
+      console.log(`Returning cached CTA suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        ctas: cachedSuggestions,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new CTA suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (20 seconds - shorter for CTAs as they're simpler)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 20 seconds')), 20000);
+    });
+    
+    // Generate CTA ideas using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3', // Using standard model for better quality, CTAs are important for conversion
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a marketing expert specializing in conversion rate optimization and call-to-action creation. Provide effective, compelling CTAs for different business types.'
+        },
+        { 
+          role: 'user', 
+          content: `Suggest 5-8 effective call-to-action (CTA) ideas for a ${normalizedBusinessType} business website. For each CTA, provide:
+          
+1. The CTA text (short and action-oriented)
+2. Where it should be placed on the website (e.g., hero section, after pricing, etc.)
+3. A brief explanation of why it would be effective
+
+Structure your response in markdown format with clear sections for each CTA suggestion.`
+        }
+      ],
+      temperature: 0.5,
+      max_tokens: 1000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const ctaSuggestions = response.choices[0].message.content;
+    
+    // Cache the successful response
+    ctaSuggestionsCache.set(cacheKey, ctaSuggestions);
+    
+    console.log(`Successfully generated CTA suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      ctas: ctaSuggestions,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating CTA suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 20 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate CTA suggestions",
       error: error.message || "Unknown error"
     });
   }
