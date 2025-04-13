@@ -744,7 +744,7 @@ Provide insights that would be valuable for optimizing the website.
         .where(eq(websiteMetrics.clientId, parseInt(clientId)))
         .orderBy(desc(websiteMetrics.updatedAt));
       
-      if (!metrics.rows || metrics.rows.length === 0) {
+      if (!metrics || metrics.length === 0) {
         return res.status(404).json({
           success: false,
           message: "No project metrics found for this client"
@@ -752,10 +752,10 @@ Provide insights that would be valuable for optimizing the website.
       }
       
       // Format metrics for AI analysis
-      const metricData = metrics.rows.map(m => 
-        `Project ID: ${m.project_id}, Traffic: ${m.traffic}, Conversions: ${m.conversions}, ` +
-        `Bounce Rate: ${m.bounce_rate}%, Session Duration: ${m.average_session_duration} min, ` +
-        `Page Views: ${m.page_views}, Date: ${new Date(m.updated_at).toISOString().split('T')[0]}`
+      const metricData = metrics.map(m => 
+        `URL: ${m.url}, Load Time: ${m.page_load_time}s, TTFB: ${m.ttfb}s, ` +
+        `Bounce Rate: ${m.bounce_rate || 0}%, Device: ${m.device_type || 'unknown'}, ` +
+        `Browser: ${m.browser || 'unknown'}, Date: ${new Date(m.collected_at).toISOString().split('T')[0]}`
       ).join('\n');
       
       // Set timeout for Grok call (30 seconds)
@@ -791,59 +791,57 @@ Provide insights that would be valuable for optimizing the website.
         const analysis = response.choices[0].message.content;
         
         // Calculate aggregate metrics
-        const totalTraffic = metrics.rows.reduce((sum, m) => sum + parseInt(m.traffic), 0);
-        const totalConversions = metrics.rows.reduce((sum, m) => sum + parseInt(m.conversions), 0);
-        const totalPageViews = metrics.rows.reduce((sum, m) => sum + parseInt(m.page_views), 0);
-        const avgBounceRate = metrics.rows.reduce((sum, m) => sum + parseFloat(m.bounce_rate), 0) / metrics.rows.length;
-        const avgSessionDuration = metrics.rows.reduce((sum, m) => sum + parseFloat(m.average_session_duration), 0) / metrics.rows.length;
-        const conversionRate = (totalConversions / totalTraffic) * 100;
+        const avgPageLoadTime = metrics.reduce((sum, m) => sum + parseFloat(m.page_load_time), 0) / metrics.length;
+        const avgTtfb = metrics.reduce((sum, m) => sum + parseFloat(m.ttfb), 0) / metrics.length;
+        const avgBounceRate = metrics.reduce((sum, m) => sum + (m.bounce_rate ? parseFloat(m.bounce_rate) : 0), 0) / metrics.length;
         
         // Calculate trends (comparing most recent to previous)
-        const sorted = [...metrics.rows].sort((a, b) => 
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        const sorted = [...metrics].sort((a, b) => 
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
         
         let trafficTrend = 0;
         let conversionTrend = 0;
         
+        // Calculate page load speed trend
+        let loadTimeTrend = 0;
+        let ttfbTrend = 0;
+        
         if (sorted.length >= 2) {
           const recent = sorted[0];
           const previous = sorted[1];
-          trafficTrend = ((recent.traffic - previous.traffic) / previous.traffic) * 100;
-          conversionTrend = ((recent.conversions - previous.conversions) / previous.conversions) * 100;
+          loadTimeTrend = ((parseFloat(previous.page_load_time) - parseFloat(recent.page_load_time)) / parseFloat(previous.page_load_time)) * 100;
+          ttfbTrend = ((parseFloat(previous.ttfb) - parseFloat(recent.ttfb)) / parseFloat(previous.ttfb)) * 100;
         }
         
         // Prepare response
         const result = {
           clientId: parseInt(clientId),
-          projectCount: new Set(metrics.rows.map(m => m.project_id)).size,
+          urlCount: new Set(metrics.map(m => m.url)).size,
           aggregateMetrics: {
-            totalTraffic,
-            totalConversions,
-            totalPageViews,
-            avgBounceRate: avgBounceRate.toFixed(2) + '%',
-            avgSessionDuration: avgSessionDuration.toFixed(2) + ' min',
-            conversionRate: conversionRate.toFixed(2) + '%'
+            avgPageLoadTime: avgPageLoadTime.toFixed(2) + 's',
+            avgTtfb: avgTtfb.toFixed(2) + 's',
+            avgBounceRate: avgBounceRate.toFixed(2) + '%'
           },
           trends: {
-            traffic: trafficTrend.toFixed(2) + '%',
-            conversions: conversionTrend.toFixed(2) + '%'
+            pageLoadSpeed: loadTimeTrend.toFixed(2) + '%',
+            ttfb: ttfbTrend.toFixed(2) + '%'
           },
-          projectMetrics: metrics.rows.map(m => ({
-            projectId: m.project_id,
-            traffic: m.traffic,
-            conversions: m.conversions,
-            bounceRate: m.bounce_rate + '%',
-            sessionDuration: m.average_session_duration + ' min',
-            pageViews: m.page_views,
-            updated: new Date(m.updated_at).toISOString()
+          websiteMetrics: metrics.map(m => ({
+            url: m.url,
+            pageLoadTime: m.page_load_time + 's',
+            ttfb: m.ttfb + 's',
+            bounceRate: (m.bounce_rate || '0') + '%',
+            deviceType: m.device_type || 'unknown',
+            browser: m.browser || 'unknown',
+            collectedAt: new Date(m.collected_at).toISOString()
           })),
           analysis,
           timestamp: new Date().toISOString()
         };
         
-        // Cache the result
-        apiCache.set(cacheKey, result, 900); // Cache for 15 minutes
+        // Cache the result for 15 minutes
+        apiCache.set(cacheKey, result, 900);
         
         return res.json({
           success: true,
@@ -854,71 +852,67 @@ Provide insights that would be valuable for optimizing the website.
         console.error("Error calling Grok API:", error);
         
         // Prepare fallback analysis
-        const totalTraffic = metrics.rows.reduce((sum, m) => sum + parseInt(m.traffic), 0);
-        const totalConversions = metrics.rows.reduce((sum, m) => sum + parseInt(m.conversions), 0);
-        const totalPageViews = metrics.rows.reduce((sum, m) => sum + parseInt(m.page_views), 0);
-        const avgBounceRate = metrics.rows.reduce((sum, m) => sum + parseFloat(m.bounce_rate), 0) / metrics.rows.length;
-        const avgSessionDuration = metrics.rows.reduce((sum, m) => sum + parseFloat(m.average_session_duration), 0) / metrics.rows.length;
-        const conversionRate = (totalConversions / totalTraffic) * 100;
+        // Calculate metrics for the fallback
+        const avgPageLoadTime = metrics.reduce((sum, m) => sum + parseFloat(m.page_load_time), 0) / metrics.length;
+        const avgTtfb = metrics.reduce((sum, m) => sum + parseFloat(m.ttfb), 0) / metrics.length;
+        const avgBounceRate = metrics.reduce((sum, m) => sum + (m.bounce_rate ? parseFloat(m.bounce_rate) : 0), 0) / metrics.length;
         
         // Calculate trends
-        const sorted = [...metrics.rows].sort((a, b) => 
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        const sorted = [...metrics].sort((a, b) => 
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
         
-        let trafficTrend = 0;
-        let conversionTrend = 0;
+        // Calculate page load speed trend
+        let loadTimeTrend = 0;
+        let ttfbTrend = 0;
         
         if (sorted.length >= 2) {
           const recent = sorted[0];
           const previous = sorted[1];
-          trafficTrend = ((recent.traffic - previous.traffic) / previous.traffic) * 100;
-          conversionTrend = ((recent.conversions - previous.conversions) / previous.conversions) * 100;
+          loadTimeTrend = ((parseFloat(previous.page_load_time) - parseFloat(recent.page_load_time)) / parseFloat(previous.page_load_time)) * 100;
+          ttfbTrend = ((parseFloat(previous.ttfb) - parseFloat(recent.ttfb)) / parseFloat(previous.ttfb)) * 100;
         }
         
         // Generic fallback analysis
         const fallbackAnalysis = `
-## Project Performance Analysis
+## Website Performance Analysis
 
 ### Summary
-The client's projects have received a total of ${totalTraffic} visitors, resulting in ${totalConversions} conversions at a rate of ${conversionRate.toFixed(2)}%. The average bounce rate is ${avgBounceRate.toFixed(2)}% with users spending an average of ${avgSessionDuration.toFixed(2)} minutes per session.
+For client ID ${clientId}, we've analyzed ${metrics.length} website metrics records. The average page load time is ${avgPageLoadTime.toFixed(2)}s with a time to first byte (TTFB) of ${avgTtfb.toFixed(2)}s. The average bounce rate is ${avgBounceRate.toFixed(2)}%.
 
 ### Key Observations
-- Traffic trend is ${trafficTrend >= 0 ? 'positive' : 'negative'} at ${Math.abs(trafficTrend).toFixed(2)}% compared to the previous period
-- Conversion trend is ${conversionTrend >= 0 ? 'positive' : 'negative'} at ${Math.abs(conversionTrend).toFixed(2)}% compared to the previous period
+- Page load time trend is ${loadTimeTrend >= 0 ? 'getting slower' : 'improving'} by ${Math.abs(loadTimeTrend).toFixed(2)}% compared to the previous period
+- TTFB trend is ${ttfbTrend >= 0 ? 'getting slower' : 'improving'} by ${Math.abs(ttfbTrend).toFixed(2)}% compared to the previous period
 - Average bounce rate of ${avgBounceRate.toFixed(2)}% is ${avgBounceRate > 50 ? 'higher than optimal' : 'within acceptable range'}
 
 ### Recommendations
-1. **User Engagement**: ${avgSessionDuration < 2 ? 'Implement strategies to increase session duration such as improved content organization and interactive elements' : 'Continue to optimize content to maintain good engagement'}
-2. **Conversion Optimization**: ${conversionRate < 3 ? 'Review and optimize call-to-action elements and conversion paths' : 'Current conversion rate is healthy, continue testing to further improve'}
-3. **Traffic Sources**: Analyze traffic sources to identify the most valuable channels and optimize marketing efforts accordingly
-4. **Content Strategy**: Review content performance metrics to identify topics and formats that resonate best with your audience
+1. **Page Speed**: ${avgPageLoadTime > 3 ? 'Optimize images, implement code splitting, and utilize caching to improve page load times' : 'Continue maintaining good page speed practices'}
+2. **Server Response**: ${avgTtfb > 0.5 ? 'Consider upgrading hosting or implementing CDN to reduce server response time' : 'Server response time is good, continue monitoring for changes'}
+3. **Mobile Optimization**: Ensure your site is fully responsive and test across multiple device types
+4. **Content Delivery**: Analyze content performance with Core Web Vitals to identify opportunities for layout stability improvements
 `;
 
         // Prepare response with fallback
         const result = {
           clientId: parseInt(clientId),
-          projectCount: new Set(metrics.rows.map(m => m.project_id)).size,
+          urlCount: new Set(metrics.map(m => m.url)).size,
           aggregateMetrics: {
-            totalTraffic,
-            totalConversions,
-            totalPageViews,
-            avgBounceRate: avgBounceRate.toFixed(2) + '%',
-            avgSessionDuration: avgSessionDuration.toFixed(2) + ' min',
-            conversionRate: conversionRate.toFixed(2) + '%'
+            avgPageLoadTime: avgPageLoadTime.toFixed(2) + 's',
+            avgTtfb: avgTtfb.toFixed(2) + 's',
+            avgBounceRate: avgBounceRate.toFixed(2) + '%'
           },
           trends: {
-            traffic: trafficTrend.toFixed(2) + '%',
-            conversions: conversionTrend.toFixed(2) + '%'
+            pageLoadSpeed: loadTimeTrend.toFixed(2) + '%',
+            ttfb: ttfbTrend.toFixed(2) + '%'
           },
-          projectMetrics: metrics.rows.map(m => ({
-            projectId: m.project_id,
-            traffic: m.traffic,
-            conversions: m.conversions,
-            bounceRate: m.bounce_rate + '%',
-            sessionDuration: m.average_session_duration + ' min',
-            pageViews: m.page_views,
-            updated: new Date(m.updated_at).toISOString()
+          websiteMetrics: metrics.map(m => ({
+            url: m.url,
+            pageLoadTime: m.page_load_time + 's',
+            ttfb: m.ttfb + 's',
+            bounceRate: (m.bounce_rate || '0') + '%',
+            deviceType: m.device_type || 'unknown',
+            browser: m.browser || 'unknown',
+            collectedAt: new Date(m.collected_at).toISOString()
           })),
           analysis: fallbackAnalysis,
           fallback: true,
