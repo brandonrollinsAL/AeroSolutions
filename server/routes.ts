@@ -37,6 +37,7 @@ import complianceRouter from './routes/compliance';
 import authRouter from './routes/auth';
 import userRouter from './routes/users';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
+import { twitterPoster } from './utils/twitterPoster';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -796,6 +797,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Legal compliance monitoring process started successfully');
   } catch (error) {
     console.error('Failed to start legal compliance monitoring process:', error);
+  }
+  
+  // Initialize Twitter post scheduler
+  // Load scheduled tweets from the database and set up timers
+  try {
+    console.log('Initializing Twitter post scheduler...');
+    twitterPoster.initializeScheduledTweets().catch(error => {
+      console.error('Failed to initialize Twitter scheduled posts:', error);
+    });
+    console.log('Twitter post scheduler initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Twitter post scheduler:', error);
   }
   
   return httpServer;
