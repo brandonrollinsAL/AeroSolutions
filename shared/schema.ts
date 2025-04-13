@@ -674,3 +674,64 @@ export const insertTwitterPostSchema = createInsertSchema(twitterPosts).omit({
 
 export type TwitterPost = typeof twitterPosts.$inferSelect;
 export type InsertTwitterPost = z.infer<typeof insertTwitterPostSchema>;
+
+// User activity tracking schema
+export const userActivity = pgTable("user_activity", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // pageview, click, project_update, etc.
+  detail: text("detail"),
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertUserActivitySchema = createInsertSchema(userActivity).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type UserActivity = typeof userActivity.$inferSelect;
+export type InsertUserActivity = z.infer<typeof insertUserActivitySchema>;
+
+// User retention messages schema
+export const userRetentionMessages = pgTable("user_retention_messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 20 }).notNull(), // email, in-app
+  content: text("content").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("generated"), // generated, sent, failed
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserRetentionMessageSchema = createInsertSchema(userRetentionMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserRetentionMessage = typeof userRetentionMessages.$inferSelect;
+export type InsertUserRetentionMessage = z.infer<typeof insertUserRetentionMessageSchema>;
+
+// In-app notifications schema
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // system, retention, marketing, etc.
+  title: varchar("title", { length: 100 }),
+  content: text("content").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("unread"), // unread, read, dismissed
+  metadata: json("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  readAt: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
