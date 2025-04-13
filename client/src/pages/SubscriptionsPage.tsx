@@ -1,29 +1,52 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
+import { useLocation } from 'wouter';
 import MainLayout from '@/layouts/MainLayout';
 import SubscriptionPlans from '@/components/SubscriptionPlans';
 import Advertisement from '@/components/Advertisement';
+import { Button } from '@/components/ui/button';
+import { BarChart } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const SubscriptionsPage: React.FC = () => {
+  const [, setLocation] = useLocation();
+  const { hasPermission } = usePermissions();
   return (
     <MainLayout>
       <Helmet>
-        <title>Premium Subscriptions | Aero Solutions</title>
+        <title>Premium Subscriptions | Elevion</title>
         <meta 
           name="description" 
-          content="Enhance your aviation experience with premium subscriptions from Aero Solutions. Access exclusive features, priority support, and advanced tools." 
+          content="Enhance your web development project with premium subscriptions from Elevion. Access exclusive features, priority support, and advanced tools." 
         />
-        <meta name="keywords" content="aviation subscriptions, premium aviation services, aero solutions membership" />
+        <meta name="keywords" content="web development subscriptions, premium development services, elevion membership, ai-powered web tools" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://elevion.dev/subscriptions" />
       </Helmet>
 
       <div className="container mx-auto py-10 px-4 md:px-6">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-3/4">
-            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">Premium Subscriptions</h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Elevate your aviation experience with our premium subscription plans. 
-              Gain access to exclusive features, priority support, and advanced tools.
-            </p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">Premium Subscriptions</h1>
+                <p className="text-lg text-muted-foreground">
+                  Elevate your web development experience with our premium subscription plans. 
+                  Gain access to exclusive features, priority support, and advanced tools.
+                </p>
+              </div>
+              {hasPermission('pricing.view') && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4 md:mt-0"
+                  onClick={() => setLocation('/price-optimization')}
+                >
+                  <BarChart className="mr-2 h-4 w-4" />
+                  Price Optimization
+                </Button>
+              )}
+            </div>
 
             <SubscriptionPlans />
             

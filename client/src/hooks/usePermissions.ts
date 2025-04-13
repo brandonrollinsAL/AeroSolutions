@@ -1,5 +1,5 @@
 // Type definition for permissions
-type Permission = 'admin' | 'marketing' | 'content' | 'user' | 'client';
+type Permission = 'admin' | 'marketing' | 'content' | 'user' | 'client' | 'pricing.view' | 'pricing.manage';
 
 /**
  * Hook for checking user permissions
@@ -13,9 +13,9 @@ export function usePermissions() {
    * @returns boolean - Whether the user has the permission
    */
   const hasPermission = (permission: Permission): boolean => {
-    // For demonstration, we'll return true for admin and marketing roles
+    // For demonstration, we'll return true for admin, marketing, and pricing roles
     // In production, this would check against a real user role
-    return ['admin', 'marketing'].includes(permission);
+    return ['admin', 'marketing', 'pricing.view', 'pricing.manage'].includes(permission);
   };
 
   /**
