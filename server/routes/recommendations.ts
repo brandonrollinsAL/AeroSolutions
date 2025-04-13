@@ -2,6 +2,9 @@ import express from 'express';
 import { db } from '../db';
 import { callXAI } from '../utils/xaiClient';
 
+// Configure API request timeout
+const API_TIMEOUT = 30000; // 30 seconds timeout for longer requests
+
 const router = express.Router();
 
 /**
@@ -132,11 +135,20 @@ router.post('/features', async (req, res) => {
       For each feature, include a brief explanation of its benefit and relative implementation complexity.
       Format the response as JSON.`;
     
-    const response = await callXAI('/chat/completions', {
-      model: 'grok-3-latest',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('API request timed out')), API_TIMEOUT);
     });
+    
+    // Race the API call against the timeout
+    const response = await Promise.race([
+      callXAI('/chat/completions', {
+        model: 'grok-3-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      }),
+      timeoutPromise
+    ]);
     
     const content = JSON.parse(response.choices[0].message.content);
     
