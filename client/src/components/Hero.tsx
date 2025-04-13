@@ -125,6 +125,17 @@ export default function Hero() {
                   <div className="text-9xl text-electric-cyan mb-6">E</div>
                   <div className="text-2xl text-white font-poppins font-bold tracking-wider mb-4">ELEVION</div>
                   <div className="text-light-gray font-lato">Web Development Excellence</div>
+                  
+                  {/* Tech Assistant Chat Button */}
+                  <div className="mt-6">
+                    <button 
+                      onClick={() => window.dispatchEvent(new CustomEvent('openTechAssistant'))}
+                      className="bg-electric-cyan/20 hover:bg-electric-cyan/30 text-white font-semibold py-3 px-6 rounded-lg border border-electric-cyan/30 transition-all duration-300 hover:scale-105 font-inter flex items-center justify-center gap-2 mx-auto"
+                    >
+                      <FaLaptopCode className="text-electric-cyan" />
+                      <span>Ask Tech Assistant</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

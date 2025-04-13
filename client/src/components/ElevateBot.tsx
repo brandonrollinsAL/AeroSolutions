@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { FaRocket, FaTimes, FaPaperPlane, FaCode, FaDesktop, FaPalette, FaMobileAlt, FaUser } from "react-icons/fa";
+import { 
+  FaRocket, FaTimes, FaPaperPlane, FaCode, FaDesktop, 
+  FaPalette, FaMobileAlt, FaUser, FaLaptopCode, FaHeadset 
+} from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -7,6 +10,8 @@ import { toast } from "@/hooks/use-toast";
 interface ElevateBotProps {
   isOpen?: boolean;
   initialOption?: string | null;
+  hideFloatingButton?: boolean;
+  className?: string;
 }
 
 interface ChatMessage {
@@ -16,7 +21,12 @@ interface ChatMessage {
   isProcessing?: boolean;
 }
 
-export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: ElevateBotProps = {}) {
+export default function ElevateBot({ 
+  isOpen: externalIsOpen, 
+  initialOption, 
+  hideFloatingButton = false,
+  className = ""
+}: ElevateBotProps = {}) {
   const [isOpen, setIsOpen] = useState(externalIsOpen || false);
   const [activeOption, setActiveOption] = useState<string | null>(initialOption || null);
   const [isTyping, setIsTyping] = useState(false);
@@ -223,24 +233,26 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
   };
 
   return (
-    <>
-      {/* Floating Chat Button */}
-      <button
-        onClick={toggleChatbot}
-        className="fixed bottom-6 right-6 bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center"
-        aria-label="Chat with ElevateBot"
-      >
-        {isOpen ? (
-          <FaTimes className="text-xl" />
-        ) : (
-          <div className="relative">
-            <FaRocket className="text-xl text-[#00D1D1]" />
-            <span className="absolute -top-2 -right-2 bg-[#FF7043] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-              1
-            </span>
-          </div>
-        )}
-      </button>
+    <div className={className}>
+      {/* Floating Chat Button - Only show if not hidden */}
+      {!hideFloatingButton && (
+        <button
+          onClick={toggleChatbot}
+          className="fixed bottom-6 right-6 bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center"
+          aria-label="Chat with ElevateBot"
+        >
+          {isOpen ? (
+            <FaTimes className="text-xl" />
+          ) : (
+            <div className="relative">
+              <FaLaptopCode className="text-xl text-[#00D1D1]" />
+              <span className="absolute -top-2 -right-2 bg-[#FF7043] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                1
+              </span>
+            </div>
+          )}
+        </button>
+      )}
 
       {/* Chatbot Panel */}
       <AnimatePresence>
@@ -257,11 +269,11 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
             <div className="bg-[#3B5B9D] text-white p-4 flex items-center justify-between">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-[#EDEFF2] text-[#3B5B9D] flex items-center justify-center mr-3">
-                  <FaRocket className="text-[#00D1D1]" />
+                  <FaLaptopCode className="text-[#00D1D1]" />
                 </div>
                 <div>
-                  <h3 className="font-bold font-poppins">ElevateBot</h3>
-                  <span className="text-xs text-[#00D1D1] font-inter">Online</span>
+                  <h3 className="font-bold font-poppins">Tech Assistant</h3>
+                  <span className="text-xs text-[#00D1D1] font-inter">Powered by Grok AI</span>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white">
@@ -275,7 +287,7 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
               {messages.length === 0 && (
                 <div className="flex mb-4">
                   <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
-                    <FaRocket className="text-[#00D1D1]" />
+                    <FaLaptopCode className="text-[#00D1D1]" />
                   </div>
                   <div className="bg-white p-3 rounded-lg rounded-tl-none max-w-[80%] shadow-sm">
                     {isTyping ? (
@@ -286,7 +298,7 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
                       </div>
                     ) : typingComplete ? (
                       <p className="text-gray-800 font-lato">
-                        Hello! I'm ElevateBot, your web development assistant powered by Grok AI. How can I help your business succeed online today?
+                        Hi there! I'm your Elevion Tech Assistant, powered by Grok AI. How can I help you with your web development needs today?
                       </p>
                     ) : null}
                   </div>
@@ -332,7 +344,7 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
                 <div key={msg.id} className={`flex mb-4 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                   {msg.sender === 'bot' && (
                     <div className="w-8 h-8 rounded-full bg-[#3B5B9D] text-white flex items-center justify-center mr-2 flex-shrink-0">
-                      <FaRocket className="text-[#00D1D1]" />
+                      <FaLaptopCode className="text-[#00D1D1]" />
                     </div>
                   )}
                   
@@ -390,6 +402,6 @@ export default function ElevateBot({ isOpen: externalIsOpen, initialOption }: El
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
