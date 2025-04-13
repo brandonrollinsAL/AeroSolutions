@@ -290,6 +290,11 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   updatedAt: true
 });
 
+export const insertArticleEngagementSchema = createInsertSchema(articleEngagement).omit({
+  id: true,
+  createdAt: true
+});
+
 // Export types
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
@@ -299,6 +304,9 @@ export type InsertContentViewMetric = z.infer<typeof insertContentViewMetricSche
 
 export type Feedback = typeof feedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+export type ArticleEngagement = typeof articleEngagement.$inferSelect;
+export type InsertArticleEngagement = z.infer<typeof insertArticleEngagementSchema>;
 
 // Posts schema for feed content
 export const posts = pgTable("posts", {
