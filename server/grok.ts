@@ -35,7 +35,7 @@ class GrokApi {
       
       messages.push({ role: 'user', content: prompt });
       
-      const response = await callXAI('/chat/completions', {
+      const response: any = await callXAI('/chat/completions', {
         model: options.max_tokens && options.max_tokens > 4000 ? 'grok-3' : this.defaultModel,
         messages,
         temperature: options.temperature ?? 0.7,
@@ -74,7 +74,7 @@ class GrokApi {
       
       messages.push({ role: 'user', content: prompt });
       
-      const response = await callXAI('/chat/completions', {
+      const response: any = await callXAI('/chat/completions', {
         model: options.max_tokens && options.max_tokens > 4000 ? 'grok-3' : this.defaultModel,
         messages,
         temperature: options.temperature ?? 0.5, // Lower temperature for more consistent JSON
@@ -107,7 +107,7 @@ class GrokApi {
     options: GrokApiOptions = {}
   ): Promise<string> {
     try {
-      const response = await callXAI('/chat/completions', {
+      const response: any = await callXAI('/chat/completions', {
         model: 'grok-vision-latest',
         messages: [
           {

@@ -82,12 +82,13 @@ router.get('/blog-analysis/:postId', async (req: Request, res: Response) => {
       blogSeoAnalysisCache.set(cacheKey, result);
       
       return res.status(200).json(result);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Blog SEO analysis API error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return res.status(500).json({
         success: false,
         message: 'Error generating SEO analysis with AI',
-        error: error.message
+        error: errorMessage
       });
     }
   } catch (error: any) {
@@ -240,12 +241,13 @@ router.post('/optimize-marketplace-item', [
       marketplaceSeoCache.set(cacheKey, result);
       
       return res.status(200).json(result);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Marketplace SEO optimization API error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return res.status(500).json({
         success: false,
         message: 'Error generating SEO optimization with AI',
-        error: error.message
+        error: errorMessage
       });
     }
   } catch (error: any) {
@@ -386,7 +388,7 @@ router.post('/update-marketplace-seo/:itemId', [
         seoDescription: seoDescription || undefined,
         seoKeywords: seoKeywords || undefined,
         schemaMarkup: schemaMarkup || undefined,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       })
       .where(eq(marketplaceItems.id, parseInt(itemId)))
       .returning();
@@ -588,12 +590,13 @@ router.post('/generate-schema', [
       schemaMarkupCache.set(cacheKey, result);
       
       return res.status(200).json(result);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Schema generation API error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return res.status(500).json({
         success: false,
         message: 'Error generating schema markup with AI',
-        error: error.message
+        error: errorMessage
       });
     }
   } catch (error: any) {
