@@ -22,6 +22,7 @@ import LoginPage from "@/pages/LoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
 import ContentHubPage from "@/pages/ContentHubPage";
+import AIServices from "@/pages/AIServices";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -335,6 +336,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <ContentHubPage />
+            </>
+          )}
+        </Route>
+        <Route path="/ai-services">
+          {() => (
+            <>
+              <Helmet>
+                <title>AI-Powered Services | Elevion</title>
+                <meta name="description" content="Experience Elevion's AI-powered tools including personalized service recommendations, intelligent content analysis, and our ElevateBot assistant." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/ai-services" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <AIServices />
             </>
           )}
         </Route>
