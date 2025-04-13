@@ -957,4 +957,146 @@ router.post('/record-social-share', async (req, res) => {
   }
 });
 
+/**
+ * Suggestion 39: Real-Time Analytics for Content Engagement
+ * Analyze engagement with published content articles (e.g., views, shares, likes, comments).
+ * Uses AI to provide insights and recommendations based on engagement metrics.
+ */
+router.get('/content-engagement', async (req, res) => {  
+  try {
+    // Cache key for engagement analysis
+    const cacheKey = 'content_engagement_analysis';
+    
+    // Check if analysis is cached
+    const cachedAnalysis = sentimentCache.get(cacheKey);
+    if (cachedAnalysis) {
+      return res.json({
+        success: true,
+        analysis: cachedAnalysis,
+        source: 'cache'
+      });
+    }
+    
+    // Fetch article engagement data
+    const engagementData = await db.select({
+      article_id: articleEngagement.article_id,
+      views: articleEngagement.views,
+      shares: articleEngagement.shares,
+      likes: articleEngagement.likes,
+      comments: articleEngagement.comments,
+      avgReadTime: articleEngagement.avgReadTime,
+      socialShares: articleEngagement.socialShares
+    })
+    .from(articleEngagement)
+    .limit(100);
+    
+    // If no engagement data is available
+    if (engagementData.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No content engagement data available for analysis',
+        data: []
+      });
+    }
+    
+    // Join with posts to get titles
+    const postsData = await db.select({
+      id: posts.id,
+      title: posts.title,
+      category: posts.category
+    })
+    .from(posts)
+    .where(
+      sql`${posts.id} IN (${engagementData.map(item => item.article_id).join(',')})`
+    );
+    
+    // Create a map of post IDs to titles
+    const postTitleMap = {};
+    postsData.forEach(post => {
+      postTitleMap[post.id] = {
+        title: post.title,
+        category: post.category
+      };
+    });
+    
+    // Format data for AI analysis
+    const formattedData = engagementData.map(engagement => {
+      const postInfo = postTitleMap[engagement.article_id] || { title: `Article ${engagement.article_id}`, category: 'Unknown' };
+      
+      // Format social shares
+      let socialSharesText = '';
+      if (engagement.socialShares) {
+        const shares = engagement.socialShares;
+        socialSharesText = Object.keys(shares).map(platform => 
+          `${platform}: ${shares[platform]} shares`
+        ).join(', ');
+      }
+      
+      return `"${postInfo.title}" (ID: ${engagement.article_id}, Category: ${postInfo.category}): 
+        ${engagement.views} views, 
+        ${engagement.shares} shares, 
+        ${engagement.likes} likes, 
+        ${engagement.comments} comments, 
+        ${Number(engagement.avgReadTime).toFixed(2)} min avg read time
+        ${socialSharesText ? `Social: ${socialSharesText}` : ''}`;
+    }).join('\n\n');
+    
+    // Prepare the prompt for analysis
+    const prompt = `
+      Analyze the following content engagement metrics for our blog articles:
+      
+      ${formattedData}
+      
+      Please provide:
+      1. Top performing content (most engaging articles)
+      2. Content engagement patterns (e.g., categories/topics performing well)
+      3. Recommendations for improving engagement
+      4. Social media platform performance insights
+      5. Reader behavior insights (based on view-to-engagement ratios)
+      
+      Format as JSON with these sections.
+    `;
+    
+    // Generate AI analysis
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a content analytics expert who specializes in interpreting engagement data and providing actionable insights. Use the provided metrics to help understand content performance.'
+        },
+        { 
+          role: 'user', 
+          content: prompt 
+        }
+      ],
+      response_format: { type: 'json_object' }
+    });
+    
+    if (!response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from AI service');
+    }
+    
+    const analysis = response.choices[0].message.content;
+    
+    // Cache the analysis
+    sentimentCache.set(cacheKey, analysis, 300); // 5 minute cache
+    
+    // Return the engagement data and analysis
+    return res.json({
+      success: true,
+      data: engagementData,
+      analysis,
+      source: 'fresh'
+    });
+  } catch (error) {
+    console.error('Content engagement analysis failed:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Content engagement analysis failed', 
+      error: error.message || 'Unknown error'
+    });
+  }
+});
+
 export default router;
