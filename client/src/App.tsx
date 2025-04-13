@@ -43,6 +43,7 @@ import SocialMediaPage from "@/pages/SocialMediaPage";
 import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
 import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
 import OptimizedLandingPage from "@/pages/OptimizedLandingPage";
+import CheckoutOptimizationPage from "@/pages/CheckoutOptimizationPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
