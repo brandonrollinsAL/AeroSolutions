@@ -1,7 +1,10 @@
 /**
- * ElevateBot Analytics Routes
+ * ElevateBot Routes
  * 
- * This module provides routes for tracking and analyzing ElevateBot usage patterns.
+ * This module provides routes for the ElevateBot, including:
+ * - Chat interface for real-time user engagement
+ * - Analytics for tracking usage patterns
+ * - Personalized subscription recommendations
  */
 
 import express, { Request, Response } from 'express';
@@ -15,6 +18,9 @@ const router = express.Router();
 
 // Create a cache for ElevateBot analytics to prevent excessive AI calls
 const elevateAnalyticsCache = new NodeCache({ stdTTL: 1800, checkperiod: 300 }); // 30 min cache
+
+// Create a message history cache to maintain conversation context
+const conversationCache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // 10 min conversation memory
 
 /**
  * Log a new query to the ElevateBot
@@ -300,6 +306,128 @@ router.get('/elevatebot-usage', async (req: Request, res: Response) => {
     };
     
     return res.status(200).json(fallbackAnalysis);
+  }
+});
+
+/**
+ * Main ElevateBot chat endpoint
+ * Real-time interaction with the ElevateBot using xAI (Grok-3-mini) for answering queries
+ * and guiding users toward subscriptions or purchases
+ */
+router.post('/chat', [
+  body('message').isString().notEmpty().withMessage('Message is required'),
+  body('sessionId').optional().isString().withMessage('Session ID must be a string'),
+  body('userId').optional().isNumeric().withMessage('User ID must be a number')
+], async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { message, sessionId, userId } = req.body;
+    const startTime = process.hrtime();
+    
+    // Generate a session ID if not provided
+    const currentSessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Retrieve conversation history from cache or create new
+    const historyKey = `conversation_${currentSessionId}`;
+    let conversationHistory = conversationCache.get(historyKey) || [];
+    
+    // Add user message to history
+    conversationHistory.push({ role: 'user', content: message });
+    
+    // If history is too long, trim it to keep the last 10 messages
+    if (conversationHistory.length > 10) {
+      conversationHistory = conversationHistory.slice(conversationHistory.length - 10);
+    }
+    
+    // System prompt with conversation guidelines
+    const systemPrompt = `You are ElevateBot, the intelligent assistant for Elevion - a web development company specializing in small business solutions.
+
+Your personality: Professional, helpful, and persuasive. You communicate in a clear, friendly manner while subtly directing users toward Elevion's services.
+
+Guidelines:
+1. Answer questions accurately about web development, design trends, SEO, and digital marketing
+2. For every response, look for natural opportunities to mention Elevion's services
+3. When appropriate, suggest checking out Elevion's subscription plans or specific services
+4. If users express interest in website development, suggest starting with a free mockup
+5. For complex technical questions, offer helpful insights but suggest booking a consultation
+6. If users are comparing prices, mention Elevion's competitive pricing at 60% below market rates
+7. Always provide concrete, practical advice users can implement immediately
+
+IMPORTANT: Never fabricate information about Elevion. Stick to these key facts:
+- Elevion offers web development, design, SEO, and digital marketing services
+- Specializes in small business solutions with competitive pricing
+- Provides free website mockups to help clients visualize potential designs
+- Has subscription plans for ongoing support and maintenance
+- Can help with both quick projects and comprehensive digital transformation`;
+    
+    // Full conversation for API call
+    const fullConversation = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory
+    ];
+    
+    // Call the Grok API with the conversation
+    const response = await grokApi.createChatCompletion(
+      fullConversation,
+      {
+        model: 'grok-3-mini', // Using the faster grok-3-mini for real-time engagement
+        temperature: 0.7,
+        max_tokens: 500
+      }
+    );
+    
+    // Get the assistant's response
+    const assistantResponse = response.choices[0].message.content;
+    
+    // Add the assistant response to the conversation history
+    conversationHistory.push({ role: 'assistant', content: assistantResponse });
+    
+    // Update the cache with the conversation history
+    conversationCache.set(historyKey, conversationHistory);
+    
+    // Calculate response time
+    const endTime = process.hrtime(startTime);
+    const responseTimeMs = Math.round((endTime[0] * 1000) + (endTime[1] / 1000000));
+    
+    // Log the query to the database for analytics
+    const logResult = await db.query(
+      'INSERT INTO elevatebot_queries (query, user_id, model_used, response_time, response, session_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [message, userId || null, 'grok-3-mini', responseTimeMs, assistantResponse, currentSessionId]
+    );
+    
+    // Analyze if the response contains subscription or service recommendations
+    const containsRecommendation = 
+      assistantResponse.toLowerCase().includes('subscription') ||
+      assistantResponse.toLowerCase().includes('service') ||
+      assistantResponse.toLowerCase().includes('plan') ||
+      assistantResponse.toLowerCase().includes('package') ||
+      assistantResponse.toLowerCase().includes('free mockup') ||
+      assistantResponse.toLowerCase().includes('consultation');
+    
+    // Return the response
+    return res.json({
+      success: true,
+      sessionId: currentSessionId,
+      message: assistantResponse,
+      containsRecommendation,
+      responseTime: responseTimeMs,
+      queryId: logResult.rows[0].id
+    });
+    
+  } catch (error: any) {
+    console.error('ElevateBot chat error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while processing your request',
+      error: error.message
+    });
   }
 });
 
