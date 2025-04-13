@@ -1,15 +1,11 @@
 import { db } from '../db';
-import { ComplianceMonitor, ComplianceContentType } from '../utils/complianceMonitor';
+import { eq, desc, sql, lt, and, or } from 'drizzle-orm';
 import { posts, marketplaceItems } from '@shared/schema';
-import { eq, lt, and } from 'drizzle-orm';
-import NodeCache from 'node-cache';
-
-// Cache to track recently checked content to avoid duplicate processing
-const checkedContentCache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache
+import { complianceMonitor } from '../utils/complianceMonitor';
 
 /**
- * Background process to monitor content for compliance
- * Runs periodically to check content against regulatory requirements
+ * Background process to automatically scan website content for compliance
+ * with US laws, GDPR, and Google guidelines using XAI
  */
 export class ComplianceMonitoringProcess {
   private runningFlag: boolean = false;
@@ -18,26 +14,32 @@ export class ComplianceMonitoringProcess {
   
   /**
    * Starts the compliance monitoring background process
-   * @param intervalMinutes Optional interval in minutes between checks
+   * @param intervalMinutes Minutes between compliance checks
    */
   start(intervalMinutes: number = 15) {
     if (this.runningFlag) {
-      console.log('Compliance monitoring process already running');
+      console.log('Compliance monitoring is already running.');
       return;
     }
     
     this.intervalMs = intervalMinutes * 60 * 1000;
-    console.log(`Starting compliance monitoring process to run every ${intervalMinutes} minutes`);
+    this.runningFlag = true;
     
-    // Run immediately on start
-    this.runComplianceChecks();
+    // Run immediately
+    this.runComplianceChecks().catch(err => {
+      console.error('Error in initial compliance check:', err);
+    });
     
-    // Set up interval for future runs
+    // Schedule regular checks
     this.checkInterval = setInterval(() => {
-      this.runComplianceChecks();
+      if (this.runningFlag) {
+        this.runComplianceChecks().catch(err => {
+          console.error('Error in scheduled compliance check:', err);
+        });
+      }
     }, this.intervalMs);
     
-    this.runningFlag = true;
+    console.log(`Compliance monitoring started. Checking every ${intervalMinutes} minutes.`);
   }
   
   /**
@@ -47,9 +49,10 @@ export class ComplianceMonitoringProcess {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
-      this.runningFlag = false;
-      console.log('Compliance monitoring process stopped');
     }
+    
+    this.runningFlag = false;
+    console.log('Compliance monitoring stopped.');
   }
   
   /**
@@ -57,13 +60,21 @@ export class ComplianceMonitoringProcess {
    * @param intervalMinutes New interval in minutes between checks
    */
   updateInterval(intervalMinutes: number) {
-    if (intervalMinutes < 1) {
-      console.warn('Interval too short, using 1 minute minimum');
-      intervalMinutes = 1;
+    this.intervalMs = intervalMinutes * 60 * 1000;
+    
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      
+      this.checkInterval = setInterval(() => {
+        if (this.runningFlag) {
+          this.runComplianceChecks().catch(err => {
+            console.error('Error in scheduled compliance check:', err);
+          });
+        }
+      }, this.intervalMs);
     }
     
-    this.stop();
-    this.start(intervalMinutes);
+    console.log(`Compliance check interval updated to ${intervalMinutes} minutes.`);
   }
   
   /**
@@ -71,19 +82,19 @@ export class ComplianceMonitoringProcess {
    */
   private async runComplianceChecks() {
     try {
-      console.log('Running compliance checks...');
+      if (!this.runningFlag) {
+        return;
+      }
       
-      // Process blog posts
+      // Check blog posts
       await this.checkBlogPosts();
       
-      // Process marketplace items
+      // Check marketplace items
       await this.checkMarketplaceItems();
-      
-      // Additional content types can be added here
       
       console.log('Compliance check cycle completed');
     } catch (error) {
-      console.error('Error during compliance check cycle:', error);
+      console.error('Error in compliance check cycle:', error);
     }
   }
   
@@ -92,42 +103,51 @@ export class ComplianceMonitoringProcess {
    */
   private async checkBlogPosts() {
     try {
-      // Get published blog posts ordered by newest first
-      const blogPosts = await db.select()
+      // Get blog posts that haven't been checked in the last 7 days
+      // or have never been checked
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      
+      const postsToCheck = await db
+        .select({
+          id: posts.id,
+          title: posts.title,
+          content: posts.content
+        })
         .from(posts)
-        .where(eq(posts.status, 'published'))
-        .orderBy(posts.createdAt);
+        .where(
+          or(
+            // Either never been checked
+            sql`NOT EXISTS (
+              SELECT 1 FROM content_compliance_scans 
+              WHERE content_id = ${posts.id}::text AND content_type = 'blog'
+            )`,
+            // Or checked more than 7 days ago
+            sql`EXISTS (
+              SELECT 1 FROM content_compliance_scans 
+              WHERE content_id = ${posts.id}::text AND content_type = 'blog'
+              AND scan_started_at < ${lastWeek}
+              ORDER BY scan_started_at DESC
+              LIMIT 1
+            )`
+          )
+        )
+        .limit(5); // Check only 5 posts at a time to avoid overwhelming the system
       
-      console.log(`Found ${blogPosts.length} blog posts to check for compliance`);
+      console.log(`Found ${postsToCheck.length} blog posts to check for compliance`);
       
-      for (const post of blogPosts) {
-        const cacheKey = `blog_post_${post.id}`;
-        
-        // Skip if recently checked
-        if (checkedContentCache.has(cacheKey)) {
-          continue;
+      // Check each blog post
+      for (const post of postsToCheck) {
+        try {
+          await complianceMonitor.checkCompliance(
+            post.id.toString(),
+            'blog',
+            post.title,
+            post.content || ''
+          );
+        } catch (error) {
+          console.error(`Error checking blog post ${post.id} for compliance:`, error);
         }
-        
-        // Check content for compliance
-        console.log(`Checking blog post "${post.title}" (ID: ${post.id}) for compliance`);
-        
-        await ComplianceMonitor.checkCompliance({
-          contentId: post.id,
-          contentType: ComplianceContentType.BLOG_POST,
-          contentTitle: post.title,
-          content: post.content,
-          metadata: {
-            author: post.authorId,
-            category: post.category,
-            tags: post.tags,
-          }
-        });
-        
-        // Cache this post as checked
-        checkedContentCache.set(cacheKey, true);
-        
-        // Add a small delay to avoid overwhelming the AI service
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
       console.error('Error checking blog posts for compliance:', error);
@@ -139,43 +159,51 @@ export class ComplianceMonitoringProcess {
    */
   private async checkMarketplaceItems() {
     try {
-      // Get available marketplace items
-      const items = await db.select()
+      // Get marketplace items that haven't been checked in the last 7 days
+      // or have never been checked
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      
+      const itemsToCheck = await db
+        .select({
+          id: marketplaceItems.id,
+          title: marketplaceItems.title,
+          description: marketplaceItems.description
+        })
         .from(marketplaceItems)
-        .where(eq(marketplaceItems.isAvailable, true))
-        .orderBy(marketplaceItems.createdAt);
+        .where(
+          or(
+            // Either never been checked
+            sql`NOT EXISTS (
+              SELECT 1 FROM content_compliance_scans 
+              WHERE content_id = ${marketplaceItems.id}::text AND content_type = 'marketplace'
+            )`,
+            // Or checked more than 7 days ago
+            sql`EXISTS (
+              SELECT 1 FROM content_compliance_scans 
+              WHERE content_id = ${marketplaceItems.id}::text AND content_type = 'marketplace'
+              AND scan_started_at < ${lastWeek}
+              ORDER BY scan_started_at DESC
+              LIMIT 1
+            )`
+          )
+        )
+        .limit(5); // Check only 5 items at a time
       
-      console.log(`Found ${items.length} marketplace items to check for compliance`);
+      console.log(`Found ${itemsToCheck.length} marketplace items to check for compliance`);
       
-      for (const item of items) {
-        const cacheKey = `marketplace_item_${item.id}`;
-        
-        // Skip if recently checked
-        if (checkedContentCache.has(cacheKey)) {
-          continue;
+      // Check each marketplace item
+      for (const item of itemsToCheck) {
+        try {
+          await complianceMonitor.checkCompliance(
+            item.id.toString(),
+            'marketplace',
+            item.title,
+            item.description || ''
+          );
+        } catch (error) {
+          console.error(`Error checking marketplace item ${item.id} for compliance:`, error);
         }
-        
-        // Check content for compliance
-        console.log(`Checking marketplace item "${item.name}" (ID: ${item.id}) for compliance`);
-        
-        await ComplianceMonitor.checkCompliance({
-          contentId: item.id,
-          contentType: ComplianceContentType.MARKETPLACE_ITEM,
-          contentTitle: item.name,
-          content: item.description,
-          metadata: {
-            seller: item.sellerId,
-            category: item.category,
-            tags: item.tags,
-            price: item.price
-          }
-        });
-        
-        // Cache this item as checked
-        checkedContentCache.set(cacheKey, true);
-        
-        // Add a small delay to avoid overwhelming the AI service
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
       console.error('Error checking marketplace items for compliance:', error);
@@ -183,5 +211,4 @@ export class ComplianceMonitoringProcess {
   }
 }
 
-// Create a singleton instance
 export const complianceMonitoringProcess = new ComplianceMonitoringProcess();

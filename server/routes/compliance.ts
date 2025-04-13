@@ -1,216 +1,268 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
+import { body, param, validationResult } from 'express-validator';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { ComplianceMonitor, ComplianceContentType } from '../utils/complianceMonitor';
-import { contentComplianceAlerts, contentComplianceScans } from '@shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { 
+  contentComplianceScans, 
+  contentComplianceAlerts,
+  ContentComplianceAlert,
+  ContentComplianceScan
+} from '@shared/schema';
+import { complianceMonitor } from '../utils/complianceMonitor';
 
 const router = express.Router();
 
-// Middleware to check admin authorization
+// Middleware to check if user is admin
 const adminAuthCheck = (req: Request, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
   }
-  
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: Admin access required' });
+
+  try {
+    // Check if user has admin role
+    if (req.user && req.user.role === 'admin') {
+      return next();
+    }
+    
+    // Not an admin
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
+  } catch (error) {
+    console.error('Error in admin auth check:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error verifying admin access'
+    });
   }
-  
-  next();
 };
 
 // Get recent compliance alerts
 router.get('/alerts/recent', adminAuthCheck, async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10;
-    const alerts = await ComplianceMonitor.getRecentAlerts(limit);
+    const limit = parseInt(req.query.limit as string) || 50;
     
-    return res.json(alerts);
+    const alerts = await db
+      .select()
+      .from(contentComplianceAlerts)
+      .orderBy(desc(contentComplianceAlerts.createdAt))
+      .limit(limit);
+
+    return res.status(200).json(alerts);
   } catch (error) {
-    console.error('Error fetching recent alerts:', error);
-    return res.status(500).json({ message: 'Failed to fetch recent compliance alerts' });
+    console.error('Error fetching recent compliance alerts:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch compliance alerts' 
+    });
   }
 });
 
-// Get alerts for a specific content item
+// Get compliance alerts for specific content
 router.get('/alerts/content/:contentId', adminAuthCheck, async (req: Request, res: Response) => {
   try {
     const { contentId } = req.params;
-    const contentType = req.query.contentType as string;
     
-    if (!contentId || !contentType) {
-      return res.status(400).json({ message: 'Content ID and content type are required' });
-    }
-    
-    // Validate content type
-    if (!Object.values(ComplianceContentType).includes(contentType as ComplianceContentType)) {
-      return res.status(400).json({ message: 'Invalid content type' });
-    }
-    
-    const alerts = await ComplianceMonitor.getContentAlerts(
-      contentId,
-      contentType as ComplianceContentType
-    );
-    
-    return res.json(alerts);
+    const alerts = await db
+      .select()
+      .from(contentComplianceAlerts)
+      .where(eq(contentComplianceAlerts.contentId, contentId))
+      .orderBy(desc(contentComplianceAlerts.createdAt));
+
+    return res.status(200).json(alerts);
   } catch (error) {
-    console.error('Error fetching content alerts:', error);
-    return res.status(500).json({ message: 'Failed to fetch content compliance alerts' });
+    console.error('Error fetching content compliance alerts:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch content compliance alerts' 
+    });
   }
 });
 
-// Get compliance scan history for a specific content item
+// Get compliance scans for specific content
 router.get('/scans/content/:contentId', adminAuthCheck, async (req: Request, res: Response) => {
   try {
     const { contentId } = req.params;
-    const contentType = req.query.contentType as string;
     
-    if (!contentId || !contentType) {
-      return res.status(400).json({ message: 'Content ID and content type are required' });
-    }
-    
-    // Validate content type
-    if (!Object.values(ComplianceContentType).includes(contentType as ComplianceContentType)) {
-      return res.status(400).json({ message: 'Invalid content type' });
-    }
-    
-    const scans = await db.select()
+    const scans = await db
+      .select()
       .from(contentComplianceScans)
-      .where(and(
-        eq(contentComplianceScans.contentId, contentId),
-        eq(contentComplianceScans.contentType, contentType)
-      ))
+      .where(eq(contentComplianceScans.contentId, contentId))
       .orderBy(desc(contentComplianceScans.scanStartedAt));
-    
-    return res.json(scans);
+
+    return res.status(200).json(scans);
   } catch (error) {
-    console.error('Error fetching content scans:', error);
-    return res.status(500).json({ message: 'Failed to fetch content compliance scans' });
+    console.error('Error fetching content compliance scans:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch content compliance scans' 
+    });
   }
 });
 
-// Update alert status (resolve, acknowledge, mark as false positive)
-router.patch('/alerts/:alertId/status', adminAuthCheck, async (req: Request, res: Response) => {
+// Update alert status
+router.patch('/alerts/:alertId/status', adminAuthCheck, [
+  param('alertId').isInt().withMessage('Invalid alert ID'),
+  body('status')
+    .isIn(['open', 'resolved', 'acknowledged', 'false_positive'])
+    .withMessage('Invalid status value'),
+  body('resolutionNotes')
+    .optional()
+    .isString()
+    .isLength({ max: 1000 })
+    .withMessage('Resolution notes must be a string with maximum 1000 characters')
+], async (req: Request, res: Response) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request data",
+        errors: errors.array()
+      });
+    }
+
     const { alertId } = req.params;
+    const { status, resolutionNotes } = req.body;
     
-    // Validate request body
-    const statusSchema = z.object({
-      status: z.enum(['resolved', 'acknowledged', 'false_positive']),
-      resolutionNotes: z.string().optional()
+    // Update the alert
+    const [updatedAlert] = await db
+      .update(contentComplianceAlerts)
+      .set({
+        status,
+        resolutionNotes,
+        resolvedAt: status === 'resolved' ? new Date() : null
+      })
+      .where(eq(contentComplianceAlerts.id, parseInt(alertId)))
+      .returning();
+    
+    if (!updatedAlert) {
+      return res.status(404).json({
+        success: false,
+        message: 'Alert not found'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Alert status updated',
+      alert: updatedAlert
     });
     
-    const validatedData = statusSchema.parse(req.body);
-    
-    // Check if alert exists
-    const [existingAlert] = await db.select()
-      .from(contentComplianceAlerts)
-      .where(eq(contentComplianceAlerts.id, parseInt(alertId)));
-    
-    if (!existingAlert) {
-      return res.status(404).json({ message: 'Alert not found' });
-    }
-    
-    // Update alert status
-    await ComplianceMonitor.updateAlertStatus(
-      parseInt(alertId),
-      validatedData.status,
-      validatedData.resolutionNotes
-    );
-    
-    // Return updated alert
-    const [updatedAlert] = await db.select()
-      .from(contentComplianceAlerts)
-      .where(eq(contentComplianceAlerts.id, parseInt(alertId)));
-    
-    return res.json(updatedAlert);
   } catch (error) {
-    console.error('Error updating alert status:', error);
-    
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
-    }
-    
-    return res.status(500).json({ message: 'Failed to update alert status' });
+    console.error('Error updating compliance alert status:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update alert status' 
+    });
   }
 });
 
-// Manually trigger a compliance check for a content item
-router.post('/check', adminAuthCheck, async (req: Request, res: Response) => {
+// Manually trigger compliance check
+router.post('/check', adminAuthCheck, [
+  body('contentId').isString().withMessage('Content ID is required'),
+  body('contentType')
+    .isIn(['blog', 'product', 'service', 'marketplace', 'advertisement', 'landing_page'])
+    .withMessage('Invalid content type'),
+  body('contentTitle').isString().withMessage('Content title is required'),
+  body('content').isString().withMessage('Content is required')
+], async (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const checkSchema = z.object({
-      contentId: z.string().or(z.number()),
-      contentType: z.enum(Object.values(ComplianceContentType) as [string, ...string[]]),
-      contentTitle: z.string().optional(),
-      content: z.string(),
-      metadata: z.record(z.any()).optional(),
-      categories: z.array(z.string()).optional()
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request data",
+        errors: errors.array()
+      });
+    }
+
+    const { contentId, contentType, contentTitle, content } = req.body;
+
+    // Start compliance check
+    const result = await complianceMonitor.checkCompliance(contentId, contentType, contentTitle, content);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Compliance check completed',
+      result
     });
     
-    const validatedData = checkSchema.parse(req.body);
-    
-    // Trigger compliance check
-    const result = await ComplianceMonitor.checkCompliance(validatedData);
-    
-    return res.json(result);
   } catch (error) {
-    console.error('Error during compliance check:', error);
-    
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
-    }
-    
-    return res.status(500).json({ message: 'Failed to perform compliance check' });
+    console.error('Error running compliance check:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to run compliance check' 
+    });
   }
 });
 
-// Get compliance dashboard stats
+// Get compliance stats
 router.get('/stats', adminAuthCheck, async (req: Request, res: Response) => {
   try {
-    // Get total number of scans
-    const [scanCount] = await db.select({ count: db.fn.count() })
+    // Get total scans
+    const [totalScansResult] = await db
+      .select({ count: count() })
       .from(contentComplianceScans);
     
-    // Get total number of open alerts
-    const [openAlertCount] = await db.select({ count: db.fn.count() })
+    const totalScans = totalScansResult?.count || 0;
+    
+    // Get open alerts count
+    const [openAlertsResult] = await db
+      .select({ count: count() })
       .from(contentComplianceAlerts)
       .where(eq(contentComplianceAlerts.status, 'open'));
     
+    const openAlerts = openAlertsResult?.count || 0;
+    
     // Get alerts by severity
-    const alertsBySeverity = await db.select({
-      severity: contentComplianceAlerts.severity,
-      count: db.fn.count()
-    })
-    .from(contentComplianceAlerts)
-    .groupBy(contentComplianceAlerts.severity);
+    const alertsBySeverity = await db
+      .select({
+        severity: contentComplianceAlerts.severity,
+        count: count()
+      })
+      .from(contentComplianceAlerts)
+      .groupBy(contentComplianceAlerts.severity)
+      .orderBy(contentComplianceAlerts.severity);
     
     // Get alerts by category
-    const alertsByCategory = await db.select({
-      category: contentComplianceAlerts.category,
-      count: db.fn.count()
-    })
-    .from(contentComplianceAlerts)
-    .groupBy(contentComplianceAlerts.category);
+    const alertsByCategory = await db
+      .select({
+        category: contentComplianceAlerts.category,
+        count: count()
+      })
+      .from(contentComplianceAlerts)
+      .groupBy(contentComplianceAlerts.category)
+      .orderBy(contentComplianceAlerts.category);
     
-    // Get recent failed scans (content that didn't pass compliance)
-    const recentFailedScans = await db.select()
+    // Get recent failed scans
+    const recentFailedScans = await db
+      .select()
       .from(contentComplianceScans)
       .where(eq(contentComplianceScans.passedCheck, false))
       .orderBy(desc(contentComplianceScans.scanStartedAt))
       .limit(5);
     
-    return res.json({
-      totalScans: scanCount.count,
-      openAlerts: openAlertCount.count,
+    return res.status(200).json({
+      totalScans,
+      openAlerts,
       alertsBySeverity,
       alertsByCategory,
       recentFailedScans
     });
+    
   } catch (error) {
     console.error('Error fetching compliance stats:', error);
-    return res.status(500).json({ message: 'Failed to fetch compliance statistics' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch compliance stats' 
+    });
   }
 });
 

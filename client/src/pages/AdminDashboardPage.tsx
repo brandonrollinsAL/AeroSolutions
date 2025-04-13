@@ -5,10 +5,12 @@ import { Helmet } from 'react-helmet';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FaUsers, FaChartBar, FaRegCalendarAlt, FaExternalLinkAlt, FaLock, FaDatabase, FaGlobe, FaClipboard, FaUser, FaCode } from 'react-icons/fa';
-import { Shield, Activity, BarChart } from 'lucide-react';
+import { FaUsers, FaChartBar, FaRegCalendarAlt, FaExternalLinkAlt, FaLock, FaDatabase, FaGlobe, FaClipboard, FaUser, FaCode, FaShieldAlt } from 'react-icons/fa';
+import { Shield, Activity, BarChart, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/components/MainLayout';
 import LanguageMetaTags from '@/components/LanguageMetaTags';
+import ComplianceAlerts from '@/components/ComplianceAlerts';
 
 export default function AdminDashboardPage() {
   const [, setLocation] = useLocation();
@@ -250,6 +252,22 @@ export default function AdminDashboardPage() {
               </CardFooter>
             </Card>
           </div>
+          
+          {/* Compliance Monitoring Section */}
+          <Card className="border-blue-100 shadow">
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <FaShieldAlt className="mr-2 h-5 w-5 text-blue-600" />
+                Legal Compliance Monitoring
+              </CardTitle>
+              <CardDescription>
+                AI-powered monitoring and detection of potential legal and regulatory compliance issues
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ComplianceAlerts />
+            </CardContent>
+          </Card>
           
           {/* Quick Links */}
           <Card>
