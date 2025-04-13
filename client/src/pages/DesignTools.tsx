@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WebsiteColorSuggestions from '@/components/WebsiteColorSuggestions';
 import WebsiteLayoutSuggestions from '@/components/WebsiteLayoutSuggestions';
 import WebsiteCtaSuggestions from '@/components/WebsiteCtaSuggestions';
+import WebsiteImageSuggestions from '@/components/WebsiteImageSuggestions';
 import { Separator } from '@/components/ui/separator';
 
 /**
@@ -35,10 +36,11 @@ export default function DesignTools() {
       <Separator className="my-6" />
 
       <Tabs defaultValue="colors" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 max-w-[750px]">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 max-w-[900px]">
           <TabsTrigger value="colors">Color Schemes</TabsTrigger>
           <TabsTrigger value="layouts">Layouts</TabsTrigger>
           <TabsTrigger value="ctas">CTAs</TabsTrigger>
+          <TabsTrigger value="images">Images</TabsTrigger>
           <TabsTrigger value="typography">Typography</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
         </TabsList>
@@ -53,6 +55,10 @@ export default function DesignTools() {
         
         <TabsContent value="ctas" className="space-y-6">
           <WebsiteCtaSuggestions />
+        </TabsContent>
+        
+        <TabsContent value="images" className="space-y-6">
+          <WebsiteImageSuggestions />
         </TabsContent>
         
         <TabsContent value="typography" className="space-y-6">

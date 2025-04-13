@@ -29,6 +29,8 @@ const ctaSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 const websiteFeatureSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website color suggestions with 2-hour TTL
 const websiteColorSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website image suggestions with 2-hour TTL
+const websiteImageSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for mockup engagement analytics with 1-hour TTL
 const mockupEngagementCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
 
@@ -1984,6 +1986,112 @@ Format the response with clear sections, bullet points, and specific recommendat
     return res.status(500).json({
       success: false,
       message: "Failed to generate website layout suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 48: Auto-Suggestions for Client Website Images
+ * Suggest image ideas for client websites based on their business type.
+ */
+router.post('/suggest-images', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `image_suggestions_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedSuggestions = websiteImageSuggestionsCache.get(cacheKey);
+    if (cachedSuggestions) {
+      console.log(`Returning cached image suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        images: cachedSuggestions,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new image suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Set timeout for Grok call (25 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 25 seconds')), 25000);
+    });
+    
+    // Generate image ideas using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3', // Using standard model for better quality images suggestions
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional web designer specializing in visual design and imagery selection for different business types. Provide detailed, practical image recommendations.'
+        },
+        { 
+          role: 'user', 
+          content: `Suggest 6-10 effective image ideas for a ${normalizedBusinessType} business website. For each suggestion, provide:
+          
+1. The image concept or subject
+2. Where it should be placed on the website (e.g., hero banner, about section, etc.)
+3. A brief explanation of why this image would resonate with the target audience
+4. Any specific visual style recommendations (e.g., color tones, photography style)
+
+Structure your response in markdown format with clear sections for each image suggestion. Focus on authentic, professional imagery that would build trust and represent the ${normalizedBusinessType} business effectively.`
+        }
+      ],
+      temperature: 0.6,
+      max_tokens: 1200
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const imageSuggestions = response.choices[0].message.content;
+    
+    // Cache the successful response
+    websiteImageSuggestionsCache.set(cacheKey, imageSuggestions);
+    
+    console.log(`Successfully generated image suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      images: imageSuggestions,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating image suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 25 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate image suggestions",
       error: error.message || "Unknown error"
     });
   }
