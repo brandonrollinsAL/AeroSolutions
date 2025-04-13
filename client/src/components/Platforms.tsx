@@ -10,45 +10,45 @@ export default function Platforms() {
   const platforms: Platform[] = [
     {
       id: 1,
-      name: "AeroSync",
-      description: "Streamline aviation logistics with real-time syncing across all your operations.",
+      name: "WebCraft",
+      description: "Professional website design and development for small businesses with responsive layouts.",
       image: "/images/aviation-cockpit.jpeg",
-      tags: ["Real-time", "Logistics", "Aviation"]
+      tags: ["Web Design", "Responsive", "Small Business"]
     },
     {
       id: 2,
-      name: "AeroFlight",
-      description: "Comprehensive flight management system for private and commercial aviation.",
+      name: "EcomPro",
+      description: "Complete e-commerce solution for online stores with payment processing and inventory management.",
       image: "/images/aviation-tech.jpeg",
-      tags: ["Flight Management", "Scheduling", "Analytics"]
+      tags: ["E-commerce", "Online Store", "Sales"]
     },
     {
       id: 3,
-      name: "ExecSync",
-      description: "Executive aviation management solution for private jet operations and charter services.",
+      name: "ContentHub",
+      description: "Content management system allowing easy updates and publishing for non-technical users.",
       image: "/images/aviation-controls.jpeg",
-      tags: ["Executive", "Private Jets", "Management"]
+      tags: ["CMS", "Content", "Publishing"]
     },
     {
       id: 4,
-      name: "SkyForge Legend",
-      description: "Aviation training and simulation platform for pilots and ground crew.",
+      name: "AnalyticEdge",
+      description: "Business intelligence dashboard with visitor tracking and performance monitoring.",
       image: "/images/aviation-cockpit.jpeg",
-      tags: ["Training", "Simulation", "Education"]
+      tags: ["Analytics", "Business Intelligence", "Reporting"]
     },
     {
       id: 5,
-      name: "Stitchlet",
-      description: "AI-powered data integration platform connecting disparate aviation systems.",
+      name: "AppForge",
+      description: "Mobile app development platform for iOS and Android with seamless website integration.",
       image: "/images/aviation-tech.jpeg",
-      tags: ["Data Integration", "AI", "Automation"]
+      tags: ["Mobile Apps", "iOS", "Android"]
     },
     {
       id: 6,
-      name: "AeroOps",
-      description: "Comprehensive operations management system for airlines and aviation businesses.",
+      name: "IntegrateX",
+      description: "API integration platform connecting your website with third-party services and tools.",
       image: "/images/aviation-controls.jpeg",
-      tags: ["Operations", "Management", "Efficiency"]
+      tags: ["API", "Integration", "Automation"]
     }
   ];
 

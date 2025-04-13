@@ -255,8 +255,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Purchase | Aero Solutions Marketplace</title>
-                <meta name="description" content="Complete your marketplace purchase securely with Aero Solutions." />
+                <title>Purchase | Elevion Marketplace</title>
+                <meta name="description" content="Complete your marketplace purchase securely with Elevion." />
                 <meta name="robots" content="noindex, nofollow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
@@ -269,10 +269,10 @@ export default function App() {
           {(params) => (
             <>
               <Helmet>
-                <title>Client Project Preview | Aero Solutions Aviation Software</title>
-                <meta name="description" content="Preview your custom aviation software project with our secure client access portal. Explore features, functionality, and detailed documentation." />
+                <title>Client Project Preview | Elevion Web Development</title>
+                <meta name="description" content="Preview your custom web development project with our secure client access portal. Explore features, functionality, and detailed documentation." />
                 <meta name="robots" content="noindex, nofollow" />
-                <link rel="canonical" href={`https://aerosolutions.dev/client-preview/${params.code}`} />
+                <link rel="canonical" href={`https://elevion.dev/client-preview/${params.code}`} />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
@@ -284,8 +284,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Login | Aero Solutions</title>
-                <meta name="description" content="Log in to your Aero Solutions account to access premium features, subscriptions, and client previews." />
+                <title>Login | Elevion</title>
+                <meta name="description" content="Log in to your Elevion account to access premium features, subscriptions, and client previews." />
                 <meta name="robots" content="noindex, follow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
@@ -298,8 +298,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Admin Dashboard | Aero Solutions</title>
-                <meta name="description" content="Aero Solutions administrative dashboard for platform management." />
+                <title>Admin Dashboard | Elevion</title>
+                <meta name="description" content="Elevion administrative dashboard for platform management." />
                 <meta name="robots" content="noindex, nofollow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
@@ -312,7 +312,7 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Manage Client Previews | Admin | Aero Solutions</title>
+                <title>Manage Client Previews | Admin | Elevion</title>
                 <meta name="description" content="Admin tool for managing client preview access codes." />
                 <meta name="robots" content="noindex, nofollow" />
                 <html lang={i18n.language.split('-')[0]} />
@@ -326,8 +326,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Page Not Found | Aero Solutions</title>
-                <meta name="description" content="Sorry, the page you are looking for doesn't exist. Return to our homepage to explore aviation software development services." />
+                <title>Page Not Found | Elevion</title>
+                <meta name="description" content="Sorry, the page you are looking for doesn't exist. Return to our homepage to explore our web development services." />
                 <meta name="robots" content="noindex, follow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
