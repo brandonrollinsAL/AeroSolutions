@@ -21,6 +21,7 @@ import { Menu, X, ChevronDown, User, LogOut, Star, History, Globe, Shield, Users
 import LanguageSwitcher from './LanguageSwitcher';
 import ClientPreviewModal from './ClientPreviewModal';
 import ElevionLogo from './ElevionLogo';
+import NotificationPopover from './NotificationPopover';
 import { motion } from 'framer-motion';
 
 const Navbar: React.FC = () => {
@@ -244,6 +245,8 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
               
+              {isLoggedIn && <NotificationPopover />}
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -380,6 +383,11 @@ const Navbar: React.FC = () => {
                   </div>
                   {isLoggedIn && (
                     <div className="mt-3 space-y-1 px-2">
+                      {/* Mobile Notifications */}
+                      <div className="flex items-center justify-between rounded-md px-3 py-2 text-base font-medium text-foreground bg-muted/30 mb-2">
+                        <span>Notifications</span>
+                        <NotificationPopover />
+                      </div>
                       {isAdmin() && (
                         <>
                           <Link

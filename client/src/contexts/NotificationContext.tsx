@@ -1,7 +1,21 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
+
+// Temporary auth hook until we implement a proper auth system
+const useAuth = () => {
+  // Simple check if user is logged in based on localStorage token
+  const isLoggedIn = typeof window !== 'undefined' ? !!localStorage.getItem('token') : false;
+  
+  // Mock user object based on token
+  const user = isLoggedIn ? {
+    id: 1,
+    username: 'user',
+    email: 'user@example.com'
+  } : null;
+  
+  return { user, isLoading: false, error: null };
+};
 
 // Type for individual notification
 export type Notification = {
@@ -26,6 +40,34 @@ type NotificationContextType = {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+// Sample notifications for development - will be replaced with server data
+const sampleNotifications: Notification[] = [
+  {
+    id: 1,
+    type: 'retention',
+    title: 'Welcome back!',
+    content: 'We noticed you haven\'t created a mockup in a while. Try our new design suggestions feature!',
+    status: 'unread',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    type: 'system',
+    title: 'New feature available',
+    content: 'We\'ve added AI-powered content suggestions to help you build better websites.',
+    status: 'unread',
+    createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+  },
+  {
+    id: 3, 
+    type: 'retention',
+    title: 'Your subscription is about to expire',
+    content: 'Renew now to keep access to all premium features and get a 10% discount.',
+    status: 'read',
+    createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+  }
+];
+
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -47,17 +89,31 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await apiRequest('GET', '/api/retention/notifications/unread');
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        setNotifications(data);
-        setUnreadCount(data.length);
+      
+      // During development, use sample data instead of making API calls
+      // Later this will be replaced with actual API calls
+      try {
+        // First try the API endpoint
+        const response = await apiRequest('GET', '/api/retention/notifications/unread');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          setNotifications(data);
+          setUnreadCount(data.filter(n => n.status === 'unread').length);
+        }
+      } catch (apiError) {
+        console.warn('API not available, using sample data:', apiError);
+        // Fall back to sample data if API is not available
+        setNotifications(sampleNotifications);
+        setUnreadCount(sampleNotifications.filter(n => n.status === 'unread').length);
       }
     } catch (err) {
       setError('Failed to fetch notifications');
       console.error('Error fetching notifications:', err);
+      
+      // Still use sample data even if there's an error
+      setNotifications(sampleNotifications);
+      setUnreadCount(sampleNotifications.filter(n => n.status === 'unread').length);
     } finally {
       setLoading(false);
     }

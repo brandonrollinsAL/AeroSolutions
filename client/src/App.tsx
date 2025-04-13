@@ -4,6 +4,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { Helmet } from "react-helmet";
 import { useTranslation } from 'react-i18next';
 import ContentProtection from "@/components/ContentProtection";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
@@ -96,7 +97,7 @@ export default function App() {
   }, [currentPath]);
 
   return (
-    <>
+    <NotificationProvider>
       {/* Global App Metadata - applied to all routes */}
       <Helmet>
         {/* Languages support */}
@@ -577,6 +578,6 @@ export default function App() {
       {/* Global content protection */}
       <ContentProtection />
       <Toaster />
-    </>
+    </NotificationProvider>
   );
 }
