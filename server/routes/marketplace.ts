@@ -4,11 +4,11 @@ import { validate } from '../utils/validation';
 import { authenticate, authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
-import { insertMarketplaceItemSchema, users, mockupRequests } from '@shared/schema';
+import { insertMarketplaceItemSchema, users, mockupRequests, marketplaceItems, marketplaceOrders } from '@shared/schema';
 import { z } from 'zod';
 import { grokApi } from '../grok';
 import { db } from '../db';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 
 const marketplaceRouter = Router();
@@ -1188,5 +1188,195 @@ marketplaceRouter.post(
     }
   }
 );
+
+// Create a cache for sales analytics to improve performance
+const salesAnalyticsCache = new NodeCache({ stdTTL: 900, checkperiod: 300 }); // 15 minute cache
+
+/**
+ * Suggestion 32: Real-Time Analytics for Marketplace Sales
+ * Analyze sales data for marketplace services
+ */
+marketplaceRouter.get('/sales-analytics', async (req: Request, res: Response) => {
+  try {
+    // Check if there's a cached result
+    const cacheKey = 'marketplace_sales_analytics';
+    const cachedAnalytics = salesAnalyticsCache.get(cacheKey);
+    
+    if (cachedAnalytics) {
+      console.log('[Sales Analytics] Returning cached analytics data');
+      return res.json({
+        success: true,
+        ...cachedAnalytics,
+        source: 'cache'
+      });
+    }
+    
+    console.log('[Sales Analytics] Generating fresh sales analytics');
+    
+    // Fetch sales data from the database
+    const orders = await db.select({
+      id: marketplaceOrders.id,
+      buyerId: marketplaceOrders.buyerId,
+      itemId: marketplaceOrders.itemId,
+      totalPrice: marketplaceOrders.totalPrice,
+      status: marketplaceOrders.status,
+      createdAt: marketplaceOrders.createdAt
+    })
+    .from(marketplaceOrders)
+    .where(eq(marketplaceOrders.status, 'completed'))
+    .orderBy(desc(marketplaceOrders.createdAt))
+    .limit(100);
+    
+    // If no orders exist, return empty analytics
+    if (orders.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No completed orders found to analyze',
+        analytics: {
+          totalSales: 0,
+          orderCount: 0,
+          averageOrderValue: 0,
+          timeAnalysis: [],
+          topProducts: []
+        }
+      });
+    }
+    
+    // Get item details for the orders
+    const itemIds = [...new Set(orders.map(order => order.itemId))];
+    const items = await db.select({
+      id: marketplaceItems.id,
+      name: marketplaceItems.name,
+      category: marketplaceItems.category
+    })
+    .from(marketplaceItems)
+    .where(inArray(marketplaceItems.id, itemIds));
+    
+    // Create a map of item details for quick lookup
+    const itemMap = items.reduce((map, item) => {
+      map[item.id] = item;
+      return map;
+    }, {} as Record<number, typeof items[0]>);
+    
+    // Format data for analysis
+    const salesData = orders.map(order => {
+      const item = itemMap[order.itemId] || { name: `Unknown (ID: ${order.itemId})`, category: 'Unknown' };
+      return {
+        orderDate: order.createdAt.toISOString(),
+        itemName: item.name,
+        category: item.category,
+        price: Number(order.totalPrice)
+      };
+    });
+    
+    // Basic analytics calculations (without AI)
+    const totalSales = orders.reduce((sum, order) => sum + Number(order.totalPrice), 0);
+    const orderCount = orders.length;
+    const averageOrderValue = totalSales / orderCount;
+    
+    // Sales by category
+    const salesByCategory: Record<string, { count: number, value: number }> = {};
+    salesData.forEach(sale => {
+      if (!salesByCategory[sale.category]) {
+        salesByCategory[sale.category] = { count: 0, value: 0 };
+      }
+      salesByCategory[sale.category].count += 1;
+      salesByCategory[sale.category].value += sale.price;
+    });
+    
+    // Top selling products
+    const salesByProduct: Record<string, { count: number, value: number }> = {};
+    salesData.forEach(sale => {
+      if (!salesByProduct[sale.itemName]) {
+        salesByProduct[sale.itemName] = { count: 0, value: 0 };
+      }
+      salesByProduct[sale.itemName].count += 1;
+      salesByProduct[sale.itemName].value += sale.price;
+    });
+    
+    const topProducts = Object.entries(salesByProduct)
+      .map(([itemName, data]) => ({ 
+        itemName, 
+        orderCount: data.count,
+        totalValue: data.value 
+      }))
+      .sort((a, b) => b.totalValue - a.totalValue)
+      .slice(0, 5);
+    
+    // Additional AI-driven insights using Grok API
+    let aiInsights = null;
+    try {
+      // Format data for the Grok API
+      const formattedData = salesData
+        .map(s => `Date: ${s.orderDate.substring(0, 10)}, Item: ${s.itemName}, Category: ${s.category}, Price: $${s.price.toFixed(2)}`)
+        .join('\n');
+      
+      // Set timeout for Grok call (10 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('AI insights timed out after 10 seconds')), 10000);
+      });
+      
+      // Call the Grok API for insights
+      const grokPromise = grokApi.generateJson(
+        `Analyze the following marketplace sales data and provide insightful trends and recommendations:
+        
+        ${formattedData}
+        
+        Provide a JSON response with the following structure:
+        {
+          "keyTrends": [string array of 3-5 key trends identified],
+          "customerBehaviorInsights": [string array of 2-3 insights about customer purchasing patterns],
+          "salesOpportunities": [string array of 2-3 revenue growth opportunities],
+          "recommendations": [string array of 3 actionable recommendations]
+        }`,
+        'You are a data analytics expert specializing in e-commerce sales analysis. Your task is to find valuable insights in sales data and provide actionable recommendations.'
+      );
+      
+      // Race between API call and timeout
+      aiInsights = await Promise.race([grokPromise, timeoutPromise]);
+    } catch (error) {
+      console.warn('[Sales Analytics] AI insights failed:', error.message);
+      // Continue without AI insights if the API call fails
+      aiInsights = {
+        keyTrends: ['AI insights unavailable'],
+        note: 'AI-powered insights could not be generated'
+      };
+    }
+    
+    // Prepare the final analytics result
+    const analyticsResult = {
+      totalSales,
+      orderCount,
+      averageOrderValue,
+      topProducts,
+      salesByCategory: Object.entries(salesByCategory).map(([category, data]) => ({
+        category,
+        orderCount: data.count,
+        totalValue: data.value,
+        percentOfTotal: (data.value / totalSales * 100).toFixed(1) + '%'
+      })),
+      aiInsights,
+      generatedAt: new Date().toISOString()
+    };
+    
+    // Cache the result
+    salesAnalyticsCache.set(cacheKey, analyticsResult);
+    
+    // Return the analytics
+    return res.json({
+      success: true,
+      ...analyticsResult,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error('[Sales Analytics] Error analyzing sales data:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to analyze sales data',
+      error: error.message || 'Unknown error'
+    });
+  }
+});
 
 export default marketplaceRouter;
