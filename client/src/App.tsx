@@ -24,6 +24,7 @@ import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminClientPreviewsPage from "@/pages/AdminClientPreviewsPage";
 import ContentHubPage from "@/pages/ContentHubPage";
 import AIServices from "@/pages/AIServices";
+import FeedbackPage from "@/pages/FeedbackPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -352,6 +353,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <AIServices />
+            </>
+          )}
+        </Route>
+        <Route path="/feedback">
+          {() => (
+            <>
+              <Helmet>
+                <title>Feedback | Elevion</title>
+                <meta name="description" content="Share your feedback about Elevion's web development services. Help us improve and provide better solutions for small businesses." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/feedback" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <FeedbackPage />
             </>
           )}
         </Route>

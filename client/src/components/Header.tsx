@@ -32,6 +32,7 @@ export default function Header() {
         { label: 'Get Started', path: '/get-started' },  
         { label: 'Resources', path: '/resources' },  
         { label: 'Contact Us', path: '/contact' },  
+        { label: 'Share Feedback', path: '/feedback' },  
       ],  
     },  
     { label: 'About', path: '/about' },  

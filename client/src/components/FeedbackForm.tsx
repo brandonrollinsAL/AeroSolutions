@@ -1,308 +1,232 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useTranslation } from 'react-i18next';
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrainCircuit } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2, MessageSquareText, BrainCircuit } from 'lucide-react';
-
-// Define the form schema
+// Define the form schema using Zod
 const feedbackSchema = z.object({
-  message: z.string().min(10, {
-    message: 'Feedback must be at least 10 characters.',
+  name: z.string().min(2, { message: "Name must be at least 2 characters long" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  feedbackType: z.enum(["suggestion", "bug", "question", "praise", "other"], {
+    required_error: "Please select a feedback type",
   }),
-  source: z.string().default('website'),
-  category: z.string().optional(),
-  rating: z.coerce.number().min(1).max(5).optional(),
+  rating: z.number().min(1).max(5),
+  message: z.string().min(10, { message: "Feedback must be at least 10 characters long" }).max(2000),
 });
 
+// Infer the type from the schema
 type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 
-// Feedback categories
-const feedbackCategories = [
-  { value: 'general', label: 'General Feedback' },
-  { value: 'feature_request', label: 'Feature Request' },
-  { value: 'bug_report', label: 'Bug Report' },
-  { value: 'usability', label: 'Usability' },
-  { value: 'performance', label: 'Performance' },
-  { value: 'other', label: 'Other' },
-];
-
-export function FeedbackForm() {
-  const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
-  const [analyzingFeedback, setAnalyzingFeedback] = useState(false);
+const FeedbackForm = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
-
-  // Initialize form
-  const form = useForm<FeedbackFormValues>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<number>(0);
+  
+  // Initialize the form
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
-      message: '',
-      source: 'website',
-      category: 'general',
-      rating: 5,
+      name: "",
+      email: "",
+      feedbackType: "suggestion",
+      rating: 0,
+      message: "",
     },
   });
 
-  // Handle form submission
+  // Submit handler
   const onSubmit = async (data: FeedbackFormValues) => {
-    setLoading(true);
+    setIsSubmitting(true);
     
     try {
-      // Submit feedback to API
-      const response = await apiRequest('POST', '/api/feedback', data);
+      const response = await apiRequest("POST", "/api/feedback", data);
       
       if (response.ok) {
-        const result = await response.json();
-        
         toast({
-          title: 'Thank you for your feedback!',
-          description: 'Your input helps us improve our services.',
+          title: t('feedback_success_title', 'Feedback Submitted'),
+          description: t('feedback_success_message', 'Thank you for your feedback! We appreciate your input.'),
         });
         
-        // Reset form
-        form.reset();
-        
-        // Auto-analyze the feedback
-        setAnalyzingFeedback(true);
-        const feedbackId = result.data?.id;
-        
-        if (feedbackId) {
-          analyzeFeedback(feedbackId);
-        }
+        // Reset the form
+        reset();
+        setSelectedRating(0);
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to submit feedback');
+        const errorData = await response.json();
+        
+        toast({
+          title: t('feedback_error_title', 'Submission Failed'),
+          description: errorData.message || t('feedback_error_message', 'There was an error submitting your feedback. Please try again.'),
+          variant: "destructive",
+        });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: 'Error submitting feedback',
-        description: error.message || 'Please try again later',
-        variant: 'destructive',
+        title: t('feedback_error_title', 'Submission Failed'),
+        description: t('feedback_error_message', 'There was an error submitting your feedback. Please try again.'),
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Analyze feedback with xAI
-  const analyzeFeedback = async (feedbackId: number) => {
-    try {
-      const response = await apiRequest('POST', '/api/feedback/analyze-feedback', {
-        feedbackId,
-      });
-      
-      if (response.ok) {
-        const analysisResults = await response.json();
-        setAnalysis(analysisResults);
-      } else {
-        throw new Error('Failed to analyze feedback');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Analysis failed',
-        description: error.message || 'Could not analyze your feedback',
-        variant: 'destructive',
-      });
-    } finally {
-      setAnalyzingFeedback(false);
-    }
+  // Handle star rating selection
+  const handleRatingSelect = (rating: number) => {
+    setSelectedRating(rating);
+    setValue("rating", rating);
   };
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquareText className="h-5 w-5" />
-          Share Your Feedback
+          {t('feedback_form_title', 'Share Your Feedback')}
+          <BrainCircuit className="h-5 w-5 text-primary" />
         </CardTitle>
         <CardDescription>
-          We value your input! Tell us what you think about our platform.
+          {t('feedback_form_subtitle', 'Your feedback will be analyzed by our AI to improve our services')}
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Feedback</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Share your thoughts, suggestions, or report any issues..."
-                      className="min-h-[120px] resize-y"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Be as specific as possible to help us understand your feedback better.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">{t('feedback_name_label', 'Your Name')}</Label>
+              <Input 
+                id="name" 
+                {...register("name")} 
+                placeholder={t('feedback_name_placeholder', 'Enter your name')}
+                className={errors.name ? "border-destructive" : ""}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
               )}
-            />
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {feedbackCategories.map((category) => (
-                          <SelectItem key={category.value} value={category.value}>
-                            {category.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="rating"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rating (1-5)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={5}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      5 = Excellent, 1 = Poor
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading}
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Feedback
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-
-      {analyzingFeedback && !analysis && (
-        <CardFooter className="flex flex-col space-y-2 border-t pt-4">
-          <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Analyzing your feedback with xAI...</span>
-          </div>
-        </CardFooter>
-      )}
-
-      {analysis && (
-        <CardFooter className="flex flex-col space-y-4 border-t pt-4">
-          <div className="flex items-center space-x-2">
-            <BrainCircuit className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">AI Feedback Analysis</h3>
+            
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('feedback_email_label', 'Email Address')}</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                {...register("email")} 
+                placeholder={t('feedback_email_placeholder', 'Enter your email')}
+                className={errors.email ? "border-destructive" : ""}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
           </div>
           
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="font-medium">Sentiment:</p>
-              <div className="flex gap-2 mt-1">
-                <div className="flex-1 bg-green-100 dark:bg-green-950 rounded px-2 py-1">
-                  Positive: {analysis.sentiment?.positive || 0}%
-                </div>
-                <div className="flex-1 bg-red-100 dark:bg-red-950 rounded px-2 py-1">
-                  Negative: {analysis.sentiment?.negative || 0}%
-                </div>
-                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded px-2 py-1">
-                  Neutral: {analysis.sentiment?.neutral || 0}%
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Feedback Type */}
+            <div className="space-y-2">
+              <Label htmlFor="feedbackType">{t('feedback_type_label', 'Feedback Type')}</Label>
+              <Select 
+                defaultValue="suggestion" 
+                onValueChange={(value) => setValue("feedbackType", value as any)}
+              >
+                <SelectTrigger className={errors.feedbackType ? "border-destructive" : ""}>
+                  <SelectValue placeholder={t('feedback_type_placeholder', 'Select a type')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="suggestion">{t('feedback_type_suggestion', 'Suggestion')}</SelectItem>
+                  <SelectItem value="bug">{t('feedback_type_bug', 'Bug Report')}</SelectItem>
+                  <SelectItem value="question">{t('feedback_type_question', 'Question')}</SelectItem>
+                  <SelectItem value="praise">{t('feedback_type_praise', 'Praise')}</SelectItem>
+                  <SelectItem value="other">{t('feedback_type_other', 'Other')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.feedbackType && (
+                <p className="text-sm text-destructive">{errors.feedbackType.message}</p>
+              )}
             </div>
             
-            {analysis.key_themes && (
-              <div>
-                <p className="font-medium">Key Themes:</p>
-                <ul className="list-disc list-inside mt-1">
-                  {analysis.key_themes.map((theme: string, i: number) => (
-                    <li key={i}>{theme}</li>
-                  ))}
-                </ul>
+            {/* Rating */}
+            <div className="space-y-2">
+              <Label>{t('feedback_rating_label', 'Your Rating')}</Label>
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => handleRatingSelect(rating)}
+                    className={`text-2xl px-1 focus:outline-none ${
+                      selectedRating >= rating ? "text-amber-400" : "text-gray-300"
+                    }`}
+                    aria-label={`Rate ${rating} stars`}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {selectedRating > 0 
+                    ? t('feedback_rating_selected', '{{rating}} out of 5', { rating: selectedRating })
+                    : t('feedback_rating_none', 'No rating selected')}
+                </span>
               </div>
-            )}
-            
-            {analysis.recommendations && (
-              <div>
-                <p className="font-medium">Recommendations:</p>
-                <ul className="list-disc list-inside mt-1">
-                  {analysis.recommendations.map((rec: string, i: number) => (
-                    <li key={i}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {analysis.summary && (
-              <div>
-                <p className="font-medium">Summary:</p>
-                <p className="mt-1 text-muted-foreground">{analysis.summary}</p>
-              </div>
+              {errors.rating && (
+                <p className="text-sm text-destructive">{t('feedback_rating_error', 'Please select a rating')}</p>
+              )}
+            </div>
+          </div>
+          
+          {/* Message */}
+          <div className="space-y-2">
+            <Label htmlFor="message">{t('feedback_message_label', 'Your Feedback')}</Label>
+            <Textarea 
+              id="message" 
+              {...register("message")} 
+              placeholder={t('feedback_message_placeholder', 'Tell us your thoughts, suggestions, or report an issue...')}
+              className={`min-h-[120px] ${errors.message ? "border-destructive" : ""}`}
+            />
+            {errors.message && (
+              <p className="text-sm text-destructive">{errors.message.message}</p>
             )}
           </div>
+        </CardContent>
+        
+        <CardFooter className="flex justify-between">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              reset();
+              setSelectedRating(0);
+            }}
+            disabled={isSubmitting}
+          >
+            {t('feedback_clear_button', 'Clear Form')}
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting 
+              ? t('feedback_submitting_button', 'Submitting...') 
+              : t('feedback_submit_button', 'Submit Feedback')}
+          </Button>
         </CardFooter>
-      )}
+      </form>
     </Card>
   );
-}
+};
 
 export default FeedbackForm;
