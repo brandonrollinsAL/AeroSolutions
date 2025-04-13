@@ -329,6 +329,18 @@ const Navbar: React.FC = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
+                          <Link href="/checkout-optimization" className="w-full flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4 text-blue-600">
+                              <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                              <path d="M12 12v9"/>
+                              <path d="m8 17 4 4 4-4"/>
+                              <path d="M9 6h1"/>
+                              <path d="M14 6h1"/>
+                            </svg>
+                            <span>Checkout Optimization</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
                           <Link href="/website-analytics" className="w-full flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="mr-2 h-4 w-4 text-blue-600" viewBox="0 0 16 16">
                               <path d="M4.5 11a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
@@ -485,6 +497,20 @@ const Navbar: React.FC = () => {
                               <path d="M15 17V13"/>
                             </svg>
                             UI/UX Analytics
+                          </Link>
+                          <Link
+                            href="/checkout-optimization"
+                            className="block rounded-md px-3 py-2 text-base font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 inline mr-2">
+                              <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                              <path d="M12 12v9"/>
+                              <path d="m8 17 4 4 4-4"/>
+                              <path d="M9 6h1"/>
+                              <path d="M14 6h1"/>
+                            </svg>
+                            Checkout Optimization
                           </Link>
                           <Link
                             href="/website-analytics"
