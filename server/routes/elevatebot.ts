@@ -303,5 +303,178 @@ router.get('/elevatebot-usage', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Suggestion 47: Real-Time Analytics for ElevateBot Engagement
+ * Analyze engagement with ElevateBot (e.g., query frequency, popular topics)
+ * This endpoint provides in-depth analysis of how users are interacting with ElevateBot
+ */
+router.get('/elevatebot-engagement', async (req: Request, res: Response) => {
+  try {
+    // Check if we have the data in cache
+    const cacheKey = 'elevatebot_engagement_analysis';
+    const cachedAnalysis = elevateAnalyticsCache.get(cacheKey);
+    
+    if (cachedAnalysis && !req.query.refresh) {
+      return res.json({
+        ...cachedAnalysis,
+        source: 'cache'
+      });
+    }
+    
+    // Query the database for detailed engagement data
+    const { rows: queries } = await db.query(`
+      SELECT 
+        query,
+        user_id,
+        response_time,
+        tokens_used,
+        model_used,
+        created_at
+      FROM 
+        elevatebot_queries
+      ORDER BY 
+        created_at DESC
+      LIMIT 100
+    `);
+    
+    if (!queries || queries.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No ElevateBot engagement data found for analysis'
+      });
+    }
+    
+    // Prepare analytics on query patterns
+    const queryPatterns = {
+      total: queries.length,
+      byHour: {} as Record<number, number>,
+      byDay: {} as Record<string, number>,
+      byWeekday: {} as Record<string, number>,
+      byUser: {} as Record<string, number>,
+      byModel: {} as Record<string, number>,
+      avgResponseTime: 0,
+      avgTokensUsed: 0
+    };
+    
+    // Calculate time-based distributions and other metrics
+    let totalResponseTime = 0;
+    let totalTokens = 0;
+    let queriesWithResponseTime = 0;
+    let queriesWithTokens = 0;
+    
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    queries.forEach(q => {
+      const date = new Date(q.created_at);
+      const hour = date.getHours();
+      const day = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const weekday = weekdays[date.getDay()];
+      
+      // By hour
+      queryPatterns.byHour[hour] = (queryPatterns.byHour[hour] || 0) + 1;
+      
+      // By day
+      queryPatterns.byDay[day] = (queryPatterns.byDay[day] || 0) + 1;
+      
+      // By weekday
+      queryPatterns.byWeekday[weekday] = (queryPatterns.byWeekday[weekday] || 0) + 1;
+      
+      // By user
+      const userId = q.user_id ? q.user_id.toString() : 'anonymous';
+      queryPatterns.byUser[userId] = (queryPatterns.byUser[userId] || 0) + 1;
+      
+      // By model
+      const model = q.model_used || 'unknown';
+      queryPatterns.byModel[model] = (queryPatterns.byModel[model] || 0) + 1;
+      
+      // Response time and token calculations
+      if (q.response_time) {
+        totalResponseTime += q.response_time;
+        queriesWithResponseTime++;
+      }
+      
+      if (q.tokens_used) {
+        totalTokens += q.tokens_used;
+        queriesWithTokens++;
+      }
+    });
+    
+    // Calculate averages
+    queryPatterns.avgResponseTime = queriesWithResponseTime > 0 
+      ? parseFloat((totalResponseTime / queriesWithResponseTime).toFixed(2))
+      : 0;
+      
+    queryPatterns.avgTokensUsed = queriesWithTokens > 0 
+      ? parseFloat((totalTokens / queriesWithTokens).toFixed(2))
+      : 0;
+    
+    // Format data for API analysis
+    const engagementData = queries.map(q => 
+      `Query: "${q.query}", Time: ${new Date(q.created_at).toISOString()}, User: ${q.user_id || 'anonymous'}, Model: ${q.model_used || 'unknown'}, Response Time: ${q.response_time || 'N/A'}, Tokens: ${q.tokens_used || 'N/A'}`
+    ).join('\n');
+    
+    // Call the Grok AI for detailed analysis
+    const response = await grokApi.createChatCompletion(
+      [
+        { 
+          role: 'system', 
+          content: `You are an analytics expert who excels at analyzing conversational AI usage patterns. 
+          Provide detailed insights on ElevateBot engagement including:
+          1. Common question topics and categories
+          2. User engagement patterns (time of day, day of week)
+          3. Query complexity trends
+          4. User behavior insights
+          5. Actionable recommendations for improving the bot
+          
+          Format your response with clear headings, bullet points, and concise insights.`
+        },
+        { 
+          role: 'user', 
+          content: `Analyze the following ElevateBot engagement data to identify patterns and provide actionable insights:
+          
+          ${engagementData}`
+        }
+      ],
+      {
+        model: 'grok-3', // Using full model for better analysis
+        temperature: 0.2,
+        max_tokens: 1200
+      }
+    );
+    
+    // Create comprehensive results
+    const engagementAnalysis = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      queryCount: queries.length,
+      metrics: queryPatterns,
+      topQueries: queries.slice(0, 10).map(q => ({
+        query: q.query,
+        timestamp: new Date(q.created_at).toISOString(),
+        responseTime: q.response_time || null,
+        tokensUsed: q.tokens_used || null,
+        model: q.model_used || 'unknown'
+      })),
+      aiAnalysis: response.choices[0].message.content
+    };
+    
+    // Cache the analysis
+    elevateAnalyticsCache.set(cacheKey, engagementAnalysis, 1800); // 30 min cache
+    
+    return res.json({
+      ...engagementAnalysis,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error('Error analyzing ElevateBot engagement:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to analyze ElevateBot engagement',
+      error: error.message
+    });
+  }
+});
+
 // Export the router
 export default router;
