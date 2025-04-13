@@ -207,12 +207,12 @@ www.elevion.dev`
         success: true,
         email_content: emailContent
       });
-    } catch (apiError) {
+    } catch (apiError: any) {
       console.error('Email API call error:', apiError);
       return res.status(500).json({
         success: false,
         message: 'Email generation API call failed',
-        error: apiError.message
+        error: apiError.message || 'Unknown API error'
       });
     }
   } catch (error: any) {
