@@ -863,4 +863,268 @@ marketplaceRouter.post(
   }
 );
 
+// Create a cache for content marketing suggestions to avoid unnecessary AI calls
+const contentMarketingCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
+
+// Generate content marketing suggestions based on business type
+marketplaceRouter.post(
+  '/content-marketing-suggestions',
+  // authenticate, // Temporarily disabled for testing
+  validate([
+    body('businessType').isString().notEmpty().withMessage('Business type is required'),
+    body('userId').optional().isNumeric().toInt()
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const { businessType, userId } = req.body;
+      
+      // Generate a cache key based on business type
+      const cacheKey = `content_marketing_${businessType.toLowerCase().replace(/\s+/g, '_')}`;
+      
+      // Check if we have a cached result
+      const cachedResult = contentMarketingCache.get(cacheKey);
+      if (cachedResult) {
+        console.log(`[Cache Hit] Using cached content marketing suggestions for ${businessType}`);
+        return res.json(cachedResult);
+      }
+
+      // If userId is provided, try to get more context from their mockup requests
+      let businessGoals = '';
+      let targetAudience = '';
+      let industryCategory = '';
+      
+      if (userId) {
+        try {
+          // Get the most recent mockup request for this user to get more context
+          const [recentMockup] = await db
+            .select()
+            .from(mockupRequests)
+            .where(eq(mockupRequests.userId, userId))
+            .orderBy(desc(mockupRequests.createdAt))
+            .limit(1);
+            
+          if (recentMockup) {
+            businessGoals = recentMockup.businessGoals || '';
+            targetAudience = recentMockup.targetAudience || '';
+            industryCategory = recentMockup.industryCategory || '';
+          }
+        } catch (error) {
+          console.error('Error fetching user mockup data:', error);
+          // Continue without the additional context
+        }
+      }
+      
+      // Set up the prompt for the AI - use grok-3-mini model for faster responses
+      const prompt = `As a content marketing specialist for ${businessType} businesses, provide actionable content marketing suggestions.
+      ${businessGoals ? `The business has stated these goals: ${businessGoals}` : ''}
+      ${targetAudience ? `Their target audience is: ${targetAudience}` : ''}
+      ${industryCategory ? `They are in the ${industryCategory} industry` : ''}
+      
+      Provide content marketing recommendations in the following JSON format:
+      {
+        "overview": "A brief assessment of content marketing opportunities for this business type",
+        "content_strategy": {
+          "primary_topics": ["list", "of", "5-7", "recommended", "content", "topics"],
+          "content_types": ["list", "of", "recommended", "content", "formats"],
+          "frequency_recommendations": "How often to publish different types of content",
+          "content_distribution": ["list", "of", "channels", "for", "content", "distribution"]
+        },
+        "content_calendar": {
+          "month_1": [
+            {
+              "topic": "Suggested topic",
+              "content_type": "Article/Video/Infographic/etc",
+              "distribution_channels": ["list", "of", "channels"],
+              "target_outcome": "Expected benefit from this content piece"
+            }
+          ],
+          "month_2": [
+            // Similar structure
+          ],
+          "month_3": [
+            // Similar structure
+          ]
+        },
+        "topic_ideas": {
+          "educational": ["list", "of", "5", "educational", "topic", "ideas"],
+          "promotional": ["list", "of", "3-5", "promotional", "topic", "ideas"],
+          "engagement": ["list", "of", "3-5", "engagement-focused", "topic", "ideas"]
+        },
+        "success_metrics": {
+          "kpis": ["list", "of", "key", "performance", "indicators"],
+          "measurement_tools": ["list", "of", "suggested", "tools"]
+        },
+        "additional_tips": ["list", "of", "3-5", "content", "marketing", "tips", "for", "this", "business", "type"]
+      }`;
+      
+      // Call the Grok AI API with a timeout
+      try {
+        const response = await Promise.race([
+          grokApi.generateJson(prompt, "You are an expert content marketer who specializes in creating tailored content strategies for different business types."),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('AI content marketing suggestions timed out')), 30000)
+          )
+        ]);
+        
+        // Create the result object
+        const result = {
+          success: true,
+          contentMarketing: response,
+          businessType: businessType,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Cache the result
+        contentMarketingCache.set(cacheKey, result);
+        
+        // Return the content marketing suggestions
+        return res.json(result);
+      } catch (aiError) {
+        console.error('Error generating content marketing suggestions with AI:', aiError);
+        
+        // Prepare fallback content marketing suggestions for reliability
+        const fallbackSuggestions = {
+          overview: `Content marketing is essential for ${businessType} businesses to build authority, attract customers, and demonstrate expertise.`,
+          content_strategy: {
+            primary_topics: [
+              "Industry trends and news",
+              "How-to guides and tutorials",
+              "Client success stories",
+              "Product/service highlights",
+              "Expert opinions and insights",
+              "FAQ and common challenges",
+              "Industry best practices"
+            ],
+            content_types: [
+              "Blog posts (800-1500 words)",
+              "Email newsletters",
+              "Social media posts",
+              "Video tutorials",
+              "Infographics",
+              "Case studies",
+              "Podcasts or interviews"
+            ],
+            frequency_recommendations: "Blog posts: 2-4 times monthly; Social media: 3-5 times weekly; Email newsletter: 1-2 times monthly; Video content: 1-2 times monthly",
+            content_distribution: [
+              "Company website/blog",
+              "Email marketing",
+              "LinkedIn",
+              "Facebook",
+              "Instagram",
+              "YouTube",
+              "Industry forums"
+            ]
+          },
+          content_calendar: {
+            month_1: [
+              {
+                topic: "Industry trends affecting clients in 2025",
+                content_type: "Blog post + infographic",
+                distribution_channels: ["Website", "LinkedIn", "Email newsletter"],
+                target_outcome: "Establish authority and demonstrate industry knowledge"
+              },
+              {
+                topic: "How our services solve common client problems",
+                content_type: "Video tutorial",
+                distribution_channels: ["YouTube", "Website", "Social media"],
+                target_outcome: "Address pain points and showcase solutions"
+              }
+            ],
+            month_2: [
+              {
+                topic: "Client success story: Measurable results",
+                content_type: "Case study",
+                distribution_channels: ["Website", "LinkedIn", "Sales materials"],
+                target_outcome: "Build trust through social proof"
+              },
+              {
+                topic: "Expert tips for improving business outcomes",
+                content_type: "Checklist/guide",
+                distribution_channels: ["Website", "Email newsletter", "Social media"],
+                target_outcome: "Generate leads through valuable downloadable content"
+              }
+            ],
+            month_3: [
+              {
+                topic: "Behind the scenes: Our process",
+                content_type: "Photo/video series",
+                distribution_channels: ["Instagram", "Facebook", "Website"],
+                target_outcome: "Humanize the brand and build connection"
+              },
+              {
+                topic: "Industry expert interview/Q&A",
+                content_type: "Podcast or written interview",
+                distribution_channels: ["Website", "LinkedIn", "Industry forums"],
+                target_outcome: "Expand reach through partnered content"
+              }
+            ]
+          },
+          topic_ideas: {
+            educational: [
+              "Essential tools/resources every client should know about",
+              "Step-by-step guide to solving a common problem",
+              "Industry terms explained in plain language",
+              "How to evaluate quality in our industry",
+              "Future trends and how to prepare for them"
+            ],
+            promotional: [
+              "How our approach differs from competitors",
+              "New service announcement with special offer",
+              "Client testimonial spotlight",
+              "Before/after project showcase"
+            ],
+            engagement: [
+              "Ask Me Anything session with company expert",
+              "Industry survey with shared results",
+              "Community spotlight featuring client success",
+              "Reaction to recent industry news/developments"
+            ]
+          },
+          success_metrics: {
+            kpis: [
+              "Website traffic",
+              "Time on page",
+              "Email open and click rates",
+              "Social media engagement",
+              "Content downloads",
+              "Lead generation from content",
+              "Conversion rate from content-sourced leads"
+            ],
+            measurement_tools: [
+              "Google Analytics",
+              "Email marketing platform analytics",
+              "Social media platform insights",
+              "CRM lead tracking",
+              "Customer feedback surveys"
+            ]
+          },
+          additional_tips: [
+            "Repurpose content across multiple formats to maximize value",
+            "Focus on solving problems rather than promoting services",
+            "Include clear calls-to-action in all content pieces",
+            "Create a consistent publishing schedule to build audience expectations",
+            "Analyze performance data monthly and adjust strategy accordingly"
+          ]
+        };
+        
+        return res.json({
+          success: true,
+          contentMarketing: fallbackSuggestions,
+          businessType: businessType,
+          timestamp: new Date().toISOString(),
+          fallback: true,
+          error: aiError.message
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating content marketing suggestions:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Error generating content marketing suggestions',
+        message: error.message
+      });
+    }
+  }
+);
+
 export default marketplaceRouter;
