@@ -23,6 +23,8 @@ const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 
 const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website feature suggestions with 2-hour TTL
 const websiteFeatureSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for website color suggestions with 2-hour TTL
+const websiteColorSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for mockup engagement analytics with 1-hour TTL
 const mockupEngagementCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
 
@@ -1630,6 +1632,121 @@ router.get('/mockup-engagement', async (req: Request, res: Response) => {
     res.status(500).json({ 
       success: false,
       message: 'Mockup engagement analysis failed', 
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 42: Auto-Suggestions for Client Website Colors
+ * Suggest color schemes for client websites based on their business type
+ */
+router.post('/suggest-website-colors', async (req: Request, res: Response) => {
+  try {
+    const { businessType } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    const cacheKey = `website_colors_${normalizedBusinessType}`;
+    
+    // Check cache first
+    const cachedSuggestions = websiteColorSuggestionsCache.get(cacheKey);
+    if (cachedSuggestions) {
+      console.log(`Returning cached website color suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        colors: cachedSuggestions,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new website color suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Prepare prompt for website colors
+    const prompt = `Suggest 3 complete color schemes for a ${normalizedBusinessType} business website. 
+    
+    For each color scheme, provide:
+    1. A theme name that reflects the mood or style
+    2. Primary color (with hex code)
+    3. Secondary color (with hex code)
+    4. Accent color (with hex code)
+    5. Background color (with hex code)
+    6. Text color (with hex code)
+    7. A brief explanation of why this color scheme works well for this type of business
+    
+    Format the response in well-structured markdown with clear sections for each color scheme.
+    Include both modern/trendy options and timeless/classic options.
+    Consider color psychology and industry standards for this business type.`;
+    
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    // Generate color suggestions using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional web designer and color theory expert specializing in creating effective color schemes for business websites. You have deep knowledge of color psychology and how different color combinations affect user perception and behavior.'
+        },
+        { 
+          role: 'user', 
+          content: prompt
+        }
+      ],
+      temperature: 0.4,
+      max_tokens: 1500
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const colors = response.choices[0].message.content;
+    
+    // Cache the successful response
+    websiteColorSuggestionsCache.set(cacheKey, colors);
+    
+    console.log(`Successfully generated website color suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      colors,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating website color suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate website color suggestions",
       error: error.message || "Unknown error"
     });
   }
