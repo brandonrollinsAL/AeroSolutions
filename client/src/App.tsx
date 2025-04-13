@@ -29,6 +29,7 @@ import BlogPostPage from "@/pages/BlogPostPage";
 import MockupSuggestionPage from "@/pages/MockupSuggestionPage";
 import SeoTools from "@/pages/SeoTools";
 import MarketplaceAnalyticsPage from "@/pages/MarketplaceAnalyticsPage";
+import ContentAnalyticsPage from "@/pages/ContentAnalyticsPage";
 import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 
