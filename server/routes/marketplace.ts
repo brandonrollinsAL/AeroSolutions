@@ -4,10 +4,11 @@ import { validate } from '../utils/validation';
 import { authenticate, authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
-import { insertMarketplaceItemSchema } from '@shared/schema';
+import { insertMarketplaceItemSchema, users } from '@shared/schema';
 import { z } from 'zod';
 import { grokApi } from '../grok';
 import { db } from '../db';
+import { eq } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 
 const marketplaceRouter = Router();
