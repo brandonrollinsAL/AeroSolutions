@@ -977,27 +977,33 @@ router.get('/content-engagement', async (req, res) => {
       });
     }
     
-    // Fetch article engagement data
-    const engagementData = await db.select({
-      article_id: articleEngagement.article_id,
-      views: articleEngagement.views,
-      shares: articleEngagement.shares,
-      likes: articleEngagement.likes,
-      comments: articleEngagement.comments,
-      avgReadTime: articleEngagement.avgReadTime,
-      socialShares: articleEngagement.socialShares
-    })
-    .from(articleEngagement)
-    .limit(100);
+    // Fetch article engagement data with raw SQL using the actual column names in the database
+    const engagementData = await db.execute(sql`
+      SELECT 
+        article_id, 
+        views, 
+        shares, 
+        likes, 
+        comments, 
+        avgreadtime AS "avgReadTime", 
+        socialshares AS "socialShares",
+        lastupdated AS "lastUpdated"
+      FROM article_engagement
+      LIMIT 100
+    `);
+    
     
     // If no engagement data is available
-    if (engagementData.length === 0) {
+    if (!engagementData.rows || engagementData.rows.length === 0) {
       return res.json({
         success: true,
         message: 'No content engagement data available for analysis',
         data: []
       });
     }
+    
+    // Extract article IDs from results
+    const articleIds = engagementData.rows.map(row => row.article_id);
     
     // Join with posts to get titles
     const postsData = await db.select({
@@ -1007,20 +1013,20 @@ router.get('/content-engagement', async (req, res) => {
     })
     .from(posts)
     .where(
-      sql`${posts.id} IN (${engagementData.map(item => item.article_id).join(',')})`
+      sql`${posts.id} IN (${articleIds.join(',')})`
     );
     
     // Create a map of post IDs to titles
-    const postTitleMap = {};
+    const postTitleMap: Record<number, { title: string, category: string }> = {};
     postsData.forEach(post => {
       postTitleMap[post.id] = {
         title: post.title,
-        category: post.category
+        category: post.category || 'Uncategorized'
       };
     });
     
     // Format data for AI analysis
-    const formattedData = engagementData.map(engagement => {
+    const formattedData = engagementData.rows.map(engagement => {
       const postInfo = postTitleMap[engagement.article_id] || { title: `Article ${engagement.article_id}`, category: 'Unknown' };
       
       // Format social shares
