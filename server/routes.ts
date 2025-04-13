@@ -31,8 +31,10 @@ import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/ele
 import elevateBotAnalyticsRouter from './routes/elevatebot';
 import emailCampaignsRouter from './routes/email-campaigns';
 import contentProtectionRouter from './routes/content-protection';
+import complianceRouter from './routes/compliance';
 import authRouter from './routes/auth';
 import userRouter from './routes/users';
+import { complianceMonitoringProcess } from './background/complianceMonitor';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -143,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/elevatebot', elevateBotAnalyticsRouter);
   app.use('/api/email-campaigns', emailCampaignsRouter);
   app.use('/api/content', contentProtectionRouter);
+  app.use('/api/compliance', complianceRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
@@ -780,5 +783,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Start compliance monitoring background process
+  // Check content for compliance with US laws, GDPR, and Google guidelines
+  try {
+    console.log('Starting legal compliance monitoring background process...');
+    complianceMonitoringProcess.start(30); // Check every 30 minutes
+    console.log('Legal compliance monitoring process started successfully');
+  } catch (error) {
+    console.error('Failed to start legal compliance monitoring process:', error);
+  }
+  
   return httpServer;
 }
