@@ -49,32 +49,32 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4 text-[#00D1D1]">{t('navigation')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('home')}
                 </Link>
               </li>
               <li>
-                <Link href="/services" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/services" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('services')}
                 </Link>
               </li>
               <li>
-                <Link href="/platforms" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/platforms" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('platforms')}
                 </Link>
               </li>
               <li>
-                <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/marketplace" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('marketplace')}
                 </Link>
               </li>
               <li>
-                <Link href="/subscriptions" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/subscriptions" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('subscriptions')}
                 </Link>
               </li>
               <li>
-                <Link href="/premium" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/premium" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('premium')}
                 </Link>
               </li>
@@ -86,29 +86,29 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4 text-[#00D1D1]">{t('legal')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/terms" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('terms_of_service')}
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/privacy-policy" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('privacy_policy')}
                 </Link>
               </li>
               <li>
-                <Link href="/security" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/security" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('security_policy')}
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/login" className="text-gray-300 hover:text-[#FF7043] transition-colors">
                   {t('login')}
                 </Link>
               </li>
               <li>
                 <button 
                   onClick={() => window.open('/client-preview/demo', '_blank')}
-                  className="text-gray-300 hover:text-white transition-colors"
+                  className="text-gray-300 hover:text-[#FF7043] transition-colors"
                 >
                   Client Demo
                 </button>
@@ -140,14 +140,14 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-800 py-6 text-sm text-gray-400 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-[#00D1D1]/30 py-6 text-sm text-gray-400 flex flex-col md:flex-row justify-between items-center">
           <div>
             &copy; {new Date().getFullYear()} Elevion. {t('all_rights_reserved')}
           </div>
           <div className="mt-4 md:mt-0">
             <span className="mr-4">FAQ</span>
             <span className="mr-4">Support</span>
-            <Link href="/history" className="text-gray-400 hover:text-white transition-colors">
+            <Link href="/history" className="text-gray-400 hover:text-[#FF7043] transition-colors">
               {t('our_history')}
             </Link>
           </div>
