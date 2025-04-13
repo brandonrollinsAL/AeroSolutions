@@ -341,3 +341,28 @@ export const insertWebsiteMetricSchema = createInsertSchema(websiteMetrics).omit
 
 export type WebsiteMetric = typeof websiteMetrics.$inferSelect;
 export type InsertWebsiteMetric = z.infer<typeof insertWebsiteMetricSchema>;
+
+// Mockup request schema for tracking client mockup generation requests
+export const mockupRequests = pgTable("mockup_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  businessType: text("business_type").notNull(),
+  businessGoals: text("business_goals"),
+  industryCategory: text("industry_category"),
+  targetAudience: text("target_audience"),
+  designPreferences: text("design_preferences"),
+  status: text("status").default("pending").notNull(), // pending, completed, cancelled
+  completionTime: decimal("completion_time", { precision: 10, scale: 2 }),
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMockupRequestSchema = createInsertSchema(mockupRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type MockupRequest = typeof mockupRequests.$inferSelect;
+export type InsertMockupRequest = z.infer<typeof insertMockupRequestSchema>;

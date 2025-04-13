@@ -629,4 +629,81 @@ Provide insights that would be valuable for optimizing the website.
       });
     }
   });
+  
+  /**
+   * Suggestion 21: Analyze User Behavior Patterns
+   * Use xAI to identify patterns in user behavior and actions
+   */
+  app.get("/api/analytics/behavior-patterns", async (req: Request, res: Response) => {
+    try {
+      // Authentication check
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Get recent user sessions and actions
+      const sessions = await db.select()
+        .from(userSessions)
+        .orderBy(desc(userSessions.startTime))
+        .limit(50);
+        
+      // Get recent content views
+      const contentViews = await db.select()
+        .from(contentViewMetrics)
+        .orderBy(desc(contentViewMetrics.updatedAt))
+        .limit(50);
+      
+      // Format data for AI analysis
+      const sessionData = sessions.map(s => 
+        `User ${s.userId || 'anonymous'} started session at ${s.startTime.toISOString()} for ${s.sessionDuration}s using ${s.device} (${s.browser})`
+      ).join('\n');
+      
+      const contentData = contentViews.map(c => 
+        `Content "${c.contentTitle}" (${c.contentType}) viewed ${c.views} times with avg time ${c.avgTimeOnPage}s`
+      ).join('\n');
+      
+      // Combine data for analysis
+      const analysisData = `USER SESSIONS:\n${sessionData}\n\nCONTENT VIEWS:\n${contentData}`;
+      
+      // Call xAI API to analyze behavior patterns
+      const response = await callXAI('/chat/completions', {
+        model: 'grok-3',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a user behavior analyst specialized in identifying patterns from web analytics data. Analyze the data and identify 3-5 key behavior patterns, trends, or insights.'
+          },
+          {
+            role: 'user',
+            content: `Identify behavior patterns from these user actions and content views:\n${analysisData}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1000
+      });
+      
+      if (!response.choices || !response.choices[0] || !response.choices[0].message) {
+        throw new Error('Invalid response from xAI API');
+      }
+      
+      // Extract the patterns from the response
+      const patterns = response.choices[0].message.content;
+      
+      // Return the analysis
+      res.json({ 
+        success: true,
+        patterns,
+        sessionCount: sessions.length,
+        contentViewCount: contentViews.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Behavior pattern analysis failed:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Behavior pattern analysis failed', 
+        error: error.message || 'Unknown error'
+      });
+    }
+  });
 };

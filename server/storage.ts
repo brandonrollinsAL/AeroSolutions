@@ -10,7 +10,8 @@ import {
   userSessions, contentViewMetrics, feedback,
   type UserSession, type ContentViewMetric, type Feedback,
   type InsertUserSession, type InsertContentViewMetric, type InsertFeedback,
-  posts
+  posts, mockupRequests,
+  type MockupRequest, type InsertMockupRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";

@@ -1,0 +1,60 @@
+Sub-Prompt 3: Implement Suggestions 11-25 for xAI API Integration
+Objective: Implement suggestions 11-25 of 50 ways to integrate the xAI API into Elevion, focusing on real-time applications like internal search, analytics, and user engagement features.
+
+Details:
+
+Elevion is a full-stack web development company using React, Node.js/Express, and PostgreSQL, with Stripe for payments, focused on empowering small businesses with AI-driven web solutions.
+We’ll continue implementing xAI API integrations for real-time applications.
+Step 1: Implement Suggestions 21-25 (User Engagement and Analytics)
+
+Suggestion 21: Analyze User Behavior Patterns
+
+Use xAI to identify patterns in user behavior (e.g., frequent actions).
+
+Add to server/routes/analytics.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.get('/behavior-patterns', async (req, res) => {  
+  try {  
+    const actions = await pool.query('SELECT action, created_at FROM user_actions LIMIT 100');  
+    const actionData = actions.rows.map(a => `${a.action} at ${a.created_at}`).join('\n');  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Identify behavior patterns from these user actions:\n${actionData}` }],  
+    });  
+    res.json({ patterns: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Behavior pattern analysis failed', error: error.message });  
+  }  
+});  
+Suggestion 22: Auto-Suggestions for Client Project Plans
+
+Suggest project plans for clients based on their goals.
+
+Add to server/routes/mockups.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.post('/suggest-project-plan', async (req, res) => {  
+  const { businessGoals } = req.body;  
+  try {  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Suggest a project plan for a small business with these goals:\n${businessGoals}` }],  
+    });  
+    res.json({ projectPlan: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Project plan suggestion failed', error: error.message });  
+  }  
+});
