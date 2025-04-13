@@ -170,6 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/social', socialMediaRouter);
   app.use('/api/marketing', marketingCampaignsRouter);
   app.use('/api/seo', seoRouter);
+  app.use('/api/price-optimization', priceOptimizationRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
@@ -879,6 +880,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Achievement tracking system initialized successfully');
   } catch (error) {
     console.error('Failed to initialize achievement tracking system:', error);
+  }
+  
+  // Initialize subscription price optimization with XAI
+  // Analyze subscription metrics and optimize pricing strategy
+  try {
+    console.log('Initializing subscription price optimization service...');
+    
+    // Schedule weekly price optimization analysis
+    const runPriceOptimization = async () => {
+      try {
+        console.log('Running subscription price optimization analysis...');
+        await priceOptimizationService.scheduleAutomaticPriceAnalysis();
+        console.log('Subscription price optimization analysis completed');
+      } catch (error) {
+        console.error('Error in price optimization analysis:', error);
+      }
+    };
+    
+    // Run price optimization weekly (every Monday at 1 AM)
+    const now = new Date();
+    const dayToNextMonday = (1 - now.getDay() + 7) % 7; // 1 = Monday, 0 = Sunday
+    const nextRun = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + dayToNextMonday,
+      1, 0, 0, 0
+    );
+    const timeUntilNextRun = nextRun.getTime() - now.getTime();
+    
+    // Set up the weekly scheduler
+    setTimeout(() => {
+      runPriceOptimization();
+      // Then run it every 7 days
+      setInterval(runPriceOptimization, 7 * 24 * 60 * 60 * 1000);
+    }, timeUntilNextRun);
+    
+    console.log(`Subscription price optimization scheduled weekly (next run in ${Math.round(timeUntilNextRun / (24 * 60 * 60 * 1000))} days)`);
+  } catch (error) {
+    console.error('Failed to initialize subscription price optimization service:', error);
   }
   
   return httpServer;
