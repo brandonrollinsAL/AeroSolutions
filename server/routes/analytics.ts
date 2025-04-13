@@ -1,6 +1,6 @@
 import express, { Response, Request as ExpressRequest } from "express";
 import { db } from "../db";
-import { userSessions, contentViewMetrics, websiteMetrics, websiteEngagement } from "@shared/schema";
+import { userSessions, contentViewMetrics, websiteMetrics, websiteEngagement, websiteConversions } from "@shared/schema";
 import { eq, and, or, sql, desc, gt, lt, between } from "drizzle-orm";
 import { storage } from "../storage";
 import { callXAI } from "../utils/xaiClient";

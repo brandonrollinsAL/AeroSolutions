@@ -390,6 +390,32 @@ export const insertWebsiteEngagementSchema = createInsertSchema(websiteEngagemen
 export type WebsiteEngagement = typeof websiteEngagement.$inferSelect;
 export type InsertWebsiteEngagement = z.infer<typeof insertWebsiteEngagementSchema>;
 
+// Website conversions schema for tracking conversion metrics for client websites
+export const websiteConversions = pgTable("website_conversions", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pageUrl: text("page_url").notNull(),
+  conversionType: text("conversion_type").notNull(), // form_submission, purchase, signup, etc.
+  conversions: integer("conversions").default(0).notNull(),
+  conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }).default("0").notNull(),
+  bounceRate: decimal("bounce_rate", { precision: 5, scale: 2 }).default("0").notNull(),
+  visitToConversion: decimal("visit_to_conversion", { precision: 5, scale: 2 }).default("0").notNull(),
+  source: text("source"), // traffic source
+  medium: text("medium"), // traffic medium
+  campaign: text("campaign"), // campaign identifier
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWebsiteConversionSchema = createInsertSchema(websiteConversions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type WebsiteConversion = typeof websiteConversions.$inferSelect;
+export type InsertWebsiteConversion = z.infer<typeof insertWebsiteConversionSchema>;
+
 // Mockup request schema for tracking client mockup generation requests
 export const mockupRequests = pgTable("mockup_requests", {
   id: serial("id").primaryKey(),
