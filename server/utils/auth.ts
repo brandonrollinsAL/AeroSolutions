@@ -101,7 +101,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     // Public API routes
     /^\/api\/contact$/,
     /^\/api\/copilot$/,
-    /^\/api\/preview\/validate$/
+    /^\/api\/preview\/validate$/,
+    /^\/api\/test-xai$/
   ];
   
   // Check if route is public
