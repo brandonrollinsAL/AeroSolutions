@@ -43,7 +43,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],
       fontSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", "https://api.openai.com"]
+      connectSrc: ["'self'", "https://api.openai.com", "https://api.x.ai"]
     }
   },
   crossOriginEmbedderPolicy: false,

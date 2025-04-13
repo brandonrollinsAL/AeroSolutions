@@ -9,6 +9,7 @@ import NodeCache from 'node-cache';
 import { body, query, param, validationResult } from 'express-validator';
 import { generateToken, authorize } from './utils/auth';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription, handleWebhookEvent } from './utils/stripe';
+import { callXAI, getGrokCompletion } from './utils/xaiClient';
 import subscriptionRouter from './routes/subscription';
 import marketplaceRouter from './routes/marketplace';
 import advertisementRouter from './routes/advertisement';
@@ -100,6 +101,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/marketplace', marketplaceRouter);
   app.use('/api/ads', advertisementRouter);
   app.use('/api', quoteRouter);
+  
+  // Test xAI API endpoint - public endpoint, no auth required
+  app.get('/api/test-xai', async (req: Request, res: Response) => {
+    try {
+      console.log("Testing xAI API connection...");
+      const response = await callXAI('/chat/completions', {
+        model: 'grok-3-mini',
+        messages: [{ role: 'user', content: 'Hello, Grok! Tell me about Elevion web development company.' }],
+      });
+      console.log("xAI API call successful!");
+      res.json({
+        success: true,
+        message: 'xAI API test successful',
+        data: response
+      });
+    } catch (error: any) {
+      console.error("xAI API test failed:", error);
+      res.status(500).json({ 
+        success: false,
+        message: 'xAI API test failed', 
+        error: error.message 
+      });
+    }
+  });
   
   // Stripe configuration endpoint (provides publishable key for client-side)
   app.get('/api/stripe/config', (req: Request, res: Response) => {
