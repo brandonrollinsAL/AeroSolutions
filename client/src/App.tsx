@@ -460,8 +460,8 @@ export default function App() {
           {() => (
             <>
               <Helmet>
-                <title>Sales Analytics | Marketplace | Elevion</title>
-                <meta name="description" content="View comprehensive sales analytics and AI-driven insights for your marketplace offerings. Track performance, identify trends, and discover new opportunities." />
+                <title>Service Analytics | Marketplace | Elevion</title>
+                <meta name="description" content="Track service engagement, analyze marketplace metrics, and optimize your service offerings with real-time analytics." />
                 <meta name="robots" content="noindex, follow" />
                 <link rel="canonical" href="https://elevion.dev/marketplace/analytics" />
                 <html lang={i18n.language.split('-')[0]} />
