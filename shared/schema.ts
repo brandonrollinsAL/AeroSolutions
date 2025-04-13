@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   role: text("role").default("user").notNull(), // user, admin
   stripeCustomerId: text("stripe_customer_id"),
+  preferences: text("preferences"), // User content preferences for feed personalization
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -262,3 +263,32 @@ export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 
 export type ContentViewMetric = typeof contentViewMetrics.$inferSelect;
 export type InsertContentViewMetric = z.infer<typeof insertContentViewMetricSchema>;
+
+// Posts schema for feed content
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  authorId: integer("author_id").references(() => users.id),
+  category: text("category"),
+  tags: json("tags").$type<string[]>().default([]),
+  imageUrl: text("image_url"),
+  status: text("status").default("published").notNull(), // published, draft, archived
+  viewCount: integer("view_count").default(0),
+  likeCount: integer("like_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPostSchema = createInsertSchema(posts).pick({
+  title: true,
+  content: true,
+  authorId: true,
+  category: true,
+  tags: true,
+  imageUrl: true,
+  status: true
+});
+
+export type InsertPost = z.infer<typeof insertPostSchema>;
+export type Post = typeof posts.$inferSelect;

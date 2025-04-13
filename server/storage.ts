@@ -132,7 +132,7 @@ export class DatabaseStorage implements IStorage {
     return !!preview;
   }
 
-  // Initialize sample data for client previews
+  // Initialize sample data for client previews and analytics
   async initSampleData(): Promise<void> {
     try {
       // Check if we already have preview codes
@@ -165,6 +165,12 @@ export class DatabaseStorage implements IStorage {
         ];
         
         await db.insert(clientPreviews).values(samplePreviews);
+      }
+      
+      // Initialize analytics data if needed
+      const sessionsExist = await db.select().from(userSessions).limit(1);
+      if (!sessionsExist || sessionsExist.length === 0) {
+        await this.initAnalyticsSampleData();
       }
     } catch (error) {
       console.error("Error initializing sample data:", error);
@@ -205,19 +211,23 @@ export class DatabaseStorage implements IStorage {
           
           // Random device type
           const deviceTypes = ['desktop', 'mobile', 'tablet'];
-          const deviceType = deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
+          const device = deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
           
-          // Random pages viewed (1-15)
-          const pagesViewed = Math.floor(Math.random() * 15) + 1;
+          // Random browser
+          const browsers = ['Chrome', 'Firefox', 'Safari', 'Edge'];
+          const browser = browsers[Math.floor(Math.random() * browsers.length)];
+          
+          // End time (session start + duration)
+          const endTime = new Date(sessionDate.getTime() + (durationSeconds * 1000));
           
           sampleSessions.push({
             userId: user.id,
-            sessionStart: sessionDate,
-            durationSeconds: durationSeconds,
-            deviceType: deviceType,
-            pagesViewed: pagesViewed,
+            sessionDuration: durationSeconds.toString(),
+            startTime: sessionDate,
+            endTime: endTime,
+            device: device,
+            browser: browser,
             ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-            userAgent: 'Mozilla/5.0 (compatible)',
             referrer: Math.random() > 0.7 ? 'google.com' : (Math.random() > 0.5 ? 'facebook.com' : null)
           });
           
@@ -237,50 +247,43 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Create content view metrics for sample data
-      const contentTitles = [
-        'Web Development Trends', 
-        'Small Business Website Guide', 
-        'SEO Best Practices', 
-        'E-commerce Solutions',
-        'Responsive Design Principles',
-        'Mobile App Development Process',
-        'Digital Marketing Strategies',
-        'Improving Website Performance'
+      const contentItems = [
+        { id: 1, title: 'Web Development Trends', type: 'blog' },
+        { id: 2, title: 'Small Business Website Guide', type: 'guide' },
+        { id: 3, title: 'SEO Best Practices', type: 'blog' },
+        { id: 4, title: 'E-commerce Solutions', type: 'service' },
+        { id: 5, title: 'Responsive Design Principles', type: 'blog' },
+        { id: 6, title: 'Mobile App Development Process', type: 'guide' },
+        { id: 7, title: 'Digital Marketing Strategies', type: 'blog' },
+        { id: 8, title: 'Improving Website Performance', type: 'service' }
       ];
       
-      const sampleContentViews = [];
+      const sampleContentMetrics = [];
       
-      for (const title of contentTitles) {
-        // Random number of views (50-350)
+      for (const content of contentItems) {
+        // Random metrics
         const views = Math.floor(Math.random() * 300) + 50;
+        const uniqueViews = Math.floor(views * (0.6 + (Math.random() * 0.3)));
+        const avgTimeOnPage = (Math.random() * 4 + 1).toFixed(2);
+        const bounceRate = (Math.random() * 60 + 10).toFixed(2);
+        const conversionRate = (Math.random() * 5 + 0.5).toFixed(2);
         
-        for (let i = 0; i < views; i++) {
-          // Random date within the last 30 days
-          const daysAgo = Math.floor(Math.random() * 30);
-          const viewDate = new Date(now.getTime() - (daysAgo * oneDayMs));
-          
-          // Random time spent (5-600 seconds)
-          const timeSpentSeconds = Math.floor(Math.random() * 595) + 5;
-          
-          // Random conversion (5% chance)
-          const converted = Math.random() < 0.05;
-          
-          sampleContentViews.push({
-            contentId: contentTitles.indexOf(title) + 1,
-            contentTitle: title,
-            viewedAt: viewDate,
-            timeSpentSeconds: timeSpentSeconds,
-            converted: converted,
-            deviceType: ['desktop', 'mobile', 'tablet'][Math.floor(Math.random() * 3)],
-            userId: Math.random() < 0.7 ? allUsers[Math.floor(Math.random() * allUsers.length)].id : null
-          });
-        }
+        sampleContentMetrics.push({
+          contentId: content.id,
+          contentType: content.type,
+          contentTitle: content.title,
+          views: views,
+          uniqueViews: uniqueViews,
+          avgTimeOnPage: avgTimeOnPage,
+          bounceRate: bounceRate,
+          conversionRate: conversionRate
+        });
       }
       
-      // Insert the sample content views
-      if (sampleContentViews.length > 0) {
-        await db.insert(contentViewMetrics).values(sampleContentViews);
-        console.log(`Created ${sampleContentViews.length} sample content view metrics for analytics`);
+      // Insert the sample content metrics
+      if (sampleContentMetrics.length > 0) {
+        await db.insert(contentViewMetrics).values(sampleContentMetrics);
+        console.log(`Created ${sampleContentMetrics.length} sample content view metrics for analytics`);
       }
       
     } catch (error) {

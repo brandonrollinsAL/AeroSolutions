@@ -18,7 +18,7 @@ import debugRouter from './routes/debug';
 import contentRouter from './routes/content';
 import uxRouter from './routes/ux';
 import intelligenceRouter from './routes/intelligence';
-import analyticsRouter from './routes/analytics';
+import { registerAnalyticsRoutes } from './routes/analytics';
 import aiContentRouter from './routes/ai-content';
 import recommendationsRouter from './routes/recommendations';
 import intelligentSearchRouter from './routes/intelligent-search';
@@ -115,7 +115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/content', contentRouter);
   app.use('/api/ux', uxRouter);
   app.use('/api/intelligence', intelligenceRouter);
-  app.use('/api/analytics', analyticsRouter);
+  // Register analytics routes
+  registerAnalyticsRoutes(app);
   app.use('/api/ai-content', aiContentRouter);
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/intelligent-search', intelligentSearchRouter);
