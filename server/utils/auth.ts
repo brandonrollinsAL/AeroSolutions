@@ -78,6 +78,23 @@ export function verifyPassword(password: string, hashedPassword: string): boolea
  * Middleware to verify JWT token in authorization header
  */
 export function authMiddleware(req: any, res: any, next: any) {
+  // Skip authentication for the public API endpoints
+  const publicPaths = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/test-xai',
+    '/api/test-ai-content',
+    '/api/stripe/config',
+    '/api/stripe/webhook'
+  ];
+  
+  // Check if the current path is public
+  if (publicPaths.includes(req.path)) {
+    return next();
+  }
+  
   // Get token from Authorization header
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
