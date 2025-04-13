@@ -712,10 +712,10 @@ Provide insights that would be valuable for optimizing the website.
   });
 
   /**
-   * Suggestion 27: Real-Time Analytics for Client Project Performance
-   * Analyze performance metrics for client projects (e.g., website traffic, conversions)
+   * Suggestion 27: Real-Time Analytics for Website Performance
+   * Analyze website performance metrics (e.g., page load time, TTFB, bounce rates)
    */
-  app.get("/api/analytics/project-performance/:clientId", async (req: Request, res: Response) => {
+  app.get("/api/analytics/website-performance/:clientId", async (req: Request, res: Response) => {
     try {
       const { clientId } = req.params;
       
@@ -727,7 +727,7 @@ Provide insights that would be valuable for optimizing the website.
       }
       
       // Check cache first (TTL: 15 minutes)
-      const cacheKey = `project_performance_${clientId}`;
+      const cacheKey = `website_performance_${clientId}`;
       const cachedAnalysis = apiCache.get(cacheKey);
       
       if (cachedAnalysis) {
@@ -738,7 +738,7 @@ Provide insights that would be valuable for optimizing the website.
         });
       }
       
-      // Fetch project metrics from database
+      // Fetch website metrics from database
       const metrics = await db.select()
         .from(websiteMetrics)
         .where(eq(websiteMetrics.clientId, parseInt(clientId)))
@@ -747,7 +747,7 @@ Provide insights that would be valuable for optimizing the website.
       if (!metrics || metrics.length === 0) {
         return res.status(404).json({
           success: false,
-          message: "No project metrics found for this client"
+          message: "No website metrics found for this client"
         });
       }
       
@@ -770,11 +770,11 @@ Provide insights that would be valuable for optimizing the website.
           messages: [
             { 
               role: 'system', 
-              content: 'You are a web analytics expert specializing in analyzing project performance metrics. Provide detailed insights and recommendations based on website traffic, conversions, bounce rates, and other metrics. Format your response in markdown.'
+              content: 'You are a web analytics expert specializing in website performance metrics analysis. Provide detailed insights and recommendations based on page load times, time to first byte (TTFB), bounce rates, and other web performance metrics. Format your response in markdown.'
             },
             { 
               role: 'user', 
-              content: `Analyze the following project performance metrics for client ID ${clientId}:\n\n${metricData}\n\nProvide insights on performance trends, areas for improvement, and specific recommendations to boost conversions and user engagement. Include a brief summary at the beginning followed by detailed analysis.`
+              content: `Analyze the following website performance metrics for client ID ${clientId}:\n\n${metricData}\n\nProvide insights on performance trends, areas for improvement, and specific recommendations to improve page speed, user experience, and reduce bounce rates. Include a brief summary at the beginning followed by detailed analysis with actionable recommendations for each metric.`
             }
           ],
           temperature: 0.2,
@@ -874,8 +874,7 @@ Provide insights that would be valuable for optimizing the website.
         }
         
         // Generic fallback analysis
-        const fallbackAnalysis = `
-## Website Performance Analysis
+        const fallbackAnalysis = `## Website Performance Analysis
 
 ### Summary
 For client ID ${clientId}, we've analyzed ${metrics.length} website metrics records. The average page load time is ${avgPageLoadTime.toFixed(2)}s with a time to first byte (TTFB) of ${avgTtfb.toFixed(2)}s. The average bounce rate is ${avgBounceRate.toFixed(2)}%.
@@ -889,8 +888,7 @@ For client ID ${clientId}, we've analyzed ${metrics.length} website metrics reco
 1. **Page Speed**: ${avgPageLoadTime > 3 ? 'Optimize images, implement code splitting, and utilize caching to improve page load times' : 'Continue maintaining good page speed practices'}
 2. **Server Response**: ${avgTtfb > 0.5 ? 'Consider upgrading hosting or implementing CDN to reduce server response time' : 'Server response time is good, continue monitoring for changes'}
 3. **Mobile Optimization**: Ensure your site is fully responsive and test across multiple device types
-4. **Content Delivery**: Analyze content performance with Core Web Vitals to identify opportunities for layout stability improvements
-`;
+4. **Content Delivery**: Analyze content performance with Core Web Vitals to identify opportunities for layout stability improvements`;
 
         // Prepare response with fallback
         const result = {
@@ -929,10 +927,10 @@ For client ID ${clientId}, we've analyzed ${metrics.length} website metrics reco
         });
       }
     } catch (error: any) {
-      console.error("Project performance analysis failed:", error);
+      console.error("Website performance analysis failed:", error);
       return res.status(500).json({ 
         success: false, 
-        message: "Project performance analysis failed", 
+        message: "Website performance analysis failed", 
         error: error.message || "Unknown error"
       });
     }
