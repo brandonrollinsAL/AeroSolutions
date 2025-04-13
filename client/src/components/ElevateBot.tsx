@@ -128,13 +128,13 @@ export default function ElevateBot({
     setMessages(prev => [...prev, botMessage]);
     
     try {
-      // Send request to Grok API via our backend
-      const response = await apiRequest("POST", "/api/copilot", { 
+      // Send request to dedicated ElevateBot endpoint powered by xAI
+      const response = await apiRequest("POST", "/api/elevate-bot", { 
         message: `User selected option: ${option}. ${getOptionText(option)}` 
       });
       
       if (!response.ok) {
-        throw new Error("Failed to get response from AI");
+        throw new Error("Failed to get response from ElevateBot");
       }
       
       const data = await response.json();
@@ -214,11 +214,11 @@ export default function ElevateBot({
     setMessages(prev => [...prev, botMessage]);
     
     try {
-      // Send request to Grok AI
-      const response = await apiRequest("POST", "/api/copilot", { message: userInput });
+      // Send request to dedicated ElevateBot endpoint powered by xAI
+      const response = await apiRequest("POST", "/api/elevate-bot", { message: userInput });
       
       if (!response.ok) {
-        throw new Error("Failed to get response from AI");
+        throw new Error("Failed to get response from ElevateBot");
       }
       
       const data = await response.json();
