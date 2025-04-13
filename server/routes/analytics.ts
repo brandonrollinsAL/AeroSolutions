@@ -1190,4 +1190,251 @@ For client ID ${clientId}, we've analyzed ${metrics.length} website metrics reco
       });
     }
   });
+
+  /**
+   * Real-Time Analytics for Client Website Conversions
+   * Analyze website conversion metrics (e.g., form submissions, purchases, signups)
+   */
+  app.get("/api/analytics/website-conversions/:clientId", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { clientId } = req.params;
+      const { startDate, endDate, conversionType } = req.query;
+
+      // Set default date range if not provided (last 30 days)
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const start = startDate ? new Date(startDate as string) : thirtyDaysAgo;
+      const end = endDate ? new Date(endDate as string) : now;
+
+      // Create cache key based on request parameters
+      const cacheKey = `website-conversions-${clientId}-${startDate || 'default'}-${endDate || 'default'}-${conversionType || 'all'}`;
+      
+      // Check if we have a cached response
+      const cachedData = apiCache.get(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
+      // Build query conditions
+      let conditions = [
+        eq(websiteConversions.clientId, parseInt(clientId)),
+        between(websiteConversions.createdAt, start, end)
+      ];
+      
+      // Add conversion type filter if specified
+      if (conversionType) {
+        conditions.push(eq(websiteConversions.conversionType, conversionType as string));
+      }
+
+      // Fetch conversion data
+      const conversionData = await db.select()
+        .from(websiteConversions)
+        .where(and(...conditions))
+        .orderBy(websiteConversions.createdAt);
+
+      if (conversionData.length === 0) {
+        return res.status(404).json({ 
+          message: "No conversion data found for the specified criteria" 
+        });
+      }
+
+      // Calculate key metrics
+      const totalConversions = conversionData.reduce((total, record) => total + record.conversions, 0);
+      const totalValue = conversionData.reduce((total, record) => 
+        total + parseFloat(record.conversionValue.toString()), 0);
+      
+      // Calculate average conversion metrics
+      const avgBounceRate = conversionData.reduce((total, record) => 
+        total + parseFloat(record.bounceRate.toString()), 0) / conversionData.length;
+      
+      const avgVisitToConversion = conversionData.reduce((total, record) => 
+        total + parseFloat(record.visitToConversion.toString()), 0) / conversionData.length;
+
+      // Group by conversion type
+      const conversionTypes = {};
+      conversionData.forEach(record => {
+        if (!conversionTypes[record.conversionType]) {
+          conversionTypes[record.conversionType] = {
+            count: 0,
+            value: 0,
+            records: []
+          };
+        }
+        conversionTypes[record.conversionType].count += record.conversions;
+        conversionTypes[record.conversionType].value += parseFloat(record.conversionValue.toString());
+        conversionTypes[record.conversionType].records.push(record);
+      });
+
+      // Group by source/medium
+      const sources = {};
+      conversionData.forEach(record => {
+        const source = record.source || "direct";
+        const medium = record.medium || "none";
+        const key = `${source}/${medium}`;
+        
+        if (!sources[key]) {
+          sources[key] = {
+            count: 0,
+            value: 0
+          };
+        }
+        sources[key].count += record.conversions;
+        sources[key].value += parseFloat(record.conversionValue.toString());
+      });
+
+      // Sort sources by conversion count
+      const sortedSources = Object.entries(sources)
+        .map(([key, data]) => ({
+          source: key,
+          conversions: (data as any).count,
+          value: (data as any).value
+        }))
+        .sort((a, b) => b.conversions - a.conversions);
+
+      // Get AI analysis using xAI API
+      let aiAnalysis = "";
+      try {
+        const analysisData = {
+          totalConversions,
+          totalValue,
+          avgBounceRate,
+          avgVisitToConversion,
+          conversionTypes: Object.keys(conversionTypes).map(type => ({
+            type,
+            count: conversionTypes[type].count,
+            value: conversionTypes[type].value
+          })),
+          topSources: sortedSources.slice(0, 5)
+        };
+
+        const aiResponse = await callXAI({
+          model: "grok-2-1212",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in website conversion analytics. Analyze the conversion data and provide actionable insights about conversion performance, including trends, top-performing channels, and recommendations for improvement. Be concise and professional."
+            },
+            {
+              role: "user",
+              content: `Analyze the following website conversion data for the time period ${start.toLocaleDateString()} to ${end.toLocaleDateString()}: ${JSON.stringify(analysisData)}`
+            }
+          ]
+        });
+
+        aiAnalysis = aiResponse.choices[0].message.content;
+      } catch (error) {
+        console.error("Error getting AI analysis for conversion data:", error);
+        aiAnalysis = "AI analysis currently unavailable. Please try again later.";
+      }
+
+      // Prepare response
+      const responseData = {
+        clientId: parseInt(clientId),
+        timeframe: {
+          start: start.toISOString(),
+          end: end.toISOString(),
+          days: Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+        },
+        overview: {
+          totalConversions,
+          totalValue: totalValue.toFixed(2),
+          avgBounceRate: avgBounceRate.toFixed(2) + "%",
+          avgVisitToConversion: avgVisitToConversion.toFixed(2) + "%"
+        },
+        byType: Object.keys(conversionTypes).map(type => ({
+          type,
+          conversions: conversionTypes[type].count,
+          value: conversionTypes[type].value.toFixed(2),
+          percentage: ((conversionTypes[type].count / totalConversions) * 100).toFixed(2) + "%"
+        })),
+        bySources: sortedSources.slice(0, 10),
+        trends: {
+          // Group by day for trend analysis
+          daily: Array.from(
+            conversionData.reduce((acc, record) => {
+              const date = record.createdAt.toISOString().split("T")[0];
+              const existing = acc.get(date) || { date, conversions: 0, value: 0 };
+              existing.conversions += record.conversions;
+              existing.value += parseFloat(record.conversionValue.toString());
+              acc.set(date, existing);
+              return acc;
+            }, new Map())
+          ).map(([date, data]) => ({
+            date,
+            conversions: (data as any).conversions,
+            value: (data as any).value.toFixed(2)
+          })).sort((a, b) => a.date.localeCompare(b.date))
+        },
+        analysis: aiAnalysis
+      };
+
+      // Cache the response for 30 minutes
+      apiCache.set(cacheKey, responseData, 1800);
+
+      res.json(responseData);
+    } catch (error) {
+      console.error("Error getting website conversion analytics:", error);
+      res.status(500).json({ 
+        error: "Failed to retrieve website conversion analytics",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  /**
+   * Track website conversion data for client sites
+   */
+  app.post("/api/analytics/website-conversions", async (req: Request, res: Response) => {
+    try {
+      const { 
+        clientId, 
+        pageUrl, 
+        conversionType,
+        conversions = 1,
+        conversionValue = 0,
+        bounceRate = 0,
+        visitToConversion = 0,
+        source,
+        medium,
+        campaign
+      } = req.body;
+      
+      if (!clientId || !pageUrl || !conversionType) {
+        return res.status(400).json({ error: "Missing required conversion data" });
+      }
+      
+      // Create new conversion record
+      const conversionData = {
+        clientId,
+        pageUrl,
+        conversionType,
+        conversions,
+        conversionValue: conversionValue.toString(),
+        bounceRate: bounceRate.toString(),
+        visitToConversion: visitToConversion.toString(),
+        source,
+        medium,
+        campaign
+      };
+      
+      const [result] = await db.insert(websiteConversions).values(conversionData).returning();
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Website conversion data recorded successfully",
+        id: result.id 
+      });
+    } catch (error) {
+      console.error("Error tracking website conversion:", error);
+      res.status(500).json({ 
+        error: "Failed to track website conversion data",
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
 };
