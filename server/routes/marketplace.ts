@@ -1014,8 +1014,14 @@ marketplaceRouter.post(
           timestamp: new Date().toISOString()
         };
         
-        // Cache the result
+        // Cache the result for the exact business type
         contentMarketingCache.set(cacheKey, result);
+        
+        // Also cache under the normalized/mapped type for future similar requests
+        if (mappedType !== normalizedType) {
+          contentMarketingCache.set(mappedCacheKey, result);
+          console.log(`[Content Marketing API] Also cached result for mapped business type: ${mappedType}`);
+        }
         
         // Return the content marketing suggestions
         return res.json(result);
@@ -1147,14 +1153,24 @@ marketplaceRouter.post(
           ]
         };
         
-        return res.json({
+        // Create the fallback result object
+        const fallbackResult = {
           success: true,
           contentMarketing: fallbackSuggestions,
           businessType: businessType,
           timestamp: new Date().toISOString(),
           fallback: true,
           error: aiError.message
-        });
+        };
+        
+        // Cache the fallback result for both the exact business type and the mapped type
+        contentMarketingCache.set(cacheKey, fallbackResult);
+        if (mappedType !== normalizedType) {
+          contentMarketingCache.set(mappedCacheKey, fallbackResult);
+          console.log(`[Content Marketing API] Cached fallback result for mapped business type: ${mappedType}`);
+        }
+        
+        return res.json(fallbackResult);
       }
     } catch (error: any) {
       console.error('Error generating content marketing suggestions:', error);
