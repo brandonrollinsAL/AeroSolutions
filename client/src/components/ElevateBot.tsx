@@ -63,6 +63,29 @@ export default function ElevateBot({
       }
     }
   }, [externalIsOpen, initialOption]);
+  
+  // Listen for custom event to open tech assistant
+  useEffect(() => {
+    const handleOpenTechAssistant = () => {
+      console.log("Custom event received: openTechAssistant");
+      setIsOpen(true);
+      setIsTyping(true);
+      setTypingComplete(false);
+      setActiveOption(null);
+      
+      // Simulate typing and then show content
+      setTimeout(() => {
+        setIsTyping(false);
+        setTypingComplete(true);
+      }, 1500);
+    };
+    
+    window.addEventListener('openTechAssistant', handleOpenTechAssistant);
+    
+    return () => {
+      window.removeEventListener('openTechAssistant', handleOpenTechAssistant);
+    };
+  }, []);
 
   const toggleChatbot = () => {
     setIsOpen(!isOpen);
@@ -282,7 +305,16 @@ export default function ElevateBot({
             </div>
 
             {/* Chat Content */}
-            <div className="flex-grow overflow-y-auto p-4 bg-[#EDEFF2]">
+            <div 
+              className="flex-grow overflow-y-auto p-4 bg-[#EDEFF2]"
+              style={{
+                backgroundImage: `linear-gradient(135deg, rgba(59, 91, 157, 0.03) 0%, rgba(0, 209, 209, 0.03) 100%),
+                                  url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20h15v15H20zm60 0h15v15H80zM20 80h15v15H20zm60 0h15v15H80zm-30-30h15v15H50z' fill='%2300D1D1' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E"),
+                                  url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h10v10H0zm30 0h10v10H30zM0 30h10v10H0zm30 30h10v10H30zm30-30h10v10H30z' fill='%233B5B9D' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                backgroundSize: "120px 120px, 60px 60px, 60px 60px",
+                backgroundPosition: "center, center, center"
+              }}
+            >
               {/* Welcome Message - Only shown if no messages yet */}
               {messages.length === 0 && (
                 <div className="flex mb-4">
