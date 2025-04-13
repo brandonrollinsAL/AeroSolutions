@@ -19,6 +19,9 @@ const recommendationCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 // Create a cache for listing descriptions to avoid unnecessary AI calls
 const listingDescriptionCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 
+// Create a cache for social media post suggestions to avoid unnecessary AI calls
+const socialPostSuggestionCache = new NodeCache({ stdTTL: 7200, checkperiod: 600 }); // 2 hour TTL
+
 // Get all marketplace items
 marketplaceRouter.get('/', async (req: Request, res: Response) => {
   try {
@@ -1377,6 +1380,94 @@ marketplaceRouter.get('/sales-analytics', async (req: Request, res: Response) =>
       error: error.message || 'Unknown error'
     });
   }
+});
+
+// Auto-Suggestions for Client Social Media Posts
+marketplaceRouter.get('/suggest-social-posts/:userId', async (req: Request, res: Response) => {  
+  const { userId } = req.params;  
+  try {
+    const cacheKey = `social_posts_${userId}`;
+    
+    // Check cache first
+    const cachedPosts = socialPostSuggestionCache.get(cacheKey);
+    if (cachedPosts) {
+      return res.status(200).json({
+        success: true,
+        data: cachedPosts,
+        cached: true
+      });
+    }
+    
+    // Get user data
+    const user = await storage.getUser(parseInt(userId, 10));
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Get user business type from preferences or use default
+    const preferences = user.preferences ? JSON.parse(user.preferences) : {};
+    const businessType = preferences.businessType || 'small business';
+    
+    try {
+      // Make the AI call with a timeout
+      const response = await Promise.race([
+        grokApi.createChatCompletion([
+          { 
+            role: 'system', 
+            content: 'You are a professional social media marketing expert who creates strategic content for businesses.' 
+          },
+          { 
+            role: 'user', 
+            content: `Suggest 5 engaging social media posts for a ${businessType} business that will increase engagement and drive traffic. Include posts for different platforms (Twitter, Facebook, Instagram, LinkedIn), and make them specific and relevant to the industry.` 
+          }
+        ], { 
+          model: 'grok-3-mini',  // Use the mini model for faster responses
+          temperature: 0.7 
+        }),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('AI social post suggestion timed out')), 15000)
+        )
+      ]);
+      
+      const posts = response.choices[0].message.content;
+      
+      // Cache the successful response
+      socialPostSuggestionCache.set(cacheKey, posts);
+      
+      return res.status(200).json({
+        success: true,
+        data: { posts },
+        cached: false
+      });
+    } catch (error: any) {
+      console.error("AI social post suggestion error:", error);
+      
+      // Fallback response if AI fails
+      const fallbackPosts = [
+        "📈 LinkedIn: Excited to share our new approach to [specific service] that's helping our clients achieve [specific outcome]. #BusinessGrowth #Innovation",
+        "🎯 Facebook: Don't miss our limited-time promotion on [product/service]! Perfect for businesses looking to [benefit]. Contact us to learn more.",
+        "✨ Instagram: Behind the scenes at [business name]! Our team hard at work creating solutions that make a difference for our clients. #TeamworkMakesTheDreamWork",
+        "💡 Twitter: \"The key to successful [industry] is [quick tip]\". What challenges are you facing in your business? We're here to help!",
+        "🚀 LinkedIn: Just published a new case study showing how we helped [anonymous client] increase their [metric] by [percentage]. Check out the full story on our website!"
+      ].join("\n\n");
+      
+      return res.status(200).json({
+        success: true,
+        data: { posts: fallbackPosts },
+        fallback: true
+      });
+    }
+  } catch (error: any) {
+    console.error('Social post suggestion failed:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Social post suggestion failed', 
+      error: error.message 
+    });  
+  }  
 });
 
 export default marketplaceRouter;
