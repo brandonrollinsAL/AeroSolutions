@@ -504,9 +504,8 @@ export class DatabaseStorage implements IStorage {
   
   async searchServices(query: string): Promise<any[]> {
     try {
-      // For this example, we'll assume a 'services' table exists
-      // In a real app, you might have a separate services table or reuse marketplaceItems
-      // Here we'll use similar fields to marketplaceItems
+      // We're filtering marketplaceItems with category='service' to represent services
+      // This allows us to use the same table structure for both marketplace items and services
       return await db.select().from(marketplaceItems).where(
         and(
           eq(marketplaceItems.category, 'service'),
