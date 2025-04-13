@@ -29,6 +29,7 @@ import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
+import emailCampaignsRouter from './routes/email-campaigns';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
