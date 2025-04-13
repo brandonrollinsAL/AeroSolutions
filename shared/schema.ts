@@ -533,6 +533,33 @@ export const insertWebsiteEngagementSchema = createInsertSchema(websiteEngagemen
 export type WebsiteEngagement = typeof websiteEngagement.$inferSelect;
 export type InsertWebsiteEngagement = z.infer<typeof insertWebsiteEngagementSchema>;
 
+// UI Element Interaction schema to track detailed UI interactions
+export const uiElementInteractions = pgTable("ui_element_interactions", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id, { onDelete: "cascade" }),
+  pageUrl: text("page_url").notNull(),
+  elementId: text("element_id").notNull(), // HTML ID or data attribute
+  elementType: text("element_type").notNull(), // button, link, input, etc.
+  interactionType: text("interaction_type").notNull(), // click, hover, focus, submit, etc.
+  interactionDuration: decimal("interaction_duration", { precision: 10, scale: 2 }).default("0"), // milliseconds
+  wasSuccessful: boolean("was_successful").default(true), // Did the interaction complete successfully
+  errorMessage: text("error_message"), // If there was an error
+  deviceType: text("device_type"), // mobile, desktop, tablet
+  browser: text("browser"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUiElementInteractionSchema = createInsertSchema(uiElementInteractions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type UiElementInteraction = typeof uiElementInteractions.$inferSelect;
+export type InsertUiElementInteraction = z.infer<typeof insertUiElementInteractionSchema>;
+
 // Website conversions schema for tracking conversion metrics for client websites
 export const websiteConversions = pgTable("website_conversions", {
   id: serial("id").primaryKey(),
