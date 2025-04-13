@@ -2,8 +2,8 @@ import express, { Request, Response, Router } from 'express';
 import { callXAI } from '../utils/xaiClient';
 import NodeCache from 'node-cache';
 import { db } from '../db';
-import { mockupRequests } from '@shared/schema';
-import { desc, sql } from 'drizzle-orm';
+import { mockupRequests, mockupEngagement } from '@shared/schema';
+import { desc, sql, eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -23,6 +23,8 @@ const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 
 const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for website feature suggestions with 2-hour TTL
 const websiteFeatureSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for mockup engagement analytics with 1-hour TTL
+const mockupEngagementCache = new NodeCache({ stdTTL: 3600, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -1388,6 +1390,245 @@ Focus on modern, effective features that align with current web development tren
     return res.status(500).json({
       success: false,
       message: "Failed to generate website feature suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 24: Real-Time Analytics for Client Mockup Engagement
+ * Analyze mockup engagement metrics (views, feedback, ratings) for business insights
+ */
+router.get('/mockup-engagement', async (req: Request, res: Response) => {
+  try {
+    // Check for appropriate authorization
+    // This endpoint should be restricted to staff/admins in a production environment
+    
+    // Check cache first for performance
+    const cacheKey = 'mockup_engagement_analytics';
+    const cachedAnalytics = mockupEngagementCache.get(cacheKey);
+    
+    if (cachedAnalytics && !req.query.refresh) {
+      return res.json({
+        success: true,
+        data: cachedAnalytics,
+        source: 'cache',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Fetch all mockup engagement data with mockup details
+    const engagementData = await db
+      .select({
+        engagement: mockupEngagement,
+        mockup: {
+          id: mockupRequests.id,
+          businessType: mockupRequests.businessType,
+          industryCategory: mockupRequests.industryCategory,
+          businessGoals: mockupRequests.businessGoals,
+          createdAt: mockupRequests.createdAt
+        }
+      })
+      .from(mockupEngagement)
+      .innerJoin(mockupRequests, eq(mockupEngagement.mockupId, mockupRequests.id))
+      .orderBy(desc(mockupEngagement.lastViewed));
+    
+    if (engagementData.length === 0) {
+      return res.json({
+        success: true,
+        message: "No mockup engagement data available for analysis",
+        data: {
+          summaryMetrics: {
+            totalViews: 0,
+            avgRating: 0,
+            totalShares: 0,
+            totalMockups: 0
+          },
+          byBusinessType: [],
+          byIndustry: [],
+          byEngagementSource: [],
+          recentEngagement: [],
+          trends: []
+        }
+      });
+    }
+    
+    // Calculate summary metrics
+    const summaryMetrics = {
+      totalViews: engagementData.reduce((sum, data) => sum + data.engagement.views, 0),
+      avgRating: engagementData.filter(data => data.engagement.rating).reduce((sum, data) => sum + (data.engagement.rating || 0), 0) / 
+                engagementData.filter(data => data.engagement.rating).length || 0,
+      totalShares: engagementData.reduce((sum, data) => sum + (data.engagement.sharedCount || 0), 0),
+      totalMockups: new Set(engagementData.map(data => data.engagement.mockupId)).size
+    };
+    
+    // Group by business type
+    const businessTypeMap: Record<string, { views: number, shares: number, rating: number, count: number }> = {};
+    engagementData.forEach(data => {
+      const type = data.mockup.businessType?.toLowerCase() || 'unknown';
+      if (!businessTypeMap[type]) {
+        businessTypeMap[type] = { views: 0, shares: 0, rating: 0, count: 0 };
+      }
+      businessTypeMap[type].views += data.engagement.views;
+      businessTypeMap[type].shares += data.engagement.sharedCount || 0;
+      if (data.engagement.rating) {
+        businessTypeMap[type].rating += data.engagement.rating;
+        businessTypeMap[type].count++;
+      }
+    });
+    
+    const byBusinessType = Object.entries(businessTypeMap).map(([type, metrics]) => ({
+      businessType: type,
+      views: metrics.views,
+      shares: metrics.shares,
+      avgRating: metrics.count > 0 ? metrics.rating / metrics.count : 0
+    })).sort((a, b) => b.views - a.views);
+    
+    // Group by industry
+    const industryMap: Record<string, { views: number, shares: number, rating: number, count: number }> = {};
+    engagementData.forEach(data => {
+      const industry = data.mockup.industryCategory?.toLowerCase() || 'unknown';
+      if (!industryMap[industry]) {
+        industryMap[industry] = { views: 0, shares: 0, rating: 0, count: 0 };
+      }
+      industryMap[industry].views += data.engagement.views;
+      industryMap[industry].shares += data.engagement.sharedCount || 0;
+      if (data.engagement.rating) {
+        industryMap[industry].rating += data.engagement.rating;
+        industryMap[industry].count++;
+      }
+    });
+    
+    const byIndustry = Object.entries(industryMap).map(([industry, metrics]) => ({
+      industry,
+      views: metrics.views,
+      shares: metrics.shares,
+      avgRating: metrics.count > 0 ? metrics.rating / metrics.count : 0
+    })).sort((a, b) => b.views - a.views);
+    
+    // Group by engagement source
+    const sourceMap: Record<string, { views: number, shares: number, rating: number, count: number }> = {};
+    engagementData.forEach(data => {
+      const source = data.engagement.engagementSource?.toLowerCase() || 'direct';
+      if (!sourceMap[source]) {
+        sourceMap[source] = { views: 0, shares: 0, rating: 0, count: 0 };
+      }
+      sourceMap[source].views += data.engagement.views;
+      sourceMap[source].shares += data.engagement.sharedCount || 0;
+      if (data.engagement.rating) {
+        sourceMap[source].rating += data.engagement.rating;
+        sourceMap[source].count++;
+      }
+    });
+    
+    const byEngagementSource = Object.entries(sourceMap).map(([source, metrics]) => ({
+      source,
+      views: metrics.views,
+      shares: metrics.shares,
+      avgRating: metrics.count > 0 ? metrics.rating / metrics.count : 0
+    })).sort((a, b) => b.views - a.views);
+    
+    // Recent engagement (last 10)
+    const recentEngagement = engagementData.slice(0, 10).map(data => ({
+      mockupId: data.engagement.mockupId,
+      businessType: data.mockup.businessType,
+      industry: data.mockup.industryCategory,
+      views: data.engagement.views,
+      rating: data.engagement.rating,
+      lastViewed: data.engagement.lastViewed,
+      feedback: data.engagement.feedback,
+      sharedCount: data.engagement.sharedCount
+    }));
+    
+    // Generate AI-powered business insights if enough data is available
+    let trends = [];
+    
+    if (engagementData.length >= 10) {
+      try {
+        // Format engagement data for analysis
+        const engagementForAnalysis = engagementData.slice(0, 50).map(data => 
+          `Business Type: ${data.mockup.businessType}, Industry: ${data.mockup.industryCategory || 'Unknown'}, Views: ${data.engagement.views}, Rating: ${data.engagement.rating || 'None'}, Shared: ${data.engagement.sharedCount || 0}, Source: ${data.engagement.engagementSource || 'Direct'}, Feedback: "${data.engagement.feedback?.substring(0, 50) || 'None'}"`
+        ).join('\n');
+        
+        // Set timeout for Grok call (30 seconds)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+        });
+        
+        // Generate insights using xAI Grok
+        const grokPromise = callXAI('/chat/completions', {
+          model: 'grok-3',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a business analytics expert specializing in identifying patterns and trends in client engagement with web design mockups. Provide 4-6 specific, actionable business insights based on the data.'
+            },
+            {
+              role: 'user',
+              content: `Analyze the following mockup engagement data to identify business insights and trends that could help our agency improve offerings:\n\n${engagementForAnalysis}\n\nProvide specific, actionable insights about which mockup types perform best, what feedback patterns exist, and how we can optimize our mockup offerings.`
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 1000,
+          response_format: { type: "json_object" }
+        });
+        
+        // Race between API call and timeout
+        const response: any = await Promise.race([grokPromise, timeoutPromise]);
+        
+        if (response && response.choices && response.choices[0] && response.choices[0].message) {
+          // Try to parse the response as JSON
+          try {
+            const content = response.choices[0].message.content;
+            const parsedContent = JSON.parse(content);
+            
+            // Extract insights from parsed JSON
+            if (parsedContent.insights && Array.isArray(parsedContent.insights)) {
+              trends = parsedContent.insights;
+            } else if (parsedContent.trends && Array.isArray(parsedContent.trends)) {
+              trends = parsedContent.trends;
+            } else {
+              // If the expected structure isn't found, use the whole content
+              trends = [{ insight: content }];
+            }
+          } catch (jsonError) {
+            // If JSON parsing fails, use the raw content
+            console.error("Failed to parse Grok response as JSON:", jsonError);
+            trends = [{ insight: response.choices[0].message.content }];
+          }
+        }
+      } catch (error) {
+        console.error("Error analyzing mockup engagement with AI:", error);
+        trends = [{ insight: "AI-powered trend analysis failed. Please try again later." }];
+      }
+    } else {
+      trends = [{ insight: "Not enough engagement data for AI analysis. At least 10 engagements are required." }];
+    }
+    
+    // Compile the complete analytics
+    const analyticsData = {
+      summaryMetrics,
+      byBusinessType,
+      byIndustry,
+      byEngagementSource,
+      recentEngagement,
+      trends
+    };
+    
+    // Cache the results for 1 hour
+    mockupEngagementCache.set(cacheKey, analyticsData);
+    
+    return res.json({
+      success: true,
+      data: analyticsData,
+      source: 'fresh',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Mockup engagement analysis failed:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Mockup engagement analysis failed', 
       error: error.message || "Unknown error"
     });
   }
