@@ -1,0 +1,74 @@
+Step 2: Implement Suggestions 11-20 (Internal Search and User Engagement)
+
+Suggestion 11: Power Internal Database Search Engine
+
+Use xAI to enhance search results in the database (e.g., blog posts, services, users).
+
+Create server/routes/search.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const express = require('express');  
+const router = express.Router();  
+const pool = require('../db');  
+const { callXAI } = require('../utils/xaiClient');  
+
+router.get('/search/:query', async (req, res) => {  
+  const { query } = req.params;  
+  try {  
+    const results = await pool.query('SELECT * FROM articles WHERE content ILIKE $1', [`%${query}%`]);  
+    const searchData = results.rows.map(a => `Article ${a.id}: ${a.content}`).join('\n');  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3-mini',  
+      messages: [{ role: 'user', content: `Rank these search results for relevance to "${query}":\n${searchData}` }],  
+    });  
+    res.json({ rankedResults: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Search failed', error: error.message });  
+  }  
+});  
+
+module.exports = router;  
+Add to server/index.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const searchRoutes = require('./routes/search');  
+app.use('/api/search', searchRoutes);  
+Suggestion 12: Auto-Suggestions for Website Features
+
+Suggest website features based on user business type.
+
+Add to server/routes/marketplace.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.get('/suggest-features/:userId', async (req, res) => {  
+  const { userId } = req.params;  
+  try {  
+    const userData = await pool.query('SELECT business_type FROM users WHERE id = $1', [userId]);  
+    const businessType = userData.rows[0]?.business_type || 'small business';  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3-mini',  
+      messages: [{ role: 'user', content: `Suggest website features for a ${businessType}` }],  
+    });  
+    res.json({ suggestions: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Feature suggestion failed', error: error.message });  
+  }  
+});

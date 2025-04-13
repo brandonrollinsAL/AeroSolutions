@@ -24,6 +24,7 @@ import { registerFeedRoutes } from './routes/feed';
 import aiContentRouter from './routes/ai-content';
 import recommendationsRouter from './routes/recommendations';
 import intelligentSearchRouter from './routes/intelligent-search';
+import searchRouter from './routes/search';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 
 // Extended request interface with authentication

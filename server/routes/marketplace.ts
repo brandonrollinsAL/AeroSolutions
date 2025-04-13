@@ -7,6 +7,7 @@ import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSub
 import { insertMarketplaceItemSchema } from '@shared/schema';
 import { z } from 'zod';
 import { grokApi } from '../grok';
+import { db } from '../db';
 import NodeCache from 'node-cache';
 
 const marketplaceRouter = Router();
@@ -414,5 +415,96 @@ marketplaceRouter.get(
     }
   }
 );
+
+// AI-powered feature suggestions based on user's business type
+marketplaceRouter.get('/suggest-features/:userId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const cacheKey = `feature_suggestions_${userId}`;
+    
+    // Check cache first
+    const cachedSuggestions = recommendationCache.get(cacheKey);
+    if (cachedSuggestions) {
+      return res.status(200).json({
+        success: true,
+        data: cachedSuggestions,
+        cached: true
+      });
+    }
+    
+    // Get user data
+    const user = await storage.getUser(parseInt(userId, 10));
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Get user business type from preferences or use default
+    const preferences = user.preferences ? JSON.parse(user.preferences) : {};
+    const businessType = preferences.businessType || 'small business';
+    
+    // Use xAI to suggest website features based on business type
+    const prompt = `Suggest website features for a ${businessType}. 
+    Return a JSON object with:
+    1. essential_features: Array of must-have website features with name, description, and benefit
+    2. recommended_features: Array of recommended features with name, description, and benefit
+    3. innovative_features: Array of innovative/differentiating features with name, description, and benefit
+    4. budget_estimate: Rough estimate of costs for implementing these features
+    `;
+    
+    try {
+      // Make the AI call with a timeout
+      const aiResponse = await Promise.race([
+        grokApi.generateJson(prompt, "You are an expert web consultant that helps businesses identify the most effective website features for their specific business type."),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('AI feature suggestion timed out')), 30000)
+        )
+      ]);
+      
+      // Cache the successful response
+      recommendationCache.set(cacheKey, aiResponse, 7200); // 2-hour cache
+      
+      return res.status(200).json({
+        success: true,
+        data: aiResponse,
+        cached: false
+      });
+    } catch (error) {
+      console.error("AI feature suggestion error:", error);
+      
+      // Fallback response if AI fails
+      const fallbackSuggestions = {
+        essential_features: [
+          { name: "Responsive Design", description: "Mobile-friendly website layout", benefit: "Reach customers on all devices" },
+          { name: "Contact Form", description: "Easy way for customers to reach you", benefit: "Increase customer inquiries" },
+          { name: "About Page", description: "Information about your business", benefit: "Build trust with potential customers" }
+        ],
+        recommended_features: [
+          { name: "Blog/News Section", description: "Share updates and industry insights", benefit: "Improve SEO and demonstrate expertise" },
+          { name: "Social Media Integration", description: "Connect with customers on social platforms", benefit: "Expand reach and engagement" }
+        ],
+        innovative_features: [
+          { name: "Live Chat", description: "Real-time customer support", benefit: "Improve conversion rates" }
+        ],
+        budget_estimate: "Basic features: $3,000-5,000; All recommended features: $7,000-10,000"
+      };
+      
+      return res.status(200).json({
+        success: true,
+        data: fallbackSuggestions,
+        fallback: true
+      });
+    }
+  } catch (error) {
+    console.error('Feature suggestion failed:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Feature suggestion failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 export default marketplaceRouter;
