@@ -68,6 +68,12 @@ export interface IStorage {
   searchPosts(query: string): Promise<any[]>;
   searchMarketplaceItems(query: string): Promise<any[]>;
   searchServices(query: string): Promise<any[]>;
+  
+  // Feedback methods
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  getFeedback(id: number): Promise<Feedback | undefined>;
+  getAllFeedback(limit?: number, status?: string): Promise<Feedback[]>;
+  updateFeedbackStatus(id: number, status: string): Promise<Feedback | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {

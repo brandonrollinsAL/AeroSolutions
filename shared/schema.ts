@@ -244,6 +244,19 @@ export const contentViewMetrics = pgTable("content_view_metrics", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// User Feedback Table
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  message: text("message").notNull(),
+  source: text("source").default("website").notNull(), // website, email, support, etc.
+  category: text("category"), // bug, feature_request, general, etc.
+  rating: integer("rating"), // 1-5 rating if applicable
+  status: text("status").default("new").notNull(), // new, reviewed, addressed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Create the insert schemas
 export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
   id: true,
@@ -257,12 +270,21 @@ export const insertContentViewMetricSchema = createInsertSchema(contentViewMetri
   updatedAt: true
 });
 
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Export types
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 
 export type ContentViewMetric = typeof contentViewMetrics.$inferSelect;
 export type InsertContentViewMetric = z.infer<typeof insertContentViewMetricSchema>;
+
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
 // Posts schema for feed content
 export const posts = pgTable("posts", {
