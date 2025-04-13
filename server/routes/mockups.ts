@@ -19,6 +19,8 @@ const brandingSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 
 const navigationSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 // Cache for performance optimization suggestions with 2-hour TTL
 const performanceOptimizationCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
+// Cache for blog content suggestions with 2-hour TTL
+const blogContentSuggestionsCache = new NodeCache({ stdTTL: 7200, checkperiod: 120 });
 
 /**
  * Generate a detailed prompt for the business type
@@ -1128,6 +1130,140 @@ Format your response as a JSON object with these sections. For each recommendati
     return res.status(500).json({
       success: false,
       message: "Failed to generate performance optimization suggestions",
+      error: error.message || "Unknown error"
+    });
+  }
+});
+
+/**
+ * Suggestion 38: Auto-Suggestions for Client Blog Content
+ * Suggest blog content for clients based on their business type
+ */
+router.post('/suggest-blog-content', async (req: Request, res: Response) => {
+  try {
+    const { businessType, targetAudience, contentLength, topics } = req.body;
+    
+    if (!businessType || typeof businessType !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Business type is required and must be a string"
+      });
+    }
+    
+    // Normalize business type for caching (lowercase, trim)
+    const normalizedBusinessType = businessType.toLowerCase().trim();
+    
+    // Create a cache key based on request parameters
+    const audienceKey = targetAudience ? Buffer.from(targetAudience.substr(0, 30)).toString('base64').substring(0, 20) : 'general';
+    const lengthKey = contentLength || 'medium';
+    const topicsKey = topics ? Buffer.from(topics.substr(0, 50)).toString('base64').substring(0, 20) : 'general';
+    
+    const cacheKey = `blog_content_${normalizedBusinessType}_${audienceKey}_${lengthKey}_${topicsKey}`;
+    
+    // Check cache first
+    const cachedContent = blogContentSuggestionsCache.get(cacheKey);
+    if (cachedContent) {
+      console.log(`Returning cached blog content suggestions for business type: ${normalizedBusinessType}`);
+      return res.json({
+        success: true,
+        blogContentSuggestions: cachedContent,
+        source: 'cache'
+      });
+    }
+    
+    console.log(`Generating new blog content suggestions for business type: ${normalizedBusinessType}`);
+    
+    // Prepare prompt for blog content suggestion
+    let prompt = `Suggest comprehensive blog content ideas for a ${businessType} business.`;
+    
+    if (targetAudience) {
+      prompt += ` The target audience is ${targetAudience}.`;
+    }
+    
+    if (contentLength) {
+      prompt += ` The content should be ${contentLength} in length.`;
+    }
+    
+    if (topics) {
+      prompt += ` Focus on these topics or themes: ${topics}.`;
+    }
+    
+    prompt += `\n\nPlease structure your response with these sections:
+    
+1. Blog Content Strategy (overview for this business type)
+2. 5 Blog Post Ideas with:
+   - Catchy title
+   - Brief summary (1-2 sentences)
+   - Key points to cover (3-5 bullet points)
+   - Target keywords for SEO
+   - Suggested call-to-action
+3. Content Calendar Suggestion (how to schedule these posts)
+4. Tips for Engagement (how to maximize reader engagement)
+
+Make the suggestions specific to the ${businessType} industry, addressing common customer pain points and questions.`;
+    
+    // Set timeout for Grok call (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    // Generate blog content suggestions using Grok API
+    const grokPromise = callXAI('/chat/completions', {
+      model: 'grok-3-mini', // Using mini model for faster responses
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a content marketing specialist at Elevion, with expertise in creating engaging blog content strategies for various business types. Provide practical, industry-specific blog content suggestions that will help businesses connect with their audience and drive conversions.'
+        },
+        { 
+          role: 'user', 
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+    
+    // Race between API call and timeout
+    const response: any = await Promise.race([grokPromise, timeoutPromise]);
+    
+    if (!response || !response.choices || !response.choices[0] || !response.choices[0].message) {
+      throw new Error('Invalid response from Grok API');
+    }
+    
+    const blogContentSuggestions = response.choices[0].message.content;
+    
+    // Cache the successful response
+    blogContentSuggestionsCache.set(cacheKey, blogContentSuggestions);
+    
+    console.log(`Successfully generated blog content suggestions for business type: ${normalizedBusinessType}`);
+    
+    return res.json({
+      success: true,
+      blogContentSuggestions,
+      source: 'fresh'
+    });
+  } catch (error: any) {
+    console.error("Error generating blog content suggestions:", error);
+    
+    // Handle different types of errors
+    if (error.message === 'Request timed out after 30 seconds') {
+      return res.status(504).json({
+        success: false,
+        message: "The request timed out. Please try again with a more specific business type."
+      });
+    }
+    
+    if (error.response && error.response.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please try again later."
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate blog content suggestions",
       error: error.message || "Unknown error"
     });
   }
