@@ -725,4 +725,142 @@ marketplaceRouter.get(
   }
 );
 
+// Create a cache for SEO strategy suggestions to avoid unnecessary AI calls
+const seoStrategyCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
+
+// Suggest SEO strategies for client websites based on their content
+marketplaceRouter.post(
+  '/suggest-seo',
+  validate([
+    body('websiteContent').isString().notEmpty().withMessage('Website content is required')
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const { websiteContent } = req.body;
+      
+      // Generate a cache key based on content hash to avoid redundant processing
+      const contentHash = require('crypto').createHash('md5').update(websiteContent).digest('hex');
+      const cacheKey = `seo_strategy_${contentHash}`;
+      
+      // Check if we have a cached result
+      const cachedResult = seoStrategyCache.get(cacheKey);
+      if (cachedResult) {
+        console.log(`[Cache Hit] Using cached SEO strategy suggestions`);
+        return res.json(cachedResult);
+      }
+      
+      // Set up the prompt for the AI
+      const prompt = `As an SEO expert, analyze the following website content and suggest comprehensive SEO strategies.
+      Include recommendations for keywords, meta tags, content structure, backlink strategies, and technical SEO improvements.
+      Format your response as a detailed, actionable plan that a business owner can implement.
+      
+      Website Content:
+      ${websiteContent}
+      
+      Provide your SEO strategy recommendations in the following JSON format:
+      {
+        "overall_assessment": "A brief assessment of the current content's SEO potential",
+        "keyword_recommendations": {
+          "primary_keywords": ["list", "of", "3-5", "recommended", "primary", "keywords"],
+          "secondary_keywords": ["list", "of", "5-8", "secondary", "or", "long-tail", "keywords"],
+          "keyword_placement_tips": "Tips on where and how to place keywords"
+        },
+        "content_recommendations": {
+          "structure_improvements": ["list", "of", "recommendations", "for", "content", "structure"],
+          "content_gaps": ["identified", "topics", "or", "sections", "to", "add"],
+          "readability_tips": "Suggestions to improve content readability"
+        },
+        "technical_seo": {
+          "meta_title": "Suggested meta title",
+          "meta_description": "Suggested meta description",
+          "url_structure": "Recommendation for URL structure",
+          "schema_markup": "Suggestions for appropriate schema markup"
+        },
+        "link_building": {
+          "internal_linking": ["strategies", "for", "internal", "links"],
+          "external_linking": ["potential", "sources", "for", "backlinks"]
+        },
+        "additional_strategies": ["list", "of", "other", "SEO", "tactics", "specific", "to", "this", "business"]
+      }`;
+      
+      // Call the Grok AI API
+      const response = await grokApi.generateJson(prompt);
+      
+      // Create the result object
+      const result = {
+        success: true,
+        seoStrategies: response,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Cache the result
+      seoStrategyCache.set(cacheKey, result);
+      
+      // Return the SEO strategy suggestions
+      return res.json(result);
+    } catch (error: any) {
+      console.error('Error generating SEO strategies:', error);
+      
+      // Prepare fallback SEO strategies for reliability
+      const fallbackStrategies = {
+        overall_assessment: "Unable to perform a complete analysis of your content. Here are general SEO best practices that apply to most websites.",
+        keyword_recommendations: {
+          primary_keywords: ["your business name", "main product/service", "location (if local business)"],
+          secondary_keywords: ["industry + benefits", "solutions for + customer pain points", "how to + related task", "best + product category", "affordable + service type"],
+          keyword_placement_tips: "Include primary keywords in titles, headings, first paragraph, and last paragraph. Use secondary keywords throughout content naturally."
+        },
+        content_recommendations: {
+          structure_improvements: [
+            "Use proper heading hierarchy (H1, H2, H3)",
+            "Keep paragraphs under 3-4 sentences",
+            "Include bullet points for scannable content",
+            "Add subheadings every 300 words"
+          ],
+          content_gaps: [
+            "Frequently Asked Questions section",
+            "Customer testimonials",
+            "Case studies or examples",
+            "Detailed service/product descriptions"
+          ],
+          readability_tips: "Aim for 8th-grade reading level. Use shorter sentences, active voice, and clear language. Break up text with images and formatting."
+        },
+        technical_seo: {
+          meta_title: "Primary Keyword | Business Name | Unique Value Proposition",
+          meta_description: "150-160 character description with primary keyword and call to action",
+          url_structure: "Use short, descriptive URLs with keywords. Avoid parameters and special characters.",
+          schema_markup: "Implement organization, local business, and product/service schema markup based on your business type."
+        },
+        link_building: {
+          internal_linking: [
+            "Link between related content pages",
+            "Create a resource center or blog",
+            "Link from high-authority pages to important conversion pages"
+          ],
+          external_linking: [
+            "Local business directories",
+            "Industry associations",
+            "Partner websites",
+            "Guest blogging opportunities"
+          ]
+        },
+        additional_strategies: [
+          "Optimize page loading speed",
+          "Ensure mobile-friendly design",
+          "Create location-specific pages (if applicable)",
+          "Implement social sharing capabilities",
+          "Set up Google Business Profile (for local businesses)"
+        ]
+      };
+      
+      return res.json({
+        success: true,
+        seoStrategies: fallbackStrategies,
+        timestamp: new Date().toISOString(),
+        fallback: true,
+        error: error.message
+      });
+    }
+  }
+);
+
 export default marketplaceRouter;
