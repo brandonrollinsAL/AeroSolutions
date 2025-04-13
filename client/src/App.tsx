@@ -35,6 +35,7 @@ import SocialMediaSuggestionsPage from "@/pages/SocialMediaSuggestionsPage";
 import EmailCampaignsPage from "@/pages/EmailCampaignsPage";
 import DesignTools from "@/pages/DesignTools";
 import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
+import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();

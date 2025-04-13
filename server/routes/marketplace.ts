@@ -22,6 +22,9 @@ const listingDescriptionCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }
 // Create a cache for social media post suggestions to avoid unnecessary AI calls
 const socialPostSuggestionCache = new NodeCache({ stdTTL: 7200, checkperiod: 600 }); // 2 hour TTL
 
+// Create a cache for business ad suggestions to avoid unnecessary AI calls
+const adSuggestionCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }); // 1 hour TTL
+
 // Get all marketplace items
 marketplaceRouter.get('/', async (req: Request, res: Response) => {
   try {
@@ -1565,6 +1568,107 @@ marketplaceRouter.post(
       return res.status(500).json({
         success: false,
         error: 'Error tracking service inquiry'
+      });
+    }
+  }
+);
+
+/**
+ * Suggestion 50: Auto-Suggestions for Marketplace Business Ads
+ * Suggest ad content for premium business slots in the marketplace
+ */
+marketplaceRouter.post('/suggest-ad', 
+  validate([
+    body('businessName').isString().notEmpty().withMessage('Business name is required'),
+    body('businessType').isString().optional(),
+    body('targetAudience').isString().optional(),
+  ]),
+  async (req: Request, res: Response) => {  
+    const { businessName, businessType, targetAudience } = req.body;
+    
+    try {
+      // Create a cache key based on input parameters
+      const cacheKey = `ad_suggestion_${businessName}_${businessType || 'general'}_${targetAudience || 'all'}`;
+      
+      // Check cache first
+      const cachedSuggestion = adSuggestionCache.get(cacheKey);
+      if (cachedSuggestion) {
+        return res.status(200).json({
+          success: true,
+          data: cachedSuggestion,
+          cached: true
+        });
+      }
+      
+      // Build a more detailed prompt based on available information
+      let promptContent = `Suggest a compelling ad for this business: ${businessName}.`;
+      
+      if (businessType) {
+        promptContent += ` The business is in the ${businessType} industry.`;
+      }
+      
+      if (targetAudience) {
+        promptContent += ` The target audience is ${targetAudience}.`;
+      }
+      
+      promptContent += ` 
+      Return a JSON object with the following structure:
+      {
+        "headline": "Short, attention-grabbing headline",
+        "subheadline": "Supporting text that expands on the headline",
+        "body": "Main ad copy (2-3 sentences)",
+        "callToAction": "Clear action for the viewer to take",
+        "targetKeywords": ["keyword1", "keyword2", "keyword3"],
+        "suggestedImageConcept": "Brief description of imagery that would complement this ad",
+        "toneAndStyle": "Description of the ad's tone (professional, casual, etc.)"
+      }`;
+      
+      // Make the AI call with a timeout using the Grok API
+      try {
+        const aiResponse = await Promise.race([
+          grokApi.generateJson(
+            promptContent,
+            "You are an expert marketing copywriter specialized in creating effective digital ads for small businesses."
+          ),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('AI ad suggestion timed out')), 15000)
+          )
+        ]);
+        
+        // Cache the successful response
+        adSuggestionCache.set(cacheKey, aiResponse);
+        
+        return res.status(200).json({
+          success: true,
+          data: aiResponse,
+          cached: false
+        });
+      } catch (error) {
+        console.error("AI ad suggestion error:", error);
+        
+        // Fallback: provide basic ad structure if AI call fails
+        const fallbackSuggestion = {
+          headline: `${businessName} - Quality Service You Can Trust`,
+          subheadline: "Serving our customers with excellence since 2010",
+          body: `${businessName} offers premium services designed to meet your specific needs. Contact us today to learn how we can help you achieve your goals.`,
+          callToAction: "Call now for a free consultation!",
+          targetKeywords: ["local business", "quality service", "professional"],
+          suggestedImageConcept: "Professional team or service in action",
+          toneAndStyle: "Professional and trustworthy"
+        };
+        
+        return res.status(200).json({
+          success: true,
+          data: fallbackSuggestion,
+          fallback: true
+        });
+      }
+    } catch (error) {
+      console.error('Ad suggestion failed:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ad suggestion failed', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
       });
     }
   }

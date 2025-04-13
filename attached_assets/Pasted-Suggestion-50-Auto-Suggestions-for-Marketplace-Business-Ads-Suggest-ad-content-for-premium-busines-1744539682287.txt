@@ -1,0 +1,71 @@
+Suggestion 50: Auto-Suggestions for Marketplace Business Ads
+
+Suggest ad content for premium business slots in the marketplace.
+
+Add to server/routes/marketplace.js:
+
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+router.post('/suggest-ad', async (req, res) => {  
+  const { businessName } = req.body;  
+  try {  
+    const response = await callXAI('/chat/completions', {  
+      model: 'grok-3',  
+      messages: [{ role: 'user', content: `Suggest an ad for this small business: ${businessName}` }],  
+    });  
+    res.json({ adContent: response.choices[0].message.content });  
+  } catch (error) {  
+    res.status(500).json({ message: 'Ad suggestion failed', error: error.message });  
+  }  
+});  
+Step 2: Test the Implementations and Deploy
+
+Replit AI, build and run the app:
+
+bash
+
+Collapse
+
+Wrap
+
+Copy
+npm install  
+cd client && npm install && npm run build  
+cd ../server && npm start  
+Test Mockup Suggestions: POST to http://localhost:8080/api/mockups/suggest-onboarding with { "businessType": "Bakery" }.
+Test Analytics: GET http://localhost:8080/api/analytics/project-performance/1.
+Test Content Marketing: GET http://localhost:8080/api/marketplace/suggest-content-marketing/1.
+Test Website Copy: POST to http://localhost:8080/api/mockups/suggest-website-copy with { "businessType": "Retail" }.
+Test Engagement: GET http://localhost:8080/api/content/content-engagement.
+What to Check:
+Ensure each endpoint returns a response from the xAI API.
+Check the Replit “Console” tab for errors if any endpoint fails.
+Deploy to Replit Autoscale and Render:
+
+bash
+
+Collapse
+
+Wrap
+
+Copy
+git add .  
+git commit -m "Integrated xAI API for real-time applications"  
+git push origin main  
+Replit Autoscale:
+
+Build command: npm install && cd client && npm run build
+Start command: cd server && node index.js
+Environment variables: DATABASE_URL, JWT_SECRET, XAI_API_KEY, OPENAI_API_KEY, PORT=8080
+Deploy and test the live URL.
+Render:
+Set branch to main.
+Click "Clear build cache & deploy".
+Test the live URL.
+What to Check:
+Ensure the deployed app works as expected for all implemented features.
