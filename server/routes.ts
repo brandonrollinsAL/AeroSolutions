@@ -28,6 +28,7 @@ import searchRouter from './routes/search';
 import feedbackAnalysisRouter from './routes/feedback-analysis';
 import mockupsRouter from './routes/mockups';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
+import elevateBotAnalyticsRouter from './routes/elevatebot';
 
 // Extended request interface with authentication
 interface Request extends ExpressRequest {
@@ -131,6 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/search', searchRouter);
   app.use('/api/feedback', feedbackAnalysisRouter);
   app.use('/api/mockups', mockupsRouter);
+  app.use('/api/elevatebot', elevateBotAnalyticsRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
