@@ -54,7 +54,7 @@ const CreateMarketplaceItemForm: React.FC = () => {
   const [newTag, setNewTag] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [activeTab, setActiveTab] = useState('basicInfo');
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const form = useForm<CreateItemFormValues>({
@@ -95,7 +95,7 @@ const CreateMarketplaceItemForm: React.FC = () => {
         });
         
         // Redirect to the marketplace page
-        navigate('/marketplace');
+        setLocation('/marketplace');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create marketplace item');
@@ -426,7 +426,7 @@ const CreateMarketplaceItemForm: React.FC = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => navigate('/marketplace')}
+                  onClick={() => setLocation('/marketplace')}
                 >
                   Cancel
                 </Button>
