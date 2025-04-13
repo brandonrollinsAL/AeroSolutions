@@ -388,3 +388,33 @@ export const insertMockupRequestSchema = createInsertSchema(mockupRequests).omit
 
 export type MockupRequest = typeof mockupRequests.$inferSelect;
 export type InsertMockupRequest = z.infer<typeof insertMockupRequestSchema>;
+
+// Email Campaigns schema for tracking client email campaign suggestions and templates
+export const emailCampaigns = pgTable("email_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  name: text("name").notNull(),
+  industry: text("industry").notNull(),
+  campaignType: text("campaign_type").notNull(), // welcome, promotional, newsletter, etc.
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  template: text("template"), // Optional template ID if using a predefined template
+  status: text("status").default("draft").notNull(), // draft, scheduled, sent
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  openRate: decimal("open_rate", { precision: 10, scale: 2 }),
+  clickRate: decimal("click_rate", { precision: 10, scale: 2 }),
+  audienceSize: integer("audience_size"),
+  isAiGenerated: boolean("is_ai_generated").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
