@@ -1,9 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 import { callXAI, generateText, generateJson } from '../utils/xaiClient';
 import { db } from '../db';
 import { uiElementInteractions, websiteEngagement, websiteMetrics } from '@shared/schema';
-import { sql } from 'drizzle-orm';
+import { sql, desc, eq, and, like, gte, lte } from 'drizzle-orm';
+import { createObjectCsvStringifier } from 'csv-writer';
+import * as pdf from 'pdfkit';
+import { Readable } from 'stream';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 

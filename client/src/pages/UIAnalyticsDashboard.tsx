@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import UIAnalytics from '@/components/UIAnalytics';
+import UIHeatmap from '@/components/UIHeatmap';
+import UIMetricsDisplay from '@/components/UIMetricsDisplay';
+import UIAnalyticsExport from '@/components/UIAnalyticsExport';
 import { 
   useToast 
 } from "@/hooks/use-toast";
@@ -14,27 +17,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
-  Activity, BarChart, Download, LineChart, RefreshCw, Share2 
+  Activity, BarChart, Download, LineChart, RefreshCw, Share2, FileSpreadsheet, 
+  PieChart, AlertTriangle, ChevronDown
 } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function UIAnalyticsDashboard() {
   const { toast } = useToast();
-  
-  const handleExport = () => {
-    toast({
-      title: "Export started",
-      description: "Your analytics data is being prepared for export.",
-    });
-    
-    // In a real application, this would trigger an API call to generate
-    // and download the export file
-    setTimeout(() => {
-      toast({
-        title: "Export complete",
-        description: "Analytics data has been exported successfully.",
-      });
-    }, 1500);
-  };
+  const [exportOpen, setExportOpen] = useState(false);
   
   const handleShare = () => {
     // Generate a shareable link (in a real app this would create a unique URL)
@@ -71,10 +73,42 @@ export default function UIAnalyticsDashboard() {
         </div>
         
         <div className="flex gap-2 mt-4 md:mt-0">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+                <ChevronDown className="h-3 w-3 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Quick Export</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => {
+                toast({
+                  title: "PDF Export Started",
+                  description: "Your report will be ready in a moment.",
+                });
+              }}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                toast({
+                  title: "CSV Export Started",
+                  description: "Your data will be ready in a moment.",
+                });
+              }}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setExportOpen(prev => !prev)}>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Advanced Export Options
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button variant="outline" size="sm" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />
             Share
@@ -86,8 +120,22 @@ export default function UIAnalyticsDashboard() {
         </div>
       </div>
       
+      <Collapsible
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        className="mb-8"
+      >
+        <CollapsibleContent>
+          <Card className="mt-2 border-blue-100 bg-blue-50/30">
+            <CardContent className="pt-6">
+              <UIAnalyticsExport />
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+      
       <Tabs defaultValue="recommendations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full md:w-auto md:inline-flex">
           <TabsTrigger value="recommendations">
             <Activity className="h-4 w-4 mr-2" />
             Recommendations
@@ -95,6 +143,10 @@ export default function UIAnalyticsDashboard() {
           <TabsTrigger value="interactions">
             <BarChart className="h-4 w-4 mr-2" />
             Interactions
+          </TabsTrigger>
+          <TabsTrigger value="metrics">
+            <PieChart className="h-4 w-4 mr-2" />
+            Detailed Metrics
           </TabsTrigger>
           <TabsTrigger value="trends">
             <LineChart className="h-4 w-4 mr-2" />
@@ -107,21 +159,11 @@ export default function UIAnalyticsDashboard() {
         </TabsContent>
         
         <TabsContent value="interactions" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Element Interactions</CardTitle>
-              <CardDescription>
-                Detailed breakdown of how users interact with specific UI elements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-blue-50 p-4 rounded-md">
-                <p className="text-blue-800">
-                  This feature is coming soon! It will provide a heatmap of element interactions and detailed metrics for each component.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <UIHeatmap />
+        </TabsContent>
+        
+        <TabsContent value="metrics" className="space-y-4 mt-6">
+          <UIMetricsDisplay />
         </TabsContent>
         
         <TabsContent value="trends" className="space-y-4 mt-6">
