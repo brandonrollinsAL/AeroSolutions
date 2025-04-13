@@ -6,7 +6,10 @@ import {
   userSubscriptions, type UserSubscription, type InsertUserSubscription,
   marketplaceItems, type MarketplaceItem, type InsertMarketplaceItem,
   marketplaceOrders, type MarketplaceOrder, type InsertMarketplaceOrder,
-  advertisements, type Advertisement, type InsertAdvertisement
+  advertisements, type Advertisement, type InsertAdvertisement,
+  userSessions, contentViewMetrics, 
+  type UserSession, type ContentViewMetric,
+  type InsertUserSession, type InsertContentViewMetric
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc } from "drizzle-orm";
@@ -165,6 +168,123 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error("Error initializing sample data:", error);
+    }
+  }
+  
+  // Analytics methods
+  async initAnalyticsSampleData(): Promise<void> {
+    try {
+      console.log('Initializing analytics sample data');
+      
+      // Get all users
+      const allUsers = await db.select().from(users);
+      
+      if (allUsers.length === 0) {
+        console.log('No users found for generating sample analytics data');
+        return;
+      }
+      
+      // Create sample user sessions for analytics
+      const now = new Date();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      
+      // Create session data for each user for the past 30 days
+      const sampleSessions = [];
+      
+      for (const user of allUsers) {
+        // Random number of sessions (1-20)
+        const numSessions = Math.floor(Math.random() * 20) + 1;
+        
+        for (let i = 0; i < numSessions; i++) {
+          // Random date within the last 30 days
+          const daysAgo = Math.floor(Math.random() * 30);
+          const sessionDate = new Date(now.getTime() - (daysAgo * oneDayMs));
+          
+          // Random session duration between 1 and 120 minutes (in seconds)
+          const durationSeconds = Math.floor(Math.random() * 7200) + 60;
+          
+          // Random device type
+          const deviceTypes = ['desktop', 'mobile', 'tablet'];
+          const deviceType = deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
+          
+          // Random pages viewed (1-15)
+          const pagesViewed = Math.floor(Math.random() * 15) + 1;
+          
+          sampleSessions.push({
+            userId: user.id,
+            sessionStart: sessionDate,
+            durationSeconds: durationSeconds,
+            deviceType: deviceType,
+            pagesViewed: pagesViewed,
+            ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+            userAgent: 'Mozilla/5.0 (compatible)',
+            referrer: Math.random() > 0.7 ? 'google.com' : (Math.random() > 0.5 ? 'facebook.com' : null)
+          });
+          
+          // Update the user's last login time for more recent users
+          if (daysAgo < 5 && !user.lastLoginAt) {
+            await db.update(users)
+              .set({ lastLoginAt: sessionDate })
+              .where(eq(users.id, user.id));
+          }
+        }
+      }
+      
+      // Insert the sample sessions
+      if (sampleSessions.length > 0) {
+        await db.insert(userSessions).values(sampleSessions);
+        console.log(`Created ${sampleSessions.length} sample user sessions for analytics`);
+      }
+      
+      // Create content view metrics for sample data
+      const contentTitles = [
+        'Web Development Trends', 
+        'Small Business Website Guide', 
+        'SEO Best Practices', 
+        'E-commerce Solutions',
+        'Responsive Design Principles',
+        'Mobile App Development Process',
+        'Digital Marketing Strategies',
+        'Improving Website Performance'
+      ];
+      
+      const sampleContentViews = [];
+      
+      for (const title of contentTitles) {
+        // Random number of views (50-350)
+        const views = Math.floor(Math.random() * 300) + 50;
+        
+        for (let i = 0; i < views; i++) {
+          // Random date within the last 30 days
+          const daysAgo = Math.floor(Math.random() * 30);
+          const viewDate = new Date(now.getTime() - (daysAgo * oneDayMs));
+          
+          // Random time spent (5-600 seconds)
+          const timeSpentSeconds = Math.floor(Math.random() * 595) + 5;
+          
+          // Random conversion (5% chance)
+          const converted = Math.random() < 0.05;
+          
+          sampleContentViews.push({
+            contentId: contentTitles.indexOf(title) + 1,
+            contentTitle: title,
+            viewedAt: viewDate,
+            timeSpentSeconds: timeSpentSeconds,
+            converted: converted,
+            deviceType: ['desktop', 'mobile', 'tablet'][Math.floor(Math.random() * 3)],
+            userId: Math.random() < 0.7 ? allUsers[Math.floor(Math.random() * allUsers.length)].id : null
+          });
+        }
+      }
+      
+      // Insert the sample content views
+      if (sampleContentViews.length > 0) {
+        await db.insert(contentViewMetrics).values(sampleContentViews);
+        console.log(`Created ${sampleContentViews.length} sample content view metrics for analytics`);
+      }
+      
+    } catch (error) {
+      console.error("Error initializing analytics sample data:", error);
     }
   }
   
