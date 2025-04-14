@@ -104,7 +104,7 @@ router.get('/trends', [
     const startDate = req.query.startDate as string || undefined;
     const endDate = req.query.endDate as string || undefined;
     
-    const result = await getFeedbackSentimentTrends(startDate, endDate);
+    const result = await getSentimentTrends(startDate, endDate);
     
     res.status(200).json({
       success: true,
@@ -134,7 +134,7 @@ router.get('/by-source', async (req: Request, res: Response) => {
     }
     
     const timeRange = req.query.timeRange as string || 'month';
-    const result = await getFeedbackSentimentBySource(timeRange);
+    const result = await getSentimentBySource(timeRange);
     
     res.status(200).json({
       success: true,
