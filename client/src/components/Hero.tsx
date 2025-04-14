@@ -202,32 +202,68 @@ export default function Hero() {
                       </div>
                       
                       {/* Right side */}
-                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/80 rounded-xl"
+                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/80 rounded-xl flex items-center justify-center"
                            style={{ 
                              transform: "rotateY(90deg) translateZ(24px)",
                              transformOrigin: "right"
-                           }}></div>
+                           }}>
+                        {/* Right side E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 rotate-12">
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        </div>
+                      </div>
                       
                       {/* Left side */}
-                      <div className="absolute inset-0 w-full h-full bg-slate-blue rounded-xl"
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue rounded-xl flex items-center justify-center"
                            style={{ 
                              transform: "rotateY(-90deg) translateZ(24px)",
                              transformOrigin: "left"
-                           }}></div>
+                           }}>
+                        {/* Left side E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 -rotate-12">
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        </div>
+                      </div>
                       
                       {/* Top side */}
-                      <div className="absolute inset-0 w-full h-full bg-slate-blue/60 rounded-xl"
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue/60 rounded-xl flex items-center justify-center"
                            style={{ 
                              transform: "rotateX(90deg) translateZ(24px)",
                              transformOrigin: "top"
-                           }}></div>
+                           }}>
+                        {/* Top side E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 rotate-45">
+                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-3/4 h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                        </div>
+                      </div>
                       
                       {/* Bottom side */}
-                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/60 rounded-xl"
+                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/60 rounded-xl flex items-center justify-center"
                            style={{ 
                              transform: "rotateX(-90deg) translateZ(24px)",
                              transformOrigin: "bottom"
-                           }}></div>
+                           }}>
+                        {/* Bottom side E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 -rotate-45">
+                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-3/4 h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                        </div>
+                      </div>
                       
                       {/* Inner light glow */}
                       <div className="absolute inset-0 bg-white/20 rounded-xl filter blur-lg animate-pulse"
