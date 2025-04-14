@@ -361,7 +361,7 @@ export default function ElevateBot({
                 </div>
                 <div>
                   <h3 className="font-bold font-poppins">Tech Assistant</h3>
-                  <span className="text-xs text-[#00D1D1] font-inter">Powered by xAI Grok</span>
+                  <span className="text-xs text-[#00D1D1] font-inter">Powered by Elevion AI</span>
                 </div>
               </div>
               <button onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-white">
