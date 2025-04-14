@@ -475,36 +475,49 @@ export default function ElevateBot({
               
               {/* Business Information Form */}
               {showBusinessInfoForm && (
-                <div className="bg-white p-4 rounded-lg shadow-md mb-4 mx-2">
-                  <h3 className="text-base font-semibold font-poppins text-[#3B5B9D] mb-3">
-                    Help me understand your business better
-                  </h3>
-                  <p className="text-sm mb-3 text-gray-600 font-lato">
-                    Sharing this information will help me provide more tailored assistance for your specific needs.
-                  </p>
-                  <form onSubmit={handleBusinessInfoSubmit} className="space-y-3">
-                    <div>
-                      <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Business Name
+                <div className="bg-white p-5 rounded-lg shadow-md mb-4 mx-2 border border-[#EDEFF2]">
+                  <div className="flex items-center mb-3">
+                    <div className="w-6 h-6 bg-[#3B5B9D] rounded-full flex items-center justify-center mr-2">
+                      <FaUser className="text-white text-xs" />
+                    </div>
+                    <h3 className="text-base font-semibold font-poppins text-[#3B5B9D]">
+                      Business Profile Setup
+                    </h3>
+                  </div>
+                  
+                  <div className="mb-4 pl-8 border-l-2 border-[#EDEFF2]">
+                    <p className="text-sm text-gray-600 font-lato">
+                      Sharing your business details helps me provide tailored solutions that match your specific needs and goals.
+                    </p>
+                    <div className="mt-2 text-xs text-[#00D1D1] font-medium font-inter flex items-center">
+                      <span className="mr-1">▸</span> Your information is kept private and secure
+                    </div>
+                  </div>
+                  
+                  <form onSubmit={handleBusinessInfoSubmit} className="space-y-4">
+                    <div className="transition-all hover:translate-x-1 duration-200">
+                      <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <span className="text-[#00D1D1] mr-1">•</span> Business Name
                       </label>
                       <input
                         type="text"
                         id="businessName"
                         value={businessInfo.businessName}
                         onChange={(e) => setBusinessInfo({ ...businessInfo, businessName: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00D1D1] font-inter text-sm transition-all"
                         placeholder="Your business name"
                       />
                     </div>
-                    <div>
-                      <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-1">
-                        Business Type
+                    
+                    <div className="transition-all hover:translate-x-1 duration-200">
+                      <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <span className="text-[#00D1D1] mr-1">•</span> Business Type/Industry
                       </label>
                       <select
                         id="businessType"
                         value={businessInfo.businessType}
                         onChange={(e) => setBusinessInfo({ ...businessInfo, businessType: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00D1D1] font-inter text-sm bg-white transition-all"
                       >
                         <option value="">Select a business type</option>
                         <option value="E-commerce">E-commerce</option>
@@ -518,33 +531,35 @@ export default function ElevateBot({
                         <option value="Other">Other</option>
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="businessSize" className="block text-sm font-medium text-gray-700 mb-1">
-                        Business Size
+                    
+                    <div className="transition-all hover:translate-x-1 duration-200">
+                      <label htmlFor="businessSize" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <span className="text-[#00D1D1] mr-1">•</span> Business Size
                       </label>
                       <select
                         id="businessSize"
                         value={businessInfo.businessSize}
                         onChange={(e) => setBusinessInfo({ ...businessInfo, businessSize: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00D1D1] font-inter text-sm bg-white transition-all"
                       >
                         <option value="">Select business size</option>
                         <option value="Solo entrepreneur">Solo entrepreneur</option>
-                        <option value="2-10 employees">2-10 employees</option>
-                        <option value="11-50 employees">11-50 employees</option>
-                        <option value="51-200 employees">51-200 employees</option>
-                        <option value="201+ employees">201+ employees</option>
+                        <option value="Small (2-10 employees)">Small (2-10 employees)</option>
+                        <option value="Medium (11-50 employees)">Medium (11-50 employees)</option>
+                        <option value="Large (51-200 employees)">Large (51-200 employees)</option>
+                        <option value="Enterprise (201+ employees)">Enterprise (201+ employees)</option>
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="websiteStatus" className="block text-sm font-medium text-gray-700 mb-1">
-                        Website Status
+                    
+                    <div className="transition-all hover:translate-x-1 duration-200">
+                      <label htmlFor="websiteStatus" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <span className="text-[#00D1D1] mr-1">•</span> Website Status
                       </label>
                       <select
                         id="websiteStatus"
                         value={businessInfo.websiteStatus}
                         onChange={(e) => setBusinessInfo({ ...businessInfo, websiteStatus: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00D1D1] font-inter text-sm bg-white transition-all"
                       >
                         <option value="">Select current status</option>
                         <option value="No website yet">No website yet</option>
@@ -554,32 +569,35 @@ export default function ElevateBot({
                         <option value="Multiple websites">Have multiple websites</option>
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="goals" className="block text-sm font-medium text-gray-700 mb-1">
-                        Primary Goals
+                    
+                    <div className="transition-all hover:translate-x-1 duration-200">
+                      <label htmlFor="goals" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <span className="text-[#00D1D1] mr-1">•</span> Primary Goals
                       </label>
                       <textarea
                         id="goals"
                         value={businessInfo.goals}
                         onChange={(e) => setBusinessInfo({ ...businessInfo, goals: e.target.value })}
-                        placeholder="What are your primary business goals for your website?"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        placeholder="What are your primary business goals for your website or digital presence?"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00D1D1] font-inter text-sm transition-all"
                         rows={3}
                       ></textarea>
                     </div>
-                    <div className="flex justify-between">
+                    
+                    <div className="flex justify-between items-center pt-3 mt-2 border-t border-[#EDEFF2]">
                       <button
                         type="button"
                         onClick={() => setShowBusinessInfoForm(false)}
-                        className="px-3 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium"
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors flex items-center"
                       >
-                        Skip for now
+                        <span>Skip for now</span>
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-[#3B5B9D] text-white rounded-md hover:bg-[#2A4A8C] text-sm font-medium"
+                        className="px-4 py-2 bg-[#3B5B9D] text-white rounded-md hover:bg-[#2A4A8C] text-sm font-medium transition-colors flex items-center group"
                       >
-                        Submit
+                        <span>Save Profile</span>
+                        <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
                       </button>
                     </div>
                   </form>
