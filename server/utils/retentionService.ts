@@ -1,8 +1,9 @@
 import { sql, eq, and, lte, gte, desc } from 'drizzle-orm';
 import { db } from '../db';
 import { users, userActivity, userRetentionMessages, notifications } from '@shared/schema';
-import { sendEmail, sendCampaignEmail } from './emailService';
+import { emailService } from './emailService';
 import { callXAI, generateText } from './xaiClient';
+import { logger } from './logger';
 
 /**
  * User retention service that analyzes user activity,
@@ -143,13 +144,20 @@ Business Type: ${context.user.businessType || 'small business'}
 Days Since Last Activity: ${context.daysSinceLastActivity || 'unknown'}
 Recent Activity Types: ${context.recentActivities.map(a => a.type).join(', ') || 'no recent activity'}`;
 
-      const message = await generateText({
-        model: 'grok-2-1212',
-        systemPrompt,
-        userPrompt
-      });
-
-      return message;
+      try {
+        const response = await callXAI('/chat/completions', {
+          model: 'grok-2-1212',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        });
+        const message = response.choices[0].message.content;
+        return message;
+      } catch (err) {
+        logger.error('Error generating retention message with XAI', err);
+        return '';
+      }
     } catch (error) {
       console.error('Error generating retention message:', error);
       return '';
@@ -218,13 +226,23 @@ Recent Activity Types: ${context.recentActivities.map(a => a.type).join(', ') ||
           (subjectMatch[1] || subjectMatch[2] || subjectMatch[3] || 'We miss you at Elevion!') : 
           'We miss you at Elevion!';
           
-        success = await sendCampaignEmail({
-          to: user[0].email,
-          subject,
-          content: retentionMessage,
-          campaignId: 'retention-message',
-          userId
-        });
+        try {
+          const response = await emailService.sendEmail({
+            to: user[0].email,
+            subject,
+            html: retentionMessage,
+            tags: ['retention', 'campaign'],
+            'o:tracking': true
+          });
+          success = !!response.id;
+          logger.info(`Retention email sent to ${user[0].email}`, {
+            userId,
+            messageId: response.id
+          });
+        } catch (err) {
+          logger.error(`Failed to send retention email to ${user[0].email}`, err);
+          success = false;
+        }
       } else if (messageType === 'in-app') {
         // Create in-app notification
         await db.insert(notifications).values({

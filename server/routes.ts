@@ -35,6 +35,7 @@ import checkoutOptimizationRouter from './routes/checkout-optimization';
 // Using only the new structured router from the elevatebot folder
 import elevateBotRouter from './routes/elevatebot/index';
 import emailCampaignsRouter from './routes/email-campaigns';
+import emailRouter from './routes/email';
 import contentProtectionRouter from './routes/content-protection';
 import complianceRouter from './routes/compliance';
 import authRouter from './routes/auth';
