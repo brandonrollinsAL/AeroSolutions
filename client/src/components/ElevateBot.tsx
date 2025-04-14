@@ -49,6 +49,18 @@ export default function ElevateBot({
   }, [messages]);
   
   // Handle external props changes
+  // Check if business info is stored in localStorage
+  useEffect(() => {
+    const storedBusinessInfo = localStorage.getItem('elevatebot_business_info');
+    if (storedBusinessInfo) {
+      try {
+        setBusinessInfo(JSON.parse(storedBusinessInfo));
+      } catch (e) {
+        console.error("Error parsing stored business info:", e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (externalIsOpen !== undefined) {
       setIsOpen(externalIsOpen);
@@ -67,10 +79,30 @@ export default function ElevateBot({
         setTimeout(() => {
           setIsTyping(false);
           setTypingComplete(true);
+          
+          // If we don't have business info yet, prompt for it after a short delay
+          const hasBusinessInfo = Object.values(businessInfo).some(value => value.trim() !== '');
+          if (!hasBusinessInfo && messages.length === 0) {
+            setTimeout(() => {
+              // First let's add a message to prompt the user for business info
+              const botMessage: ChatMessage = {
+                id: Date.now(),
+                text: "To provide you with more tailored assistance, I'd love to learn about your business. Would you mind sharing some quick info?",
+                sender: 'bot'
+              };
+              
+              setMessages(prev => [...prev, botMessage]);
+              
+              // Then show the form after a short delay
+              setTimeout(() => {
+                setShowBusinessInfoForm(true);
+              }, 1500);
+            }, 1000);
+          }
         }, 1500);
       }
     }
-  }, [externalIsOpen, initialOption]);
+  }, [externalIsOpen, initialOption, businessInfo, messages.length]);
   
   // Listen for custom event to open tech assistant
   useEffect(() => {
@@ -223,7 +255,13 @@ export default function ElevateBot({
     
     try {
       // Send request to dedicated ElevateBot endpoint powered by xAI
-      const response = await apiRequest("POST", "/api/elevatebot/support", { query: userInput });
+      // Include business info in the request if available
+      const hasBusinessInfo = Object.values(businessInfo).some(value => value.trim() !== '');
+      
+      const response = await apiRequest("POST", "/api/elevatebot/support", { 
+        query: userInput,
+        userContext: hasBusinessInfo ? businessInfo : undefined
+      });
       
       if (!response.ok) {
         throw new Error("Failed to get response from ElevateBot");
@@ -261,6 +299,25 @@ export default function ElevateBot({
         variant: "destructive"
       });
     }
+  };
+  
+  const handleBusinessInfoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Save business info to localStorage for persistence
+    localStorage.setItem('elevatebot_business_info', JSON.stringify(businessInfo));
+    
+    // Hide the form
+    setShowBusinessInfoForm(false);
+    
+    // Add a message from the bot acknowledging the information
+    const botMessage: ChatMessage = {
+      id: Date.now(),
+      text: `Thanks for sharing information about your business! I'll use this to provide more tailored assistance. How can I help you with your ${businessInfo.businessType || 'business'} today?`,
+      sender: 'bot'
+    };
+    
+    setMessages(prev => [...prev, botMessage]);
   };
 
   return (
@@ -416,6 +473,119 @@ export default function ElevateBot({
                 </div>
               ))}
               
+              {/* Business Information Form */}
+              {showBusinessInfoForm && (
+                <div className="bg-white p-4 rounded-lg shadow-md mb-4 mx-2">
+                  <h3 className="text-base font-semibold font-poppins text-[#3B5B9D] mb-3">
+                    Help me understand your business better
+                  </h3>
+                  <p className="text-sm mb-3 text-gray-600 font-lato">
+                    Sharing this information will help me provide more tailored assistance for your specific needs.
+                  </p>
+                  <form onSubmit={handleBusinessInfoSubmit} className="space-y-3">
+                    <div>
+                      <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Name
+                      </label>
+                      <input
+                        type="text"
+                        id="businessName"
+                        value={businessInfo.businessName}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, businessName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        placeholder="Your business name"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Type
+                      </label>
+                      <select
+                        id="businessType"
+                        value={businessInfo.businessType}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, businessType: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                      >
+                        <option value="">Select a business type</option>
+                        <option value="E-commerce">E-commerce</option>
+                        <option value="Service Provider">Service Provider</option>
+                        <option value="Restaurant">Restaurant or Food Service</option>
+                        <option value="Professional Services">Professional Services</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education">Education</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Non-profit">Non-profit</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="businessSize" className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Size
+                      </label>
+                      <select
+                        id="businessSize"
+                        value={businessInfo.businessSize}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, businessSize: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                      >
+                        <option value="">Select business size</option>
+                        <option value="Solo entrepreneur">Solo entrepreneur</option>
+                        <option value="2-10 employees">2-10 employees</option>
+                        <option value="11-50 employees">11-50 employees</option>
+                        <option value="51-200 employees">51-200 employees</option>
+                        <option value="201+ employees">201+ employees</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="websiteStatus" className="block text-sm font-medium text-gray-700 mb-1">
+                        Website Status
+                      </label>
+                      <select
+                        id="websiteStatus"
+                        value={businessInfo.websiteStatus}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, websiteStatus: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                      >
+                        <option value="">Select current status</option>
+                        <option value="No website yet">No website yet</option>
+                        <option value="Planning to build">Planning to build</option>
+                        <option value="Website needs redesign">Website needs redesign</option>
+                        <option value="Website needs optimization">Website needs optimization</option>
+                        <option value="Multiple websites">Have multiple websites</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="goals" className="block text-sm font-medium text-gray-700 mb-1">
+                        Primary Goals
+                      </label>
+                      <textarea
+                        id="goals"
+                        value={businessInfo.goals}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, goals: e.target.value })}
+                        placeholder="What are your primary business goals for your website?"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#3B5B9D] font-inter text-sm"
+                        rows={3}
+                      ></textarea>
+                    </div>
+                    <div className="flex justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowBusinessInfoForm(false)}
+                        className="px-3 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium"
+                      >
+                        Skip for now
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-[#3B5B9D] text-white rounded-md hover:bg-[#2A4A8C] text-sm font-medium"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            
               {/* Reference element for auto-scrolling */}
               <div ref={messagesEndRef} />
             </div>

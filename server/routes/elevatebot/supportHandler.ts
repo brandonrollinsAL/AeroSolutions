@@ -168,6 +168,26 @@ async function analyzeQuery(
       serviceStatus = 'All services are currently operational. No known outages.';
     }
 
+    // Extract business information from context if available
+    const businessName = context.businessName || '';
+    const businessType = context.businessType || '';
+    const businessSize = context.businessSize || '';
+    const websiteStatus = context.websiteStatus || '';
+    const businessGoals = context.goals || '';
+    
+    // Format business context for the AI prompt
+    let businessContext = '';
+    if (businessName || businessType || businessSize || websiteStatus || businessGoals) {
+      businessContext = `
+        BUSINESS INFORMATION:
+        ${businessName ? `Business Name: ${businessName}` : ''}
+        ${businessType ? `Business Type: ${businessType}` : ''}
+        ${businessSize ? `Business Size: ${businessSize}` : ''}
+        ${websiteStatus ? `Website Status: ${websiteStatus}` : ''}
+        ${businessGoals ? `Business Goals: ${businessGoals}` : ''}
+      `;
+    }
+    
     // Analyze the query using Grok AI
     const analysis = await generateJson<SupportQueryAnalysis>(`
       Please analyze this customer support query and provide a structured response:
@@ -177,7 +197,8 @@ async function analyzeQuery(
       ${userHistory ? `USER HISTORY: ${userHistory}` : ''}
       ${billingInfo ? `BILLING INFO: ${billingInfo}` : ''}
       ${serviceStatus ? `SERVICE STATUS: ${serviceStatus}` : ''}
-      ${context ? `ADDITIONAL CONTEXT: ${JSON.stringify(context)}` : ''}
+      ${businessContext ? businessContext : ''}
+      ${context && Object.keys(context).length > 0 ? `ADDITIONAL CONTEXT: ${JSON.stringify(context)}` : ''}
       
       Please return a JSON response with the following structure:
       {
@@ -200,12 +221,23 @@ async function analyzeQuery(
         2. The priority level
         3. The sentiment of the user
         4. Whether the query needs human escalation
-        5. A helpful response
+        5. A helpful response that is tailored to the user's business needs
+        
+        When business information is provided, personalize your responses based on:
+        - Business type (e-commerce, service providers, restaurants, etc.)
+        - Business size (solo, small team, medium business, etc.)
+        - Current website status (no website, needs redesign, etc.)
+        - Their specific goals and challenges
         
         Here are the available pricing plans:
         - Basic: $19/month - 5 pages, basic SEO, 1 mockup/month
         - Professional: $39/month - 10 pages, advanced SEO, 3 mockups/month
         - Enterprise: $99/month - Unlimited pages, premium SEO, unlimited mockups
+        
+        Tailor plan recommendations based on business size and needs:
+        - Solo entrepreneurs/small businesses often need Basic or Professional plans
+        - Medium-sized businesses usually need Professional plans
+        - Larger businesses often require Enterprise plans
         
         Common issues:
         - Billing questions: These can usually be handled automatically unless there's a dispute
@@ -214,6 +246,8 @@ async function analyzeQuery(
         - Feature requests: Should be logged and escalated
         
         Always be helpful, empathetic, and concise in your suggested responses.
+        Reference the user's business specifics when answering questions about services,
+        pricing, or recommendations to make responses feel personalized.
       `
     });
 
