@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-// Initialize the OpenAI client with the Elevion AI API base URL
+// Initialize the OpenAI client with the Elevion AI API configuration
 const openai = new OpenAI({
   baseURL: 'https://api.x.ai/v1',
   apiKey: process.env.XAI_API_KEY,
@@ -15,7 +15,7 @@ let lastApiError: any = null;
 export async function callXAI(endpoint: string, data: any) {
   try {
     if (!process.env.XAI_API_KEY) {
-      throw new Error('XAI_API_KEY environment variable is not set');
+      throw new Error('Elevion AI API key (XAI_API_KEY) environment variable is not set');
     }
 
     // Remove leading slash if present
@@ -63,7 +63,7 @@ const responseCache = new Map<string, {timestamp: number, response: string}>();
 const jsonResponseCache = new Map<string, {timestamp: number, response: any}>();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Helper function to generate text using XAI models
+// Helper function to generate text using Elevion AI models
 export async function generateText(prompt: string, options: {
   model?: string;
   maxTokens?: number;
@@ -223,7 +223,7 @@ export async function generateJson<T>(prompt: string, options: {
     return parsedResponse;
   } catch (error) {
     // Log error with diagnostics
-    console.error('XAI JSON generation error:', error);
+    console.error('Elevion AI JSON generation error:', error);
     console.error(`API Stats - Success: ${apiSuccessCount}/${apiTotalCalls} (${Math.round(apiSuccessCount/apiTotalCalls*100)}%)`);
     
     // Check if fallback was provided
@@ -282,7 +282,7 @@ export async function generateJson<T>(prompt: string, options: {
 // Cache for image analysis responses
 const imageAnalysisCache = new Map<string, {timestamp: number, response: string}>();
 
-// Function to analyze image with XAI vision models
+// Function to analyze image with Elevion AI vision models
 export async function analyzeImage(imageBase64: string, prompt: string, options: {
   model?: string;
   maxTokens?: number;
@@ -342,7 +342,7 @@ export async function analyzeImage(imageBase64: string, prompt: string, options:
     return textResponse;
   } catch (error) {
     // Log detailed error information
-    console.error('XAI image analysis error:', error);
+    console.error('Elevion AI image analysis error:', error);
     console.error(`API Stats - Success: ${apiSuccessCount}/${apiTotalCalls} (${Math.round(apiSuccessCount/apiTotalCalls*100)}%)`);
     
     // Use provided fallback if available
