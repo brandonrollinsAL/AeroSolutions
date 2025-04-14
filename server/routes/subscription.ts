@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../utils/validation';
 import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
@@ -56,7 +56,14 @@ subscriptionRouter.get('/plans/:id', async (req: Request, res: Response) => {
 subscriptionRouter.post(
   '/plans',
   authenticate,
-  authorize(['admin']),
+  (req: Request, res: Response, next: NextFunction) => {
+    // Admin check
+    if (req.user && req.user.role === 'admin') {
+      next();
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Admin access required' });
+    }
+  },
   [
     body('name').isString().notEmpty(),
     body('description').isString().notEmpty(),

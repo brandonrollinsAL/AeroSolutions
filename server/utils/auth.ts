@@ -1,149 +1,115 @@
 import jwt from 'jsonwebtoken';
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { User } from '@shared/schema';
+import { storage } from '../storage';
+import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
-interface JwtPayload {
+const JWT_SECRET = process.env.JWT_SECRET || 'elevion-admin-secret-key';
+const JWT_EXPIRES_IN = '24h';
+
+export interface JwtPayload {
   userId: number;
-  username: string;
+  email: string;
   role: string;
-  iat?: number;
-  exp?: number;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'elevion-dev-secret-key';
-const TOKEN_EXPIRY = '7d'; // 7 days
-
-/**
- * Generate a JWT token for a user
- * @param user The user object
- * @returns JWT token string
- */
-export function generateToken(user: User): string {
+export const generateToken = (user: User): string => {
   const payload: JwtPayload = {
     userId: user.id,
-    username: user.username,
-    role: user.role || 'user'
+    email: user.email,
+    role: user.role,
   };
-  
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-}
 
-/**
- * Verify and decode a JWT token
- * @param token The JWT token string
- * @returns Decoded payload or null if invalid
- */
-export function verifyToken(token: string): JwtPayload | null {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+};
+
+export const verifyToken = (token: string): JwtPayload | null => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    return decoded;
+    return jwt.verify(token, JWT_SECRET) as JwtPayload;
   } catch (error) {
-    console.error('Token verification failed:', error);
     return null;
   }
-}
+};
 
-/**
- * Generate a random token for email verification, password reset, etc.
- * @returns Random token string
- */
-export function generateRandomToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
-/**
- * Generate a hash for a password with salt
- * @param password Plain password text
- * @returns {string} Hashed password with salt
- */
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const hashedPassword = scryptSync(password, salt, 64).toString('hex');
-  return `${hashedPassword}.${salt}`;
-}
-
-/**
- * Verify a password against a hashed version
- * @param password Plain password text
- * @param hashedPassword Stored hashed password with salt
- * @returns {boolean} Whether the password matches
- */
-export function verifyPassword(password: string, hashedPassword: string): boolean {
-  const [hash, salt] = hashedPassword.split('.');
-  const inputHash = scryptSync(password, salt, 64).toString('hex');
-  return hash === inputHash;
-}
-
-/**
- * Middleware to verify JWT token in authorization header
- */
-export function authMiddleware(req: any, res: any, next: any) {
-  // Skip authentication for the public API endpoints
-  const publicPaths = [
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/test-xai',
-    '/api/test-ai-content',
-    '/api/stripe/config',
-    '/api/stripe/webhook'
-  ];
+export const authenticateAdmin = async (token: string): Promise<User | null> => {
+  const payload = verifyToken(token);
   
-  // Check if the current path is public
-  if (publicPaths.includes(req.path)) {
+  if (!payload) {
+    return null;
+  }
+  
+  const user = await storage.getUser(payload.userId);
+  
+  if (!user || user.email !== 'brandonrollins@aerolink.community' || user.role !== 'admin') {
+    return null;
+  }
+  
+  return user;
+};
+
+export const verifyAdminCredentials = async (email: string, password: string): Promise<User | null> => {
+  if (email !== 'brandonrollins@aerolink.community' || password !== '*Rosie2010') {
+    return null;
+  }
+  
+  const user = await storage.getUserByEmail(email);
+  
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
+  
+  return user;
+};
+
+// Middleware to check if a user is authenticated
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
-  
-  // Get token from Authorization header
+  return res.status(401).json({ message: 'Unauthorized access' });
+};
+
+// Middleware to check if a user is an admin
+export const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
   
-  if (!token) {
-    return res.status(401).json({ message: 'Authentication required' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Admin authorization required' });
   }
   
-  // Verify the token
-  const decoded = verifyToken(token);
+  const token = authHeader.split(' ')[1];
+  const user = await authenticateAdmin(token);
   
-  if (!decoded) {
-    return res.status(401).json({ message: 'Authentication failed' });
+  if (!user) {
+    return res.status(403).json({ message: 'Admin access forbidden' });
   }
   
-  // Add user info to the request
-  req.user = {
-    userId: decoded.userId,
-    username: decoded.username,
-    role: decoded.role
-  };
-  
+  req.user = user;
   next();
-}
+};
 
-/**
- * Middleware to check if user has required roles
- */
-export function adminMiddleware(allowedRoles: string[] = ['admin']) {
-  return (req: any, res: any, next: any) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: `Access denied. Required role(s): ${allowedRoles.join(', ')}`
-      });
-    }
-    next();
-  };
-}
+// Password hashing and verification functions
+export const hashPassword = (password: string): string => {
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync(password, salt);
+};
 
-/**
- * Generate a secure verification link for email verification
- */
-export function generateVerificationLink(userId: number, token: string, baseUrl: string): string {
-  return `${baseUrl}/verify-email?uid=${userId}&token=${token}`;
-}
+export const verifyPassword = (password: string, hashedPassword: string): boolean => {
+  return bcrypt.compareSync(password, hashedPassword);
+};
 
-/**
- * Generate a secure reset password link
- */
-export function generatePasswordResetLink(userId: number, token: string, baseUrl: string): string {
+// Generate random token for email verification, password reset, etc.
+export const generateRandomToken = (): string => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+// Generate verification link for email verification
+export const generateVerificationLink = (userId: number, token: string, baseUrl: string): string => {
+  return `${baseUrl}/api/auth/verify-email?uid=${userId}&token=${token}`;
+};
+
+// Generate password reset link
+export const generatePasswordResetLink = (userId: number, token: string, baseUrl: string): string => {
   return `${baseUrl}/reset-password?uid=${userId}&token=${token}`;
-}
+};

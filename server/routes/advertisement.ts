@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../utils/validation';
 import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
@@ -74,8 +74,15 @@ advertisementRouter.get('/:id', async (req: Request, res: Response) => {
 advertisementRouter.post(
   '/',
   authenticate,
-  authorize(['admin']),
-  validate([
+  (req: Request, res: Response, next: NextFunction) => {
+    // Admin check
+    if (req.user && req.user.role === 'admin') {
+      next();
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Admin access required' });
+    }
+  },
+  [
     body('name').isString().notEmpty(),
     body('type').isString().notEmpty(),
     body('imageUrl').isString().notEmpty(),
@@ -84,7 +91,8 @@ advertisementRouter.post(
     body('endDate').isISO8601().toDate(),
     body('isActive').isBoolean().optional(),
     body('position').isString().optional(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const adData = insertAdvertisementSchema.parse(req.body);
@@ -118,8 +126,15 @@ advertisementRouter.post(
 advertisementRouter.patch(
   '/:id',
   authenticate,
-  authorize(['admin']),
-  validate([
+  (req: Request, res: Response, next: NextFunction) => {
+    // Admin check
+    if (req.user && req.user.role === 'admin') {
+      next();
+    } else {
+      return res.status(403).json({ message: 'Forbidden: Admin access required' });
+    }
+  },
+  [
     param('id').isNumeric().toInt(),
     body('name').isString().notEmpty().optional(),
     body('type').isString().notEmpty().optional(),
@@ -129,7 +144,8 @@ advertisementRouter.patch(
     body('endDate').isISO8601().toDate().optional(),
     body('isActive').isBoolean().optional(),
     body('position').isString().optional(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -163,9 +179,10 @@ advertisementRouter.patch(
 // Record ad impression
 advertisementRouter.post(
   '/impression/:id',
-  validate([
+  [
     param('id').isNumeric().toInt(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -199,9 +216,10 @@ advertisementRouter.post(
 // Record ad click
 advertisementRouter.post(
   '/click/:id',
-  validate([
+  [
     param('id').isNumeric().toInt(),
-  ]),
+    validate()
+  ],
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);

@@ -1,361 +1,350 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import { Helmet } from 'react-helmet';
-import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FaUsers, FaChartBar, FaRegCalendarAlt, FaExternalLinkAlt, FaLock, FaDatabase, FaGlobe, FaClipboard, FaUser, FaCode, FaShieldAlt, FaTwitter } from 'react-icons/fa';
-import { Shield, Activity, BarChart, AlertTriangle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import MainLayout from '@/components/MainLayout';
-import LanguageMetaTags from '@/components/LanguageMetaTags';
-import ComplianceAlerts from '@/components/ComplianceAlerts';
-import ModerationDashboard from '@/components/ModerationDashboard';
-import TwitterDashboard from '@/components/TwitterDashboard';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { 
+  Users, 
+  CreditCard, 
+  Activity, 
+  BarChart2, 
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock 
+} from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
+import { apiRequest } from '@/lib/queryClient';
 
-export default function AdminDashboardPage() {
-  const [, setLocation] = useLocation();
-  const { t } = useTranslation();
-  
-  // Check if user is logged in and is admin
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setLocation('/login?redirect=/admin');
-      return;
-    }
-    
-    try {
-      // Verify token has admin role
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        throw new Error('Invalid token');
-      }
-      
-      const payload = JSON.parse(atob(tokenParts[1]));
-      if (payload.role !== 'admin') {
-        toast({
-          title: 'Access Denied',
-          description: 'You do not have permission to access this page.',
-          variant: 'destructive',
-        });
-        setLocation('/');
-      }
-    } catch (e) {
-      localStorage.removeItem('token');
-      setLocation('/login?redirect=/admin');
-    }
-  }, [setLocation]);
-
-  // Demo statistics - in a real app these would come from an API
-  const stats = {
-    clientPreviewsActive: 4,
-    clientPreviewsExpired: 2,
-    totalUsers: 245,
-    activeSubscriptions: 128,
-    marketplaceItems: 18,
-    totalRevenue: 48750.25,
-    activeAdvertisements: 7,
-    averageConversionRate: 3.5,
+interface AnalyticsData {
+  userMetrics: {
+    totalUsers: number;
+    activeSubscriptions: number;
   };
+  contentMetrics: any[];
+  recentOrders: any[];
+  aiUsageMetrics: any;
+}
+
+const AdminDashboardPage: React.FC = () => {
+  const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
+    queryKey: ['admin', 'analytics'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/admin/analytics', null, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.json();
+    }
+  });
+
+  const { data: configData } = useQuery({
+    queryKey: ['admin', 'api-config'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/admin/api-config', null, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      return response.json();
+    }
+  });
+
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const stats = [
+    {
+      name: 'Total Users',
+      value: analyticsData?.userMetrics.totalUsers ?? 0,
+      icon: Users,
+      change: '+12%',
+      trend: 'up',
+    },
+    {
+      name: 'Active Subscriptions',
+      value: analyticsData?.userMetrics.activeSubscriptions ?? 0,
+      icon: CreditCard,
+      change: '+7%',
+      trend: 'up',
+    },
+    {
+      name: 'AI Requests Today',
+      value: analyticsData?.aiUsageMetrics?.dailyRequests ?? 0,
+      icon: Activity,
+      change: '+18%',
+      trend: 'up',
+    },
+    {
+      name: 'Content Views',
+      value: analyticsData?.contentMetrics?.reduce((acc, metric) => acc + (metric.views || 0), 0) ?? 0,
+      icon: BarChart2,
+      change: '+4%',
+      trend: 'up',
+    },
+  ];
 
   return (
-    <MainLayout>
+    <AdminLayout title="Dashboard">
       <Helmet>
         <title>Admin Dashboard | Elevion</title>
-        <meta name="description" content="Admin dashboard for Elevion web development platform" />
         <meta name="robots" content="noindex,nofollow" />
-        <html lang={t('language_code')} />
       </Helmet>
-      <LanguageMetaTags currentPath="/admin" />
-      
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col gap-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center">
-                <Shield className="mr-2 h-6 w-6 text-blue-600" />
-                Admin Dashboard
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage, monitor, and control all aspects of the Elevion web development platform
-              </p>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button onClick={() => window.open('/', '_blank')}>
-                <FaExternalLinkAlt className="mr-2 h-4 w-4" />
-                View Site
-              </Button>
-            </div>
-          </div>
-          
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Client Previews</CardTitle>
-                <FaUsers className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.clientPreviewsActive}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active ({stats.clientPreviewsExpired} expired)
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">User Accounts</CardTitle>
-                <FaUser className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total registered users
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Subscriptions</CardTitle>
-                <FaRegCalendarAlt className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active paid plans
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total lifetime revenue
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Admin Actions Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-blue-100 shadow hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <FaLock className="mr-2 h-5 w-5 text-blue-600" />
-                  Client Previews
-                </CardTitle>
-                <CardDescription>
-                  Manage access codes for client platform demos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Active previews</span>
-                    <span className="font-medium">{stats.clientPreviewsActive}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Expired previews</span>
-                    <span className="font-medium">{stats.clientPreviewsExpired}</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="default" 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setLocation('/admin/client-previews')}
-                >
-                  Manage Previews
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="border-blue-100 shadow hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <FaDatabase className="mr-2 h-5 w-5 text-blue-600" />
-                  Content Management
-                </CardTitle>
-                <CardDescription>
-                  Manage website content and platform data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Marketplace items</span>
-                    <span className="font-medium">{stats.marketplaceItems}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Active advertisements</span>
-                    <span className="font-medium">{stats.activeAdvertisements}</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => toast({
-                    title: 'Coming Soon',
-                    description: 'This feature is under development',
-                  })}
-                >
-                  Manage Content
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="border-blue-100 shadow hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <FaChartBar className="mr-2 h-5 w-5 text-blue-600" />
-                  Analytics
-                </CardTitle>
-                <CardDescription>
-                  View platform usage and performance metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Conversion rate</span>
-                    <span className="font-medium">{stats.averageConversionRate}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>User engagement</span>
-                    <span className="font-medium">High</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => toast({
-                    title: 'Coming Soon',
-                    description: 'This feature is under development',
-                  })}
-                >
-                  View Analytics
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          
-          {/* Management Dashboards */}
-          <Card className="border-blue-100 shadow">
-            <CardHeader className="border-b pb-3">
-              <CardTitle className="flex items-center text-lg">
-                <FaShieldAlt className="mr-2 h-5 w-5 text-blue-600" />
-                Platform Management & Automation
-              </CardTitle>
-              <CardDescription>
-                AI-powered monitoring, moderation, legal compliance, and content automation
-              </CardDescription>
+
+      <div className="space-y-6">
+        {/* API Status Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className={configData?.openai_api_key ? "border-green-500 border-2" : "border-red-500 border-2"}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">OpenAI API Key</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <Tabs defaultValue="compliance">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="compliance">Legal Compliance</TabsTrigger>
-                  <TabsTrigger value="moderation">Content Moderation</TabsTrigger>
-                  <TabsTrigger value="twitter">Twitter Automation</TabsTrigger>
-                </TabsList>
-                <TabsContent value="compliance">
-                  <ComplianceAlerts />
-                </TabsContent>
-                <TabsContent value="moderation">
-                  <ModerationDashboard />
-                </TabsContent>
-                <TabsContent value="twitter">
-                  <TwitterDashboard />
-                </TabsContent>
-              </Tabs>
+            <CardContent>
+              <div className="flex items-center">
+                {configData?.openai_api_key ? (
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                )}
+                <span className={configData?.openai_api_key ? "text-green-500" : "text-red-500"}>
+                  {configData?.openai_api_key ? "Configured" : "Not Configured"}
+                </span>
+              </div>
             </CardContent>
           </Card>
           
-          {/* Quick Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Access</CardTitle>
-              <CardDescription>Common administrative tasks and tools</CardDescription>
+          <Card className={configData?.xai_api_key ? "border-green-500 border-2" : "border-red-500 border-2"}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">XAI API Key</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => window.open('/client-preview/demo', '_blank')}
-                >
-                  <FaGlobe className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">View Demo Preview</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText('demo');
-                    toast({
-                      title: 'Copied!',
-                      description: 'Demo access code copied to clipboard',
-                    });
-                  }}
-                >
-                  <FaClipboard className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">Copy Demo Code</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => setLocation('/admin/client-previews')}
-                >
-                  <FaCode className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">Manage Access Codes</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => window.open('https://developer.twitter.com/en/portal/dashboard', '_blank')}
-                >
-                  <FaTwitter className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">X API Dashboard</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-auto flex flex-col items-center justify-center p-4 gap-2"
-                  onClick={() => {
-                    localStorage.removeItem('token');
-                    setLocation('/login');
-                    toast({
-                      title: 'Logged Out',
-                      description: 'You have been logged out successfully',
-                    });
-                  }}
-                >
-                  <Activity className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">Logout</span>
-                </Button>
+              <div className="flex items-center">
+                {configData?.xai_api_key ? (
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                )}
+                <span className={configData?.xai_api_key ? "text-green-500" : "text-red-500"}>
+                  {configData?.xai_api_key ? "Configured" : "Not Configured"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={configData?.stripe_secret_key ? "border-green-500 border-2" : "border-red-500 border-2"}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Stripe Secret Key</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                {configData?.stripe_secret_key ? (
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                )}
+                <span className={configData?.stripe_secret_key ? "text-green-500" : "text-red-500"}>
+                  {configData?.stripe_secret_key ? "Configured" : "Not Configured"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={configData?.stripe_publishable_key ? "border-green-500 border-2" : "border-red-500 border-2"}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Stripe Publishable Key</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                {configData?.stripe_publishable_key ? (
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                )}
+                <span className={configData?.stripe_publishable_key ? "text-green-500" : "text-red-500"}>
+                  {configData?.stripe_publishable_key ? "Configured" : "Not Configured"}
+                </span>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <Card key={stat.name}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.name}
+                </CardTitle>
+                <stat.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span
+                    className={
+                      stat.trend === 'up'
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }
+                  >
+                    {stat.change}
+                  </span>{' '}
+                  from last month
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="recent-orders">Recent Orders</TabsTrigger>
+            <TabsTrigger value="ai-usage">AI Usage</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Activity</CardTitle>
+                <CardDescription>
+                  Overview of platform activities in the last 30 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <div className="h-[300px] w-full flex items-center justify-center">
+                    <p className="text-muted-foreground">
+                      Activity visualization charts will appear here
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="recent-orders" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>
+                  Recent marketplace orders from users
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                ) : analyticsData?.recentOrders && analyticsData.recentOrders.length > 0 ? (
+                  <div className="space-y-2">
+                    {analyticsData.recentOrders.map((order, index) => (
+                      <div key={index} className="flex items-center justify-between border-b pb-2">
+                        <div>
+                          <p className="font-medium">{order.itemName}</p>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>
+                              {order.createdAt ? dateFormatter.format(new Date(order.createdAt)) : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">${order.totalPrice}</p>
+                          <p className={`text-xs ${
+                            order.status === 'completed' 
+                              ? 'text-green-500' 
+                              : order.status === 'cancelled' 
+                                ? 'text-red-500' 
+                                : 'text-yellow-500'
+                          }`}>
+                            {order.status.toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No recent orders found
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="ai-usage" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Usage Statistics</CardTitle>
+                <CardDescription>
+                  Breakdown of AI feature usage across the platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                ) : analyticsData?.aiUsageMetrics ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">
+                            {analyticsData.aiUsageMetrics.totalRequests || 0}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium">Monthly Cost</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">
+                            ${analyticsData.aiUsageMetrics.monthlyCost?.toFixed(2) || '0.00'}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="h-[200px] w-full flex items-center justify-center">
+                      <p className="text-muted-foreground">
+                        AI usage charts will appear here
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No AI usage data available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </MainLayout>
+    </AdminLayout>
   );
-}
+};
+
+export default AdminDashboardPage;
