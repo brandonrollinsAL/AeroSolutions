@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ColorPicker, useColor } from 'react-color-palette';
-import 'react-color-palette/lib/css/styles.css';
+import '@/styles/react-color-palette.css';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Sheet,

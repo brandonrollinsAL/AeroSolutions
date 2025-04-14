@@ -1,0 +1,117 @@
+/* React Color Palette Custom Styles */
+
+.rcp {
+  --rcp-background: #1e293b;
+  --rcp-input-text: #f8fafc;
+  --rcp-input-border: #475569;
+  --rcp-input-label: #94a3b8;
+}
+
+.rcp__saturation {
+  position: relative;
+  width: 100%;
+  background-image: linear-gradient(transparent, black),
+    linear-gradient(to right, white, transparent);
+  margin-bottom: 15px;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 125px;
+}
+
+.rcp__saturation-cursor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  transform: translate(-10px, -10px);
+}
+
+.rcp__hue {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  background-image: linear-gradient(
+    to right,
+    rgb(255, 0, 0),
+    rgb(255, 255, 0),
+    rgb(0, 255, 0),
+    rgb(0, 255, 255),
+    rgb(0, 0, 255),
+    rgb(255, 0, 255),
+    rgb(255, 0, 0)
+  );
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.rcp__hue-cursor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  transform: translate(-10px, -4px);
+}
+
+.rcp__fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.rcp__fields-element {
+  width: 30%;
+  margin-bottom: 8px;
+}
+
+.rcp__fields-element-label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: var(--rcp-input-label);
+  text-align: center;
+}
+
+.rcp__fields-element-input {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--rcp-input-border);
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+  background: var(--rcp-background);
+  color: var(--rcp-input-text);
+}
+
+.rcp__preview {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.rcp__preview-value {
+  padding: 6px 9px;
+  border: 1px solid var(--rcp-input-border);
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+  background: var(--rcp-background);
+  color: var(--rcp-input-text);
+  width: 100%;
+  cursor: text;
+  user-select: all;
+}
+
+.rcp__preview-color {
+  height: 30px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  border: 1px solid var(--rcp-input-border);
+}
