@@ -33,6 +33,14 @@ export default function ElevateBot({
   const [typingComplete, setTypingComplete] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [businessInfo, setBusinessInfo] = useState({
+    businessName: '',
+    businessType: '',
+    businessSize: '',
+    websiteStatus: '',
+    goals: ''
+  });
+  const [showBusinessInfoForm, setShowBusinessInfoForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
