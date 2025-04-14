@@ -1,68 +1,108 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
+import { z } from 'zod';
 
 /**
- * Middleware factory to validate request data using express-validator
+ * Middleware that validates request body against a Zod schema
  * 
- * @example
- * // Usage in routes.ts
- * app.post('/api/users', [
- *   body('username').notEmpty().withMessage('Username is required'),
- *   body('email').isEmail().withMessage('Invalid email format'),
- *   validate()
- * ], createUser);
+ * @param schema The Zod schema to validate against
+ * @returns Express middleware function
  */
-export const validate = () => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+export function validateRequest(schema: z.ZodType<any, any, any>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await schema.safeParseAsync(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation error',
+          details: result.error.errors
+        });
+      }
+      
+      // Update the request body with the parsed data
+      req.body = result.data;
+      
+      next();
+    } catch (error) {
+      console.error('Validation error:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        error: 'Internal server error during validation'
       });
     }
-    next();
   };
-};
+}
 
 /**
- * Utility function to sanitize object properties
- * Remove specified fields or all fields except allowed ones
+ * Middleware that validates request parameters against a Zod schema
  * 
- * @param obj Object to sanitize
- * @param options Configuration options
- * @param options.allowList Fields to allow (if provided, all others are removed)
- * @param options.denyList Fields to remove (used if allowList not provided)
- * @returns Sanitized object
+ * @param schema The Zod schema to validate against
+ * @returns Express middleware function
  */
-export function sanitizeObject<T extends Record<string, any>>(
-  obj: T, 
-  options: {
-    allowList?: string[];
-    denyList?: string[];
-  } = {}
-): Partial<T> {
-  const result: Partial<T> = {};
-  
-  if (options.allowList && options.allowList.length > 0) {
-    // Keep only fields in the allowList
-    for (const key of options.allowList) {
-      if (key in obj) {
-        result[key as keyof T] = obj[key];
+export function validateParams(schema: z.ZodType<any, any, any>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await schema.safeParseAsync(req.params);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parameter validation error',
+          details: result.error.errors
+        });
       }
+      
+      // Update the request parameters with the parsed data
+      req.params = result.data;
+      
+      next();
+    } catch (error) {
+      console.error('Parameter validation error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error during parameter validation'
+      });
     }
-  } else if (options.denyList && options.denyList.length > 0) {
-    // Keep all fields except those in denyList
-    for (const key in obj) {
-      if (!options.denyList.includes(key)) {
-        result[key as keyof T] = obj[key];
-      }
-    }
-  } else {
-    // No filtering, return the original object
-    return { ...obj };
-  }
-  
-  return result;
+  };
 }
+
+/**
+ * Middleware that validates request query parameters against a Zod schema
+ * 
+ * @param schema The Zod schema to validate against
+ * @returns Express middleware function
+ */
+export function validateQuery(schema: z.ZodType<any, any, any>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await schema.safeParseAsync(req.query);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Query validation error',
+          details: result.error.errors
+        });
+      }
+      
+      // Update the request query with the parsed data
+      req.query = result.data;
+      
+      next();
+    } catch (error) {
+      console.error('Query validation error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error during query validation'
+      });
+    }
+  };
+}
+
+export default {
+  validateRequest,
+  validateParams,
+  validateQuery
+};

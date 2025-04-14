@@ -1,633 +1,359 @@
 import { db } from '../db';
-import { adCreatives, adCampaigns, adGroups, adTargetingProfiles, users, userActivity, marketplaceItems } from '@shared/schema';
-import { eq, and, like, gte, lte, desc, sql } from 'drizzle-orm';
-import { generateJson, generateText } from './xaiClient';
+import { eq, desc, and } from 'drizzle-orm';
+import {
+  adCampaigns,
+  adGroups,
+  adCreatives,
+  type AdCampaign,
+  type AdGroup,
+  type AdCreative
+} from '../../shared/schema';
+import { grokApi } from '../grok';
 
-/**
- * Generate targeted ad content based on user data and campaign objectives
- * @param campaignId Campaign ID
- * @param userId Optional user ID for personalization
- * @returns Generated ad content
- */
-export async function generateAdContent(
-  campaignId: number,
-  userId?: number
-): Promise<{
-  headline: string;
-  description: string;
-  callToAction: string;
-  imagePrompt?: string;
-  suggestedTags?: string[];
-  aiPrompt: string;
-}> {
+// Campaign-related functions
+export async function createCampaign(data: any): Promise<AdCampaign> {
   try {
-    // Get campaign details
-    const [campaign] = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.id, campaignId));
-
-    if (!campaign) {
-      throw new Error(`Campaign with ID ${campaignId} not found`);
-    }
-
-    // Get user data if provided
-    let userData = null;
-    let userActivities = null;
+    const [campaign] = await db.insert(adCampaigns).values({
+      name: data.name,
+      description: data.description || null,
+      objective: data.objective,
+      status: data.status || 'draft',
+      startDate: data.startDate,
+      endDate: data.endDate || null,
+      budget: data.budget || null,
+      dailyBudget: data.dailyBudget || null,
+      primaryPlatforms: data.primaryPlatforms || null,
+      businessType: data.businessType || null,
+      businessDescription: data.businessDescription || null,
+      targetAudience: data.targetAudience || null,
+      createdBy: data.createdBy
+    }).returning();
     
-    if (userId) {
-      [userData] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId));
+    return campaign;
+  } catch (error) {
+    console.error('Error creating campaign:', error);
+    throw error;
+  }
+}
+
+export async function getCampaigns(userId: number): Promise<AdCampaign[]> {
+  try {
+    const campaigns = await db.select().from(adCampaigns)
+      .where(eq(adCampaigns.createdBy, userId))
+      .orderBy(desc(adCampaigns.createdAt));
+    
+    return campaigns;
+  } catch (error) {
+    console.error('Error getting campaigns:', error);
+    throw error;
+  }
+}
+
+export async function getCampaign(campaignId: number, userId: number): Promise<AdCampaign | undefined> {
+  try {
+    const [campaign] = await db.select().from(adCampaigns)
+      .where(
+        and(
+          eq(adCampaigns.id, campaignId),
+          eq(adCampaigns.createdBy, userId)
+        )
+      );
+    
+    return campaign;
+  } catch (error) {
+    console.error('Error getting campaign:', error);
+    throw error;
+  }
+}
+
+export async function updateCampaign(campaignId: number, data: Partial<AdCampaign>): Promise<AdCampaign> {
+  try {
+    const [updatedCampaign] = await db.update(adCampaigns)
+      .set(data)
+      .where(eq(adCampaigns.id, campaignId))
+      .returning();
+    
+    return updatedCampaign;
+  } catch (error) {
+    console.error('Error updating campaign:', error);
+    throw error;
+  }
+}
+
+// Ad Group related functions
+export async function getAdGroups(campaignId: number): Promise<AdGroup[]> {
+  try {
+    const groups = await db.select().from(adGroups)
+      .where(eq(adGroups.campaignId, campaignId))
+      .orderBy(desc(adGroups.createdAt));
+    
+    return groups;
+  } catch (error) {
+    console.error('Error getting ad groups:', error);
+    throw error;
+  }
+}
+
+export async function getAdGroup(groupId: number): Promise<AdGroup | undefined> {
+  try {
+    const [group] = await db.select().from(adGroups)
+      .where(eq(adGroups.id, groupId));
+    
+    return group;
+  } catch (error) {
+    console.error('Error getting ad group:', error);
+    throw error;
+  }
+}
+
+export async function createAdGroup(data: any): Promise<AdGroup> {
+  try {
+    const [group] = await db.insert(adGroups).values({
+      name: data.name,
+      campaignId: data.campaignId,
+      status: data.status || 'draft',
+      startDate: data.startDate,
+      endDate: data.endDate || null,
+      budget: data.budget || null,
+      bidAmount: data.bidAmount || null,
+      bidStrategy: data.bidStrategy || null,
+      metrics: data.metrics || null,
+      externalIds: data.externalIds || null
+    }).returning();
+    
+    return group;
+  } catch (error) {
+    console.error('Error creating ad group:', error);
+    throw error;
+  }
+}
+
+// Creative related functions
+export async function getCreatives(groupId: number): Promise<AdCreative[]> {
+  try {
+    const creatives = await db.select().from(adCreatives)
+      .where(eq(adCreatives.groupId, groupId))
+      .orderBy(desc(adCreatives.createdAt));
+    
+    return creatives;
+  } catch (error) {
+    console.error('Error getting creatives:', error);
+    throw error;
+  }
+}
+
+export async function getCreative(creativeId: number): Promise<AdCreative | undefined> {
+  try {
+    const [creative] = await db.select().from(adCreatives)
+      .where(eq(adCreatives.id, creativeId));
+    
+    return creative;
+  } catch (error) {
+    console.error('Error getting creative:', error);
+    throw error;
+  }
+}
+
+export async function createCreative(data: any): Promise<AdCreative> {
+  try {
+    const [creative] = await db.insert(adCreatives).values({
+      name: data.name,
+      groupId: data.groupId,
+      type: data.type,
+      headline: data.headline || null,
+      description: data.description || null,
+      ctaText: data.ctaText || null,
+      imageUrl: data.imageUrl || null,
+      videoUrl: data.videoUrl || null,
+      landingPageUrl: data.landingPageUrl || null,
+      status: data.status || 'draft',
+      abTestGroup: data.abTestGroup || null,
+      metrics: data.metrics || null,
+      insights: data.insights || null,
+      performanceRating: data.performanceRating || null,
+      externalIds: data.externalIds || null
+    }).returning();
+    
+    return creative;
+  } catch (error) {
+    console.error('Error creating creative:', error);
+    throw error;
+  }
+}
+
+// AI-powered functions
+export async function generateTargetingStrategy(campaign: AdCampaign): Promise<any> {
+  try {
+    const prompt = `
+      Generate a comprehensive targeting strategy for a digital marketing campaign with the following details:
       
-      userActivities = await db
-        .select()
-        .from(userActivity)
-        .where(eq(userActivity.userId, userId))
-        .orderBy(desc(userActivity.timestamp))
-        .limit(20);
-    }
-
-    // Build the system prompt
-    const systemPrompt = `You are an expert marketing strategist specializing in creating targeted digital ad content. 
-    Your task is to create compelling ad content that aligns with the campaign objective and resonates with the target audience.
-    Create content that is concise, engaging, and designed to drive the desired action.
-    Your response should be formatted as JSON with the following structure:
-    {
-      "headline": "Attention-grabbing headline (max 50 chars)",
-      "description": "Compelling description of the value proposition (max 150 chars)",
-      "callToAction": "Clear call to action (max 20 chars)",
-      "imagePrompt": "Prompt for generating supporting visuals",
-      "suggestedTags": ["tag1", "tag2", "tag3"]
-    }
-    Ensure that your content is:
-    - Aligned with the campaign objective (${campaign.objective})
-    - Relevant to the target audience demographics and interests
-    - Clear, concise, and compelling
-    - Compliant with digital advertising standards (no misleading claims)`;
-
-    // Build the content generation prompt
-    let prompt = `Generate targeted ad content for the following campaign:
-    
-    Campaign: ${campaign.name}
-    Description: ${campaign.description || 'N/A'}
-    Objective: ${campaign.objective}
-    Target Audience: ${JSON.stringify(campaign.targetAudience || {})}
-    `;
-
-    // Add user-specific data if available
-    if (userData) {
-      prompt += `\nUser Data:
-      Business Type: ${userData.businessType || 'N/A'}
-      Preferences: ${userData.preferences || 'N/A'}
+      Campaign name: ${campaign.name}
+      Objective: ${campaign.objective}
+      ${campaign.businessType ? `Business type: ${campaign.businessType}` : ''}
+      ${campaign.businessDescription ? `Business description: ${campaign.businessDescription}` : ''}
+      ${campaign.targetAudience ? `Target audience: ${campaign.targetAudience}` : ''}
       
-      User Activity Summary:
-      ${userActivities ? userActivities.map(a => `- ${a.type}: ${a.detail || 'N/A'}`).join('\n') : 'No activity data available'}
-      `;
-    }
-
-    // Generate the ad content
-    const adContent = await generateJson<{
-      headline: string;
-      description: string;
-      callToAction: string;
-      imagePrompt?: string;
-      suggestedTags?: string[];
-    }>(prompt, {
-      model: 'grok-3',
-      systemPrompt,
-      temperature: 0.7
-    });
-
-    return {
-      ...adContent,
-      aiPrompt: prompt // Store the original prompt for reference
-    };
-  } catch (error) {
-    console.error('Error generating ad content:', error);
-    throw error;
-  }
-}
-
-/**
- * Generate target audience segments based on user data and business type
- * @param businessType Type of business
- * @param userBehaviors Optional array of user behaviors to target
- * @returns Generated audience targeting criteria
- */
-export async function generateTargetAudience(
-  businessType: string,
-  userBehaviors: string[] = []
-): Promise<{
-  demographics: {
-    ageRange: string[];
-    gender: string[];
-    location: string[];
-    language: string[];
-    income?: string[];
-    education?: string[];
-    occupation?: string[];
-  };
-  interests: string[];
-  behaviors: string[];
-  keywords: string[];
-  excludedAudiences?: string[];
-  platforms: string[];
-  devices: string[];
-}> {
-  try {
-    // Build the system prompt
-    const systemPrompt = `You are an expert in digital marketing and audience segmentation.
-    Your task is to create highly effective audience targeting profiles based on business type and user behaviors.
-    Your response should provide comprehensive targeting criteria that would maximize campaign effectiveness.
-    Respond with JSON in this exact format:
-    {
-      "demographics": {
-        "ageRange": ["18-24", "25-34", ...],
-        "gender": ["male", "female", "all"],
-        "location": ["urban", "suburban", ...],
-        "language": ["en", "es", ...],
-        "income": ["middle", "upper-middle", ...],
-        "education": ["high school", "bachelor", ...],
-        "occupation": ["professional", "student", ...]
-      },
-      "interests": ["interest1", "interest2", ...],
-      "behaviors": ["behavior1", "behavior2", ...],
-      "keywords": ["keyword1", "keyword2", ...],
-      "excludedAudiences": ["segment1", "segment2", ...],
-      "platforms": ["facebook", "instagram", "google", ...],
-      "devices": ["mobile", "desktop", "tablet", ...]
-    }`;
-
-    // Build the audience generation prompt
-    const prompt = `Generate optimal audience targeting criteria for a business in the following category:
-    
-    Business Type: ${businessType}
-    
-    ${userBehaviors.length > 0 ? `Target users who have exhibited these behaviors: ${userBehaviors.join(', ')}` : ''}
-    
-    Based on the business type${userBehaviors.length > 0 ? ' and user behaviors' : ''}, recommend comprehensive targeting criteria that would be most effective for digital advertising campaigns.
-    Consider demographics, interests, behaviors, and keywords that would be most relevant.
-    Also suggest platforms and devices that would be most effective for reaching this audience.
+      Your response should include:
+      1. Demographics targeting (age ranges, gender, income levels)
+      2. Geographic targeting (regions, cities, radius)
+      3. Interest categories
+      4. Behavioral targeting
+      5. Lookalike audiences
+      6. Custom audience suggestions (if any)
+      7. Exclusion criteria
+      
+      Format your response as JSON with these sections.
     `;
-
-    // Generate the audience targeting criteria
-    const targetingCriteria = await generateJson<{
-      demographics: {
-        ageRange: string[];
-        gender: string[];
-        location: string[];
-        language: string[];
-        income?: string[];
-        education?: string[];
-        occupation?: string[];
-      };
-      interests: string[];
-      behaviors: string[];
-      keywords: string[];
-      excludedAudiences?: string[];
-      platforms: string[];
-      devices: string[];
-    }>(prompt, {
-      model: 'grok-3',
-      systemPrompt,
-      temperature: 0.4
+    
+    const result = await grokApi.generateJson({
+      prompt,
+      systemPrompt: "You are a digital marketing expert specializing in ad targeting strategies. Your task is to provide detailed, realistic targeting recommendations based on the campaign details provided."
     });
-
-    return targetingCriteria;
+    
+    return result;
   } catch (error) {
-    console.error('Error generating target audience:', error);
-    throw error;
-  }
-}
-
-/**
- * Create a new ad campaign with AI-generated content and targeting
- * @param name Campaign name
- * @param description Campaign description
- * @param objective Campaign objective
- * @param businessType Business type for targeting
- * @param budget Campaign budget
- * @param startDate Campaign start date
- * @param userId User ID creating the campaign
- * @returns Created campaign with generated groups and creatives
- */
-export async function createCampaignWithAI(
-  name: string,
-  description: string,
-  objective: string,
-  businessType: string,
-  budget: number,
-  startDate: Date,
-  userId: number
-): Promise<{
-  campaign: any;
-  groups: any[];
-  creatives: any[];
-}> {
-  try {
-    // 1. Generate target audience based on business type
-    const targetAudience = await generateTargetAudience(businessType);
-
-    // 2. Create the campaign
-    const [campaign] = await db
-      .insert(adCampaigns)
-      .values({
-        name,
-        description,
-        objective,
-        startDate,
-        budget,
-        dailyBudget: budget / 30, // Rough estimate for daily budget
-        targetAudience,
-        createdBy: userId,
-        status: 'draft'
-      })
-      .returning();
-
-    // 3. Generate ad content
-    const adContent = await generateAdContent(campaign.id, userId);
-
-    // 4. Create an ad group
-    const [adGroup] = await db
-      .insert(adGroups)
-      .values({
-        campaignId: campaign.id,
-        name: `${name} - Main Group`,
-        startDate,
-        status: 'draft',
-        budget: budget * 0.9, // 90% of total budget to main group
-        bidStrategy: 'auto'
-      })
-      .returning();
-
-    // 5. Create ad creatives (main version)
-    const [adCreative] = await db
-      .insert(adCreatives)
-      .values({
-        groupId: adGroup.id,
-        name: `${name} - Main Creative`,
-        type: 'image',
-        headline: adContent.headline,
-        description: adContent.description,
-        callToAction: adContent.callToAction,
-        aiGenerated: true,
-        aiPrompt: adContent.aiPrompt,
-        status: 'draft'
-      })
-      .returning();
-
-    // 6. Create A/B test variants (optional)
-    const abVariants = [];
-
-    // Return the complete campaign structure
+    console.error('Error generating targeting strategy:', error);
     return {
-      campaign,
-      groups: [adGroup],
-      creatives: [adCreative, ...abVariants]
+      error: 'Failed to generate targeting strategy',
+      message: error instanceof Error ? error.message : 'Unknown error'
     };
-  } catch (error) {
-    console.error('Error creating campaign with AI:', error);
-    throw error;
   }
 }
 
-/**
- * Analyze ad performance and provide recommendations for improvement
- * @param adCreativeId ID of the ad creative to analyze
- * @returns Analysis and recommendations
- */
-export async function analyzeAdPerformance(adCreativeId: number): Promise<{
-  performanceScore: number;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  abTestSuggestions: {
-    headline?: string;
-    description?: string;
-    callToAction?: string;
-  }[];
-}> {
+export async function generateAdGroupSuggestions(campaign: AdCampaign): Promise<any> {
   try {
-    // 1. Get the ad creative
-    const [adCreative] = await db
-      .select()
-      .from(adCreatives)
-      .where(eq(adCreatives.id, adCreativeId));
-
-    if (!adCreative) {
-      throw new Error(`Ad creative with ID ${adCreativeId} not found`);
-    }
-
-    // 2. Get the ad group
-    const [adGroup] = await db
-      .select()
-      .from(adGroups)
-      .where(eq(adGroups.id, adCreative.groupId));
-
-    // 3. Get the campaign
-    const [campaign] = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.id, adGroup.campaignId));
-
-    // Build the system prompt
-    const systemPrompt = `You are a digital advertising expert specializing in performance analysis and optimization.
-    Analyze the provided ad creative and performance metrics to identify strengths, weaknesses, and actionable recommendations.
-    Your response should be a JSON object with the following structure:
-    {
-      "performanceScore": number from 1-10,
-      "strengths": ["strength1", "strength2", ...],
-      "weaknesses": ["weakness1", "weakness2", ...],
-      "recommendations": ["recommendation1", "recommendation2", ...],
-      "abTestSuggestions": [
-        { "headline": "Alternative headline", "description": "Alternative description", "callToAction": "Alternative CTA" },
-        { ... additional variants ... }
-      ]
-    }`;
-
-    // Build the analysis prompt
-    const prompt = `Analyze this ad creative and its performance:
+    const prompt = `
+      Generate AI-powered ad group suggestions for a digital marketing campaign with the following details:
+      
+      Campaign name: ${campaign.name}
+      Objective: ${campaign.objective}
+      ${campaign.businessType ? `Business type: ${campaign.businessType}` : ''}
+      ${campaign.businessDescription ? `Business description: ${campaign.businessDescription}` : ''}
+      ${campaign.targetAudience ? `Target audience: ${campaign.targetAudience}` : ''}
+      
+      Create 3-5 suggested ad groups, each with:
+      1. Name
+      2. Target audience focus
+      3. Bidding strategy
+      4. Budget allocation (percentage of total campaign budget)
+      5. Key metrics to track for this group
+      
+      Format your response as JSON with an array of ad group objects.
+    `;
     
-    Ad Creative:
-    - Headline: ${adCreative.headline}
-    - Description: ${adCreative.description}
-    - Call to Action: ${adCreative.callToAction}
-    - Type: ${adCreative.type}
-    
-    Campaign Objective: ${campaign.objective}
-    Target Audience: ${JSON.stringify(campaign.targetAudience || {})}
-    
-    Performance Metrics:
-    ${adCreative.metrics ? JSON.stringify(adCreative.metrics, null, 2) : 'No metrics available yet'}
-    
-    Considering the campaign objective and target audience, analyze the creative's effectiveness and suggest improvements.
-    Also propose A/B test variants that might perform better.`;
-
-    // Generate the analysis
-    const analysis = await generateJson<{
-      performanceScore: number;
-      strengths: string[];
-      weaknesses: string[];
-      recommendations: string[];
-      abTestSuggestions: {
-        headline?: string;
-        description?: string;
-        callToAction?: string;
-      }[];
-    }>(prompt, {
-      model: 'grok-3',
-      systemPrompt,
-      temperature: 0.4
+    const result = await grokApi.generateJson({
+      prompt,
+      systemPrompt: "You are a digital marketing expert specializing in campaign structure and optimization. Your task is to provide practical, effective ad group suggestions based on the campaign details provided."
     });
-
-    return analysis;
+    
+    return result;
   } catch (error) {
-    console.error('Error analyzing ad performance:', error);
-    throw error;
+    console.error('Error generating ad group suggestions:', error);
+    return {
+      error: 'Failed to generate ad group suggestions',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
-/**
- * Generate ad campaign metrics visualization insights
- * @param campaignId Campaign ID
- * @returns Visualization insights and recommendations
- */
-export async function generateCampaignInsights(campaignId: number): Promise<{
-  summary: string;
-  keyMetrics: {
-    name: string;
-    value: number;
-    trend: 'up' | 'down' | 'stable';
-    insight: string;
-  }[];
-  insights: string[];
-  recommendations: string[];
-  bestPerformingAds: {
-    id: number;
-    name: string;
-    reason: string;
-  }[];
-}> {
+export async function generateCreativeSuggestions(adGroup: AdGroup, campaign: AdCampaign): Promise<any> {
   try {
-    // 1. Get the campaign
-    const [campaign] = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.id, campaignId));
-
-    if (!campaign) {
-      throw new Error(`Campaign with ID ${campaignId} not found`);
-    }
-
-    // 2. Get all groups in the campaign
-    const groups = await db
-      .select()
-      .from(adGroups)
-      .where(eq(adGroups.campaignId, campaignId));
-
-    // 3. Get all creatives across all groups
-    const groupIds = groups.map(group => group.id);
-    let creatives = [];
+    const prompt = `
+      Generate 3-5 creative suggestions for a digital ad with the following details:
+      
+      Campaign name: ${campaign.name}
+      Campaign objective: ${campaign.objective}
+      Ad group name: ${adGroup.name}
+      ${campaign.businessType ? `Business type: ${campaign.businessType}` : ''}
+      ${campaign.businessDescription ? `Business description: ${campaign.businessDescription}` : ''}
+      ${campaign.targetAudience ? `Target audience: ${campaign.targetAudience}` : ''}
+      
+      For each creative suggestion, include:
+      1. Type (image, video, carousel)
+      2. Headline (max 40 chars)
+      3. Description (max 120 chars)
+      4. Call-to-action button text
+      5. Key visual elements to include
+      6. Tone and messaging approach
+      
+      Format your response as JSON with an array of creative objects.
+    `;
     
-    if (groupIds.length > 0) {
-      creatives = await db
-        .select()
-        .from(adCreatives)
-        .where(sql`${adCreatives.groupId} IN (${groupIds.join(',')})`);
-    }
-
-    // Build the system prompt
-    const systemPrompt = `You are a data analyst specializing in digital advertising performance metrics.
-    Analyze the provided campaign data to generate actionable insights and visualizations recommendations.
-    Your analysis should highlight key metrics, trends, and optimization opportunities.
-    Respond with JSON in this exact format:
-    {
-      "summary": "Brief campaign performance summary",
-      "keyMetrics": [
-        { "name": "Metric name", "value": numeric value, "trend": "up/down/stable", "insight": "Insight about this metric" },
-        ...
-      ],
-      "insights": ["Insight 1", "Insight 2", ...],
-      "recommendations": ["Recommendation 1", "Recommendation 2", ...],
-      "bestPerformingAds": [
-        { "id": creative id, "name": "creative name", "reason": "why it's performing well" },
-        ...
-      ]
-    }`;
-
-    // Build the insights prompt
-    const prompt = `Generate performance insights for this ad campaign:
-    
-    Campaign: ${campaign.name}
-    Objective: ${campaign.objective}
-    Status: ${campaign.status}
-    Budget: $${campaign.budget}
-    Target Audience: ${JSON.stringify(campaign.targetAudience || {})}
-    
-    Campaign Metrics:
-    ${campaign.metrics ? JSON.stringify(campaign.metrics, null, 2) : 'No metrics available yet'}
-    
-    ${groups.length} Ad Groups:
-    ${groups.map(g => `- ${g.name}: $${g.budget} budget, Status: ${g.status}`).join('\n')}
-    
-    ${creatives.length} Ad Creatives:
-    ${creatives.map(c => `- ${c.name}: Type: ${c.type}, Status: ${c.status}`).join('\n')}
-    ${creatives.map(c => `  Metrics: ${c.metrics ? JSON.stringify(c.metrics) : 'No metrics yet'}`).join('\n')}
-    
-    Based on this data, provide a comprehensive performance analysis with actionable insights.
-    If metrics are limited or unavailable, provide hypothetical insights based on the campaign structure and objectives.`;
-
-    // Generate the insights
-    const insights = await generateJson<{
-      summary: string;
-      keyMetrics: {
-        name: string;
-        value: number;
-        trend: 'up' | 'down' | 'stable';
-        insight: string;
-      }[];
-      insights: string[];
-      recommendations: string[];
-      bestPerformingAds: {
-        id: number;
-        name: string;
-        reason: string;
-      }[];
-    }>(prompt, {
-      model: 'grok-3',
-      systemPrompt,
-      temperature: 0.4
+    const result = await grokApi.generateJson({
+      prompt,
+      systemPrompt: "You are a digital advertising creative expert. Your task is to generate compelling, effective ad creative concepts based on the campaign and ad group details provided."
     });
-
-    return insights;
+    
+    return result;
   } catch (error) {
-    console.error('Error generating campaign insights:', error);
-    throw error;
+    console.error('Error generating creative suggestions:', error);
+    return {
+      error: 'Failed to generate creative suggestions',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
-/**
- * Prepare campaign data for external ad platform integration
- * @param campaignId Campaign ID
- * @param platformName Platform name (e.g., "google_ads", "facebook_ads")
- * @returns Formatted campaign data for the platform API
- */
-export async function prepareCampaignForExternalPlatform(
-  campaignId: number,
-  platformName: string
-): Promise<{
-  platformSpecificData: any;
-  mappingDetails: any;
-  apiEndpoints: any;
-  estimatedReach: number;
-  suggestedBudget: number;
-}> {
+export async function generateCampaignOptimizationSuggestions(campaign: AdCampaign): Promise<any> {
   try {
-    // 1. Get the campaign
-    const [campaign] = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.id, campaignId));
-
-    if (!campaign) {
-      throw new Error(`Campaign with ID ${campaignId} not found`);
+    // Extract budget information for analysis
+    let budget = 0;
+    if (campaign.budget) {
+      budget = parseFloat(campaign.budget);
     }
-
-    // 2. Get the ad platform details
-    const [platform] = await db
-      .select()
-      .from(adPlatforms)
-      .where(eq(adPlatforms.name, platformName));
-
-    if (!platform) {
-      throw new Error(`Ad platform ${platformName} not found`);
-    }
-
-    // 3. Get all groups and creatives
-    const groups = await db
-      .select()
-      .from(adGroups)
-      .where(eq(adGroups.campaignId, campaignId));
-
-    const groupIds = groups.map(group => group.id);
-    let creatives = [];
     
-    if (groupIds.length > 0) {
-      creatives = await db
-        .select()
-        .from(adCreatives)
-        .where(sql`${adCreatives.groupId} IN (${groupIds.join(',')})`);
-    }
-
-    // Build the system prompt
-    const systemPrompt = `You are an advertising API integration specialist.
-    Your task is to convert the internal campaign structure to the format required by the ${platformName} API.
-    Provide the mapping between our data model and the platform's requirements.
-    Respond with JSON in this exact format:
-    {
-      "platformSpecificData": {
-        // Platform-specific campaign structure
-      },
-      "mappingDetails": {
-        // Mapping between our fields and platform fields
-      },
-      "apiEndpoints": {
-        // Relevant API endpoints for this platform
-      },
-      "estimatedReach": numeric estimated reach,
-      "suggestedBudget": numeric suggested budget
-    }`;
-
-    // Build the platform preparation prompt
-    const prompt = `Prepare this campaign for integration with ${platformName}:
+    const prompt = `
+      Generate a set of optimization suggestions for a digital marketing campaign with the following details:
+      
+      Campaign name: ${campaign.name}
+      Objective: ${campaign.objective}
+      Status: ${campaign.status}
+      Start date: ${campaign.startDate.toISOString().split('T')[0]}
+      ${campaign.endDate ? `End date: ${campaign.endDate.toISOString().split('T')[0]}` : ''}
+      ${campaign.budget ? `Total budget: $${campaign.budget}` : ''}
+      ${campaign.dailyBudget ? `Daily budget: $${campaign.dailyBudget}` : ''}
+      ${campaign.businessType ? `Business type: ${campaign.businessType}` : ''}
+      ${campaign.targetAudience ? `Target audience: ${campaign.targetAudience}` : ''}
+      
+      Provide optimization suggestions in these areas:
+      1. Budget allocation adjustments
+      2. Audience targeting refinements
+      3. Bidding strategy improvements
+      4. Ad creative optimization
+      5. Performance tracking enhancements
+      6. Testing opportunities
+      
+      Format your response as JSON with these sections.
+    `;
     
-    Campaign: ${campaign.name}
-    Description: ${campaign.description || 'N/A'}
-    Objective: ${campaign.objective}
-    Budget: $${campaign.budget}
-    Daily Budget: $${campaign.dailyBudget || 'N/A'}
-    Start Date: ${campaign.startDate}
-    End Date: ${campaign.endDate || 'No end date'}
-    Target Audience: ${JSON.stringify(campaign.targetAudience || {})}
-    
-    Platform Details:
-    Name: ${platform.name}
-    Display Name: ${platform.displayName}
-    API Configuration: ${JSON.stringify(platform.apiConfig || {})}
-    
-    Our campaign has ${groups.length} ad groups and ${creatives.length} creatives.
-    
-    Convert this internal campaign structure to the format required by the ${platformName} API.
-    Include all necessary mappings, required API endpoints, and any platform-specific considerations.
-    Estimate the potential reach based on the target audience and suggest an optimal budget for this platform.`;
-
-    // Generate the platform-specific data
-    const platformData = await generateJson<{
-      platformSpecificData: any;
-      mappingDetails: any;
-      apiEndpoints: any;
-      estimatedReach: number;
-      suggestedBudget: number;
-    }>(prompt, {
-      model: 'grok-3',
-      systemPrompt,
-      temperature: 0.3
+    const result = await grokApi.generateJson({
+      prompt,
+      systemPrompt: "You are a digital marketing optimization expert. Your task is to provide practical, actionable suggestions to improve campaign performance based on the details provided."
     });
-
-    return platformData;
+    
+    return result;
   } catch (error) {
-    console.error(`Error preparing campaign for ${platformName}:`, error);
-    throw error;
+    console.error('Error generating campaign optimization suggestions:', error);
+    return {
+      error: 'Failed to generate campaign optimization suggestions',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
 export default {
-  generateAdContent,
-  generateTargetAudience,
-  createCampaignWithAI,
-  analyzeAdPerformance,
-  generateCampaignInsights,
-  prepareCampaignForExternalPlatform
+  createCampaign,
+  getCampaigns,
+  getCampaign,
+  updateCampaign,
+  getAdGroups,
+  getAdGroup,
+  createAdGroup,
+  getCreatives,
+  getCreative,
+  createCreative,
+  generateTargetingStrategy,
+  generateAdGroupSuggestions,
+  generateCreativeSuggestions,
+  generateCampaignOptimizationSuggestions
 };

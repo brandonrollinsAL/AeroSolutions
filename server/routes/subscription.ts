@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateRequest } from '../utils/validation';
 import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
@@ -65,13 +65,7 @@ subscriptionRouter.post(
     }
   },
   [
-    body('name').isString().notEmpty(),
-    body('description').isString().notEmpty(),
-    body('price').isNumeric(),
-    body('interval').isIn(['month', 'year']),
-    body('features').isArray(),
-    body('isActive').isBoolean().optional(),
-    validate()
+    validateRequest(insertSubscriptionPlanSchema)
   ],
   async (req: Request, res: Response) => {
     try {
@@ -114,8 +108,7 @@ subscriptionRouter.post(
   '/subscribe',
   authenticate,
   [
-    body('planId').isNumeric().toInt(),
-    validate()
+    validateRequest(z.object({ planId: z.number() }))
   ],
   async (req: Request, res: Response) => {
     try {
@@ -239,8 +232,7 @@ subscriptionRouter.post(
   '/cancel',
   authenticate,
   [
-    body('subscriptionId').isNumeric().toInt(),
-    validate()
+    validateRequest(z.object({ subscriptionId: z.number() }))
   ],
   async (req: Request, res: Response) => {
     try {

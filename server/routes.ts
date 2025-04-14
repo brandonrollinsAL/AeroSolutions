@@ -40,6 +40,7 @@ import complianceRouter from './routes/compliance';
 import authRouter from './routes/auth';
 import sentimentRouter from './routes/sentiment';
 import abTestingRouter from './routes/abTesting';
+import targetedAdsRouter from './routes/targetedAds';
 import userRouter from './routes/users';
 import achievementsRouter from './routes/achievements';
 import socialMediaRouter from './routes/socialMedia';
@@ -192,6 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/errors', errorsRouter);
   app.use('/api/sentiment', sentimentRouter);
   app.use('/api/abtesting', abTestingRouter);
+  app.use('/api/targeted-ads', targetedAdsRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

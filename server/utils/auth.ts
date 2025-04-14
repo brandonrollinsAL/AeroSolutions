@@ -1,121 +1,101 @@
-import jwt from 'jsonwebtoken';
-import { User } from '@shared/schema';
-import { storage } from '../storage';
 import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'elevion-admin-secret-key';
-const JWT_EXPIRES_IN = '24h';
+// Secret key for JWT signing - in production, use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'elevion-secret-key';
 
-export interface JwtPayload {
-  userId: number;
-  email: string;
-  role: string;
-}
-
-export const generateToken = (user: User): string => {
-  const payload: JwtPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+// Generate JWT token
+export const generateToken = (payload: any, expiresIn = '24h'): string => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 };
 
-export const verifyToken = (token: string): JwtPayload | null => {
+// Verify JWT token
+export const verifyToken = (token: string): any => {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return jwt.verify(token, JWT_SECRET);
   } catch (error) {
     return null;
   }
 };
 
-export const authenticateAdmin = async (token: string): Promise<User | null> => {
-  const payload = verifyToken(token);
-  
-  if (!payload) {
-    return null;
-  }
-  
-  const user = await storage.getUser(payload.userId);
-  
-  if (!user || user.email !== 'brandonrollins@aerolink.community' || user.role !== 'admin') {
-    return null;
-  }
-  
-  return user;
-};
-
-export const verifyAdminCredentials = async (email: string, password: string): Promise<User | null> => {
-  if (email !== 'brandonrollins@aerolink.community' || password !== '*Rosie2010') {
-    return null;
-  }
-  
-  const user = await storage.getUserByEmail(email);
-  
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
-  
-  return user;
-};
-
-// Middleware to check if a user is authenticated
+// Authentication middleware using JWT
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    return next();
+  try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required. No token provided.'
+      });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    // Verify the token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // Add the decoded user to the request
+      (req as any).user = decoded;
+      
+      next();
+    } catch (error) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({ 
+      success: false,
+      message: 'Internal server error during authentication'
+    });
   }
-  return res.status(401).json({ message: 'Unauthorized access' });
 };
 
-// Helper function to check if a user is an admin
-export const isAdmin = (req: Request): boolean => {
-  if (!req.user) return false;
-  return req.user.role === 'admin';
-};
-
-// Middleware to check if a user is an admin
-export const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Admin authorization required' });
+// Admin middleware to check if user has admin role
+export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (!(req as any).user) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication required' 
+    });
   }
   
-  const token = authHeader.split(' ')[1];
-  const user = await authenticateAdmin(token);
-  
-  if (!user) {
-    return res.status(403).json({ message: 'Admin access forbidden' });
+  if ((req as any).user.role !== 'admin') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Admin privileges required' 
+    });
   }
   
-  req.user = user;
   next();
 };
 
-// Password hashing and verification functions
-export const hashPassword = (password: string): string => {
-  const salt = bcrypt.genSaltSync(10);
-  return bcrypt.hashSync(password, salt);
+/**
+ * Middleware to require authentication
+ * 
+ * @param req The Express request object
+ * @param res The Express response object
+ * @param next The Express next function
+ */
+export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!(req as any).isAuthenticated || !(req as any).isAuthenticated()) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required"
+    });
+  }
+  next();
 };
 
-export const verifyPassword = (password: string, hashedPassword: string): boolean => {
-  return bcrypt.compareSync(password, hashedPassword);
-};
-
-// Generate random token for email verification, password reset, etc.
-export const generateRandomToken = (): string => {
-  return crypto.randomBytes(32).toString('hex');
-};
-
-// Generate verification link for email verification
-export const generateVerificationLink = (userId: number, token: string, baseUrl: string): string => {
-  return `${baseUrl}/api/auth/verify-email?uid=${userId}&token=${token}`;
-};
-
-// Generate password reset link
-export const generatePasswordResetLink = (userId: number, token: string, baseUrl: string): string => {
-  return `${baseUrl}/reset-password?uid=${userId}&token=${token}`;
+export default {
+  generateToken,
+  verifyToken,
+  authMiddleware,
+  adminMiddleware,
+  requireAuth
 };

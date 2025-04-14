@@ -1,306 +1,350 @@
-import { Router } from 'express';
-import { db } from '../db';
-import { adCampaigns, adGroups, adCreatives, adTargetingProfiles, adPlatforms } from '@shared/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import {
+  createCampaign,
+  getCampaigns,
+  getCampaign,
+  updateCampaign,
+  getAdGroups,
+  getAdGroup,
+  createAdGroup,
+  getCreatives,
+  getCreative,
+  createCreative,
+  generateTargetingStrategy,
+  generateAdGroupSuggestions,
+  generateCreativeSuggestions,
+  generateCampaignOptimizationSuggestions
+} from '../utils/targetedAds';
 import { validateRequest } from '../utils/validation';
-import targetedAds from '../utils/targetedAds';
-import { requireAuth } from '../utils/auth';
+import { authMiddleware } from '../utils/auth';
 
-const router = Router();
+const targetedAdsRouter = Router();
 
-// Get all campaigns
-router.get('/', requireAuth, async (req, res) => {
+// Campaign schemas
+const campaignCreateSchema = z.object({
+  name: z.string().min(3),
+  objective: z.string(),
+  startDate: z.coerce.date(), 
+  endDate: z.coerce.date().optional().nullable(),
+  budget: z.string().optional(),
+  dailyBudget: z.string().optional(),
+  businessType: z.string().optional(),
+  primaryPlatforms: z.array(z.string()).optional(),
+  businessDescription: z.string().optional(),
+  targetAudience: z.string().optional(),
+  status: z.string().default('draft')
+});
+
+const campaignUpdateSchema = campaignCreateSchema.partial();
+
+// Ad Group schemas
+const adGroupCreateSchema = z.object({
+  name: z.string().min(3),
+  campaignId: z.number(),
+  status: z.string().default('draft'),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().optional().nullable(),
+  budget: z.string().optional(),
+  bidAmount: z.string().optional(),
+  bidStrategy: z.string().optional()
+});
+
+const adGroupUpdateSchema = adGroupCreateSchema.partial();
+
+// Creative schemas
+const creativeCreateSchema = z.object({
+  name: z.string().min(3),
+  groupId: z.number(),
+  type: z.string(),
+  headline: z.string().optional(),
+  description: z.string().optional(),
+  ctaText: z.string().optional(),
+  imageUrl: z.string().optional(),
+  videoUrl: z.string().optional(),
+  landingPageUrl: z.string().optional(),
+  status: z.string().default('draft'),
+  abTestGroup: z.string().optional()
+});
+
+const creativeUpdateSchema = creativeCreateSchema.partial();
+
+// Campaign routes
+targetedAdsRouter.get('/campaigns', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const campaigns = await db.select().from(adCampaigns).orderBy(desc(adCampaigns.createdAt));
-    
-    res.json(campaigns);
+    const campaigns = await getCampaigns((req as any).user.id);
+    return res.json({ success: true, data: campaigns });
   } catch (error) {
     console.error('Error fetching campaigns:', error);
-    res.status(500).json({ error: 'Failed to fetch campaigns' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch campaigns' });
   }
 });
 
-// Get single campaign with all related data
-router.get('/:id', requireAuth, async (req, res) => {
+targetedAdsRouter.get('/campaigns/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const campaignId = parseInt(req.params.id);
-    
-    if (isNaN(campaignId)) {
-      return res.status(400).json({ error: 'Invalid campaign ID' });
-    }
-    
-    const [campaign] = await db
-      .select()
-      .from(adCampaigns)
-      .where(eq(adCampaigns.id, campaignId));
+    const campaign = await getCampaign(campaignId, (req as any).user.id);
     
     if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found' });
+      return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
     
-    // Get ad groups for this campaign
-    const groups = await db
-      .select()
-      .from(adGroups)
-      .where(eq(adGroups.campaignId, campaignId));
+    // Get associated ad groups and creatives
+    const adGroups = await getAdGroups(campaignId);
+    const creatives = [];
     
-    // Get creatives for each group
-    const groupIds = groups.map(group => group.id);
-    let creatives = [];
-    
-    if (groupIds.length > 0) {
-      creatives = await db
-        .select()
-        .from(adCreatives)
-        .where(sql`${adCreatives.groupId} IN (${groupIds.join(',')})`);
+    // Get creatives for each ad group
+    for (const group of adGroups) {
+      const groupCreatives = await getCreatives(group.id);
+      creatives.push(...groupCreatives);
     }
     
-    // Organize creatives by group
-    const groupsWithCreatives = groups.map(group => ({
-      ...group,
-      creatives: creatives.filter(creative => creative.groupId === group.id)
-    }));
-    
-    res.json({
-      campaign,
-      groups: groupsWithCreatives
+    return res.json({
+      success: true,
+      data: { campaign, adGroups, creatives }
     });
   } catch (error) {
-    console.error(`Error fetching campaign ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to fetch campaign details' });
+    console.error('Error fetching campaign:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch campaign details' });
   }
 });
 
-// Create new campaign with AI-generated content
-const createCampaignSchema = z.object({
-  name: z.string().min(3).max(100),
-  description: z.string().optional(),
-  objective: z.string().min(3).max(50),
-  businessType: z.string().min(2).max(50),
-  budget: z.number().min(1),
-  startDate: z.string().transform(val => new Date(val)),
-  endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
-});
-
-router.post('/', requireAuth, validateRequest(createCampaignSchema), async (req, res) => {
-  try {
-    const { name, description, objective, businessType, budget, startDate, endDate } = req.body;
-    const userId = req.user.id;
-    
-    const campaign = await targetedAds.createCampaignWithAI(
-      name,
-      description || '',
-      objective,
-      businessType,
-      budget,
-      startDate,
-      userId
-    );
-    
-    res.status(201).json(campaign);
-  } catch (error) {
-    console.error('Error creating campaign:', error);
-    res.status(500).json({ error: 'Failed to create campaign' });
+targetedAdsRouter.post('/campaigns', 
+  authMiddleware,
+  validateRequest(campaignCreateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const campaignData = req.body;
+      const userId = (req as any).user.id;
+      
+      const campaign = await createCampaign({
+        ...campaignData,
+        createdBy: userId
+      });
+      
+      return res.status(201).json({ success: true, data: campaign });
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      return res.status(500).json({ success: false, error: 'Failed to create campaign' });
+    }
   }
-});
+);
 
-// Generate ad content for an existing campaign
-router.post('/:id/generate-content', requireAuth, async (req, res) => {
+targetedAdsRouter.patch('/campaigns/:id',
+  authMiddleware,
+  validateRequest(campaignUpdateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+      
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await getCampaign(campaignId, userId);
+      if (!existingCampaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const updatedCampaign = await updateCampaign(campaignId, req.body);
+      
+      return res.json({ success: true, data: updatedCampaign });
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      return res.status(500).json({ success: false, error: 'Failed to update campaign' });
+    }
+  }
+);
+
+// Ad Group routes
+targetedAdsRouter.get('/adgroups/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const campaignId = parseInt(req.params.id);
-    const userId = req.user.id;
+    const groupId = parseInt(req.params.id);
+    const adGroup = await getAdGroup(groupId);
     
-    if (isNaN(campaignId)) {
-      return res.status(400).json({ error: 'Invalid campaign ID' });
+    if (!adGroup) {
+      return res.status(404).json({ success: false, error: 'Ad group not found' });
     }
     
-    const adContent = await targetedAds.generateAdContent(campaignId, userId);
+    // Get associated creatives
+    const creatives = await getCreatives(groupId);
     
-    res.json(adContent);
+    return res.json({
+      success: true,
+      data: { adGroup, creatives }
+    });
   } catch (error) {
-    console.error(`Error generating content for campaign ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to generate ad content' });
+    console.error('Error fetching ad group:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch ad group details' });
   }
 });
 
-// Analyze ad performance and get recommendations
-router.get('/creatives/:id/analyze', requireAuth, async (req, res) => {
+targetedAdsRouter.post('/adgroups', 
+  authMiddleware,
+  validateRequest(adGroupCreateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const groupData = req.body;
+      const userId = (req as any).user.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await getCampaign(groupData.campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const adGroup = await createAdGroup(groupData);
+      
+      return res.status(201).json({ success: true, data: adGroup });
+    } catch (error) {
+      console.error('Error creating ad group:', error);
+      return res.status(500).json({ success: false, error: 'Failed to create ad group' });
+    }
+  }
+);
+
+// Creative routes
+targetedAdsRouter.get('/creatives/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const creativeId = parseInt(req.params.id);
+    const creative = await getCreative(creativeId);
     
-    if (isNaN(creativeId)) {
-      return res.status(400).json({ error: 'Invalid creative ID' });
+    if (!creative) {
+      return res.status(404).json({ success: false, error: 'Creative not found' });
     }
     
-    const analysis = await targetedAds.analyzeAdPerformance(creativeId);
-    
-    res.json(analysis);
+    return res.json({ success: true, data: creative });
   } catch (error) {
-    console.error(`Error analyzing creative ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to analyze ad performance' });
+    console.error('Error fetching creative:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch creative details' });
   }
 });
 
-// Get campaign insights (metrics visualization)
-router.get('/:id/insights', requireAuth, async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
-    
-    if (isNaN(campaignId)) {
-      return res.status(400).json({ error: 'Invalid campaign ID' });
+targetedAdsRouter.post('/creatives', 
+  authMiddleware,
+  validateRequest(creativeCreateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const creativeData = req.body;
+      const userId = (req as any).user.id;
+      
+      // Get the ad group
+      const adGroup = await getAdGroup(creativeData.groupId);
+      if (!adGroup) {
+        return res.status(404).json({ success: false, error: 'Ad group not found' });
+      }
+      
+      // Check if campaign belongs to user
+      const campaign = await getCampaign(adGroup.campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const creative = await createCreative(creativeData);
+      
+      return res.status(201).json({ success: true, data: creative });
+    } catch (error) {
+      console.error('Error creating creative:', error);
+      return res.status(500).json({ success: false, error: 'Failed to create creative' });
     }
-    
-    const insights = await targetedAds.generateCampaignInsights(campaignId);
-    
-    res.json(insights);
-  } catch (error) {
-    console.error(`Error generating insights for campaign ${req.params.id}:`, error);
-    res.status(500).json({ error: 'Failed to generate campaign insights' });
   }
-});
+);
 
-// Generate target audience for a business type
-router.post('/audience', requireAuth, async (req, res) => {
-  try {
-    const { businessType, behaviors } = req.body;
-    
-    if (!businessType) {
-      return res.status(400).json({ error: 'Business type is required' });
+// AI-assisted ad generation routes
+targetedAdsRouter.post('/campaigns/:id/targeting', 
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await getCampaign(campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const targetingStrategy = await generateTargetingStrategy(campaign);
+      
+      return res.json({ success: true, data: targetingStrategy });
+    } catch (error) {
+      console.error('Error generating targeting strategy:', error);
+      return res.status(500).json({ success: false, error: 'Failed to generate targeting strategy' });
     }
-    
-    const audience = await targetedAds.generateTargetAudience(
-      businessType,
-      behaviors || []
-    );
-    
-    res.json(audience);
-  } catch (error) {
-    console.error('Error generating target audience:', error);
-    res.status(500).json({ error: 'Failed to generate target audience' });
   }
-});
+);
 
-// Update campaign status
-const updateCampaignStatusSchema = z.object({
-  status: z.enum(['draft', 'active', 'paused', 'completed', 'archived'])
-});
-
-router.patch('/:id/status', requireAuth, validateRequest(updateCampaignStatusSchema), async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
-    const { status } = req.body;
-    
-    if (isNaN(campaignId)) {
-      return res.status(400).json({ error: 'Invalid campaign ID' });
+targetedAdsRouter.post('/campaigns/:id/adgroup-suggestions', 
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await getCampaign(campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const suggestions = await generateAdGroupSuggestions(campaign);
+      
+      return res.json({ success: true, data: suggestions });
+    } catch (error) {
+      console.error('Error generating ad group suggestions:', error);
+      return res.status(500).json({ success: false, error: 'Failed to generate ad group suggestions' });
     }
-    
-    const [campaign] = await db
-      .update(adCampaigns)
-      .set({ 
-        status,
-        updatedAt: new Date()
-      })
-      .where(eq(adCampaigns.id, campaignId))
-      .returning();
-    
-    if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found' });
+  }
+);
+
+targetedAdsRouter.post('/adgroups/:id/creative-suggestions', 
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+      
+      // Get the ad group
+      const adGroup = await getAdGroup(groupId);
+      if (!adGroup) {
+        return res.status(404).json({ success: false, error: 'Ad group not found' });
+      }
+      
+      // Check if campaign belongs to user
+      const campaign = await getCampaign(adGroup.campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const suggestions = await generateCreativeSuggestions(adGroup, campaign);
+      
+      return res.json({ success: true, data: suggestions });
+    } catch (error) {
+      console.error('Error generating creative suggestions:', error);
+      return res.status(500).json({ success: false, error: 'Failed to generate creative suggestions' });
     }
-    
-    res.json(campaign);
-  } catch (error) {
-    console.error(`Error updating campaign ${req.params.id} status:`, error);
-    res.status(500).json({ error: 'Failed to update campaign status' });
   }
-});
+);
 
-// Get all targeting profiles
-router.get('/targeting-profiles', requireAuth, async (req, res) => {
-  try {
-    const profiles = await db.select().from(adTargetingProfiles);
-    
-    res.json(profiles);
-  } catch (error) {
-    console.error('Error fetching targeting profiles:', error);
-    res.status(500).json({ error: 'Failed to fetch targeting profiles' });
-  }
-});
-
-// Create new targeting profile
-const createTargetingProfileSchema = z.object({
-  name: z.string().min(3).max(100),
-  description: z.string().optional(),
-  criteria: z.record(z.any()).optional()
-});
-
-router.post('/targeting-profiles', requireAuth, validateRequest(createTargetingProfileSchema), async (req, res) => {
-  try {
-    const { name, description, criteria } = req.body;
-    const userId = req.user.id;
-    
-    const [profile] = await db
-      .insert(adTargetingProfiles)
-      .values({
-        name,
-        description,
-        criteria: criteria || {},
-        createdBy: userId
-      })
-      .returning();
-    
-    res.status(201).json(profile);
-  } catch (error) {
-    console.error('Error creating targeting profile:', error);
-    res.status(500).json({ error: 'Failed to create targeting profile' });
-  }
-});
-
-// Prepare campaign for external platform
-router.get('/:id/prepare/:platform', requireAuth, async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
-    const platformName = req.params.platform;
-    
-    if (isNaN(campaignId)) {
-      return res.status(400).json({ error: 'Invalid campaign ID' });
+targetedAdsRouter.post('/campaigns/:id/optimization', 
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+      
+      // Check if campaign exists and belongs to user
+      const campaign = await getCampaign(campaignId, userId);
+      if (!campaign) {
+        return res.status(404).json({ success: false, error: 'Campaign not found' });
+      }
+      
+      const suggestions = await generateCampaignOptimizationSuggestions(campaign);
+      
+      return res.json({ success: true, data: suggestions });
+    } catch (error) {
+      console.error('Error generating campaign optimization suggestions:', error);
+      return res.status(500).json({ success: false, error: 'Failed to generate campaign optimization suggestions' });
     }
-    
-    // Verify the platform exists
-    const [platform] = await db
-      .select()
-      .from(adPlatforms)
-      .where(eq(adPlatforms.name, platformName));
-    
-    if (!platform) {
-      return res.status(404).json({ error: 'Platform not found' });
-    }
-    
-    const data = await targetedAds.prepareCampaignForExternalPlatform(
-      campaignId,
-      platformName
-    );
-    
-    res.json(data);
-  } catch (error) {
-    console.error(`Error preparing campaign ${req.params.id} for ${req.params.platform}:`, error);
-    res.status(500).json({ error: 'Failed to prepare campaign for external platform' });
   }
-});
+);
 
-// Get all supported ad platforms
-router.get('/platforms', requireAuth, async (req, res) => {
-  try {
-    const platforms = await db
-      .select()
-      .from(adPlatforms)
-      .where(eq(adPlatforms.isActive, true));
-    
-    res.json(platforms);
-  } catch (error) {
-    console.error('Error fetching ad platforms:', error);
-    res.status(500).json({ error: 'Failed to fetch ad platforms' });
-  }
-});
-
-export default router;
+export default targetedAdsRouter;

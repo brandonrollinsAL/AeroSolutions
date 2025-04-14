@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, param } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateRequest } from '../utils/validation';
 import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { getPublishableKey, createPaymentIntent, createStripeCustomer, createSubscription, getSubscription, cancelSubscription } from '../utils/stripe';
@@ -73,15 +73,15 @@ marketplaceRouter.get('/:id', async (req: Request, res: Response) => {
 marketplaceRouter.post(
   '/',
   authenticate,
-  validate([
-    body('name').isString().notEmpty(),
-    body('description').isString().notEmpty(),
-    body('price').isNumeric(),
-    body('category').isString().notEmpty(),
-    body('tags').isArray().optional(),
-    body('images').isArray().optional(),
-    body('isAvailable').isBoolean().optional(),
-  ]),
+  validateRequest(z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+    price: z.number().or(z.string().regex(/^\d+(\.\d+)?$/).transform(val => parseFloat(val))),
+    category: z.string().min(1),
+    tags: z.array(z.string()).optional(),
+    images: z.array(z.string()).optional(),
+    isAvailable: z.boolean().optional(),
+  })),
   // Apply content moderation to check listing content before saving
   moderateContent('description', 'marketplace_listing', 'name', 'id'),
   async (req: Request, res: Response) => {
@@ -130,15 +130,15 @@ marketplaceRouter.post(
 marketplaceRouter.patch(
   '/:id',
   authenticate,
-  validate([
-    body('name').isString().notEmpty().optional(),
-    body('description').isString().notEmpty().optional(),
-    body('price').isNumeric().optional(),
-    body('category').isString().notEmpty().optional(),
-    body('tags').isArray().optional(),
-    body('images').isArray().optional(),
-    body('isAvailable').isBoolean().optional(),
-  ]),
+  validateRequest(z.object({
+    name: z.string().min(1).optional(),
+    description: z.string().min(1).optional(),
+    price: z.number().or(z.string().regex(/^\d+(\.\d+)?$/).transform(val => parseFloat(val))).optional(),
+    category: z.string().min(1).optional(),
+    tags: z.array(z.string()).optional(),
+    images: z.array(z.string()).optional(),
+    isAvailable: z.boolean().optional(),
+  })),
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -182,10 +182,10 @@ marketplaceRouter.patch(
 marketplaceRouter.post(
   '/purchase',
   authenticate,
-  validate([
-    body('itemId').isNumeric().toInt(),
-    body('quantity').isNumeric().toInt().optional(),
-  ]),
+  validateRequest(z.object({
+    itemId: z.number().or(z.string().regex(/^\d+$/).transform(val => parseInt(val))),
+    quantity: z.number().or(z.string().regex(/^\d+$/).transform(val => parseInt(val))).optional(),
+  })),
   async (req: Request, res: Response) => {
     try {
       const { itemId, quantity = 1 } = req.body;
