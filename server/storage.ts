@@ -1050,6 +1050,73 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(feedback.createdAt))
       .limit(limit);
   }
+  
+  // Brand consistency methods
+  async createBrandConsistencyIssue(issue: InsertBrandConsistencyIssue): Promise<BrandConsistencyIssue> {
+    const [brandIssue] = await db.insert(brand_consistency_issues).values(issue).returning();
+    return brandIssue;
+  }
+  
+  async getBrandConsistencyIssues(status?: string): Promise<BrandConsistencyIssue[]> {
+    if (status) {
+      return await db.select().from(brand_consistency_issues)
+        .where(eq(brand_consistency_issues.status, status))
+        .orderBy(desc(brand_consistency_issues.createdAt))
+        .limit(100);
+    } else {
+      return await db.select().from(brand_consistency_issues)
+        .orderBy(desc(brand_consistency_issues.createdAt))
+        .limit(100);
+    }
+  }
+  
+  async getBrandConsistencyIssue(id: number): Promise<BrandConsistencyIssue | undefined> {
+    try {
+      const [issue] = await db.select().from(brand_consistency_issues)
+        .where(eq(brand_consistency_issues.id, id));
+      return issue;
+    } catch (error) {
+      console.error(`Error fetching brand consistency issue with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async updateBrandConsistencyIssue(id: number, data: Partial<BrandConsistencyIssue>): Promise<BrandConsistencyIssue | undefined> {
+    try {
+      const [issue] = await db.update(brand_consistency_issues)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(brand_consistency_issues.id, id))
+        .returning();
+      return issue;
+    } catch (error) {
+      console.error('Error updating brand consistency issue:', error);
+      return undefined;
+    }
+  }
+  
+  async getRecentContent(limit: number = 20): Promise<any[]> {
+    // Combine blog posts and other content for brand consistency checking
+    try {
+      // Get blog posts
+      const blogPosts = await db.select().from(posts)
+        .orderBy(desc(posts.createdAt))
+        .limit(limit);
+        
+      // Map blog posts to a consistent content format for brand analysis
+      const contentItems = blogPosts.map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        type: 'blog',
+        createdAt: post.createdAt
+      }));
+      
+      return contentItems;
+    } catch (error) {
+      console.error('Error fetching content for brand consistency analysis:', error);
+      return [];
+    }
+  }
 }
 
 // Create a new instance of DatabaseStorage
