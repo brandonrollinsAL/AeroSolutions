@@ -170,6 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/feedback', feedbackAnalysisRouter);
   app.use('/api/mockups', mockupsRouter);
   app.use('/api/elevatebot', elevateBotAnalyticsRouter);
+  app.use('/api/elevatebot', elevateBotRouter);
   app.use('/api/email-campaigns', emailCampaignsRouter);
   app.use('/api/content', contentProtectionRouter);
   app.use('/api/compliance', complianceRouter);

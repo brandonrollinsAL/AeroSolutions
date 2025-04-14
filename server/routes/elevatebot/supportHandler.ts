@@ -169,7 +169,28 @@ async function analyzeQuery(
     }
 
     // Analyze the query using Grok AI
-    const analysis = await generateJson<SupportQueryAnalysis>({
+    const analysis = await generateJson<SupportQueryAnalysis>(`
+      Please analyze this customer support query and provide a structured response:
+      
+      QUERY: "${query}"
+      
+      ${userHistory ? `USER HISTORY: ${userHistory}` : ''}
+      ${billingInfo ? `BILLING INFO: ${billingInfo}` : ''}
+      ${serviceStatus ? `SERVICE STATUS: ${serviceStatus}` : ''}
+      ${context ? `ADDITIONAL CONTEXT: ${JSON.stringify(context)}` : ''}
+      
+      Please return a JSON response with the following structure:
+      {
+        "category": "billing|technical|account|feature|other",
+        "priority": "low|medium|high|critical",
+        "sentiment": "positive|neutral|negative|frustrated",
+        "isEscalationNeeded": boolean,
+        "escalationReason": "Reason for escalation if needed",
+        "suggestedResponse": "A helpful response to the query",
+        "relevantDocumentation": ["URL or doc reference 1", "URL or doc reference 2"],
+        "followUpQuestions": ["Potential follow-up question 1", "Potential follow-up question 2"]
+      }
+    `, {
       model: 'grok-3-mini',
       systemPrompt: `
         You are an AI support assistant for Elevion, a web development company that offers services 
@@ -193,28 +214,6 @@ async function analyzeQuery(
         - Feature requests: Should be logged and escalated
         
         Always be helpful, empathetic, and concise in your suggested responses.
-      `,
-      prompt: `
-        Please analyze this customer support query and provide a structured response:
-        
-        QUERY: "${query}"
-        
-        ${userHistory ? `USER HISTORY: ${userHistory}` : ''}
-        ${billingInfo ? `BILLING INFO: ${billingInfo}` : ''}
-        ${serviceStatus ? `SERVICE STATUS: ${serviceStatus}` : ''}
-        ${context ? `ADDITIONAL CONTEXT: ${JSON.stringify(context)}` : ''}
-        
-        Please return a JSON response with the following structure:
-        {
-          "category": "billing|technical|account|feature|other",
-          "priority": "low|medium|high|critical",
-          "sentiment": "positive|neutral|negative|frustrated",
-          "isEscalationNeeded": boolean,
-          "escalationReason": "Reason for escalation if needed",
-          "suggestedResponse": "A helpful response to the query",
-          "relevantDocumentation": ["URL or doc reference 1", "URL or doc reference 2"],
-          "followUpQuestions": ["Potential follow-up question 1", "Potential follow-up question 2"]
-        }
       `
     });
 
