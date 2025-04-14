@@ -4,6 +4,12 @@ import { z } from "zod";
 // Define the Json type locally instead of importing from drizzle-orm
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
+// Goal Type enum for A/B testing
+export type ABTestGoalType = 'click' | 'form_submit' | 'page_view' | 'custom';
+
+// Status enum for A/B testing
+export type ABTestStatus = 'draft' | 'running' | 'completed' | 'stopped';
+
 // User schema with Stripe integration and enhanced security
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -1295,3 +1301,71 @@ export const insertBrandConsistencyIssueSchema = createInsertSchema(brand_consis
 
 export type BrandConsistencyIssue = typeof brand_consistency_issues.$inferSelect;
 export type InsertBrandConsistencyIssue = z.infer<typeof insertBrandConsistencyIssueSchema>;
+
+// A/B Testing schema
+export const abTests = pgTable("ab_tests", {
+  id: text("id").primaryKey(), // UUID
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").$type<ABTestStatus>().default("draft").notNull(), // draft, running, completed, stopped
+  elementSelector: text("element_selector").notNull(), // CSS selector for the element to test
+  goalType: text("goal_type").$type<ABTestGoalType>().notNull(), // click, form_submit, page_view, custom
+  goalSelector: text("goal_selector"), // CSS selector for goal conversion (if applicable)
+  minSampleSize: integer("min_sample_size").default(100).notNull(), // Minimum sample size for statistical significance
+  confidenceLevel: decimal("confidence_level", { precision: 3, scale: 2 }).default("0.95").notNull(), // Default 95% confidence
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const abTestVariants = pgTable("ab_test_variants", {
+  id: text("id").primaryKey(), // UUID
+  testId: text("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  changes: json("changes").$type<Record<string, any>>().notNull(), // JSON of changes to apply
+  isControl: boolean("is_control").default(false).notNull(), // Is this the control variant?
+  weight: integer("weight").default(1).notNull(), // Relative weight for traffic distribution
+  impressions: integer("impressions").default(0), // Cached impression count
+  conversions: integer("conversions").default(0), // Cached conversion count
+  conversionRate: decimal("conversion_rate", { precision: 6, scale: 3 }).default("0") // Cached conversion rate (%)
+});
+
+export const abTestImpressions = pgTable("ab_test_impressions", {
+  id: text("id").primaryKey(), // UUID
+  testId: text("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull().references(() => abTestVariants.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id), // Optional: track which user saw this variant
+  sessionId: text("session_id"), // For anonymous tracking
+  timestamp: timestamp("timestamp").defaultNow().notNull()
+});
+
+export const abTestConversions = pgTable("ab_test_conversions", {
+  id: text("id").primaryKey(), // UUID
+  testId: text("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull().references(() => abTestVariants.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id), // Optional: track which user converted
+  sessionId: text("session_id"), // For anonymous tracking
+  timestamp: timestamp("timestamp").defaultNow().notNull()
+});
+
+export const insertABTestSchema = createInsertSchema(abTests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertABTestVariantSchema = createInsertSchema(abTestVariants).omit({
+  id: true,
+  impressions: true,
+  conversions: true,
+  conversionRate: true,
+});
+
+export type ABTest = typeof abTests.$inferSelect & {
+  variants?: ABTestVariant[];
+};
+export type ABTestVariant = typeof abTestVariants.$inferSelect;
+export type ABTestImpression = typeof abTestImpressions.$inferSelect;
+export type ABTestConversion = typeof abTestConversions.$inferSelect;
+export type InsertABTest = z.infer<typeof insertABTestSchema>;
+export type InsertABTestVariant = z.infer<typeof insertABTestVariantSchema>;

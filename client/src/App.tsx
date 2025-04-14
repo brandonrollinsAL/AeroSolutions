@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 import { useTranslation } from 'react-i18next';
 import ContentProtection from "@/components/ContentProtection";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import ABTestClient from "@/components/ABTestClient";
 
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
@@ -108,6 +109,9 @@ export default function App() {
 
   return (
     <NotificationProvider>
+      {/* A/B Testing Client - applied to all routes */}
+      <ABTestClient />
+      
       {/* Global App Metadata - applied to all routes */}
       <Helmet>
         {/* Languages support */}

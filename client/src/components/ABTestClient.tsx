@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 type ABTestVariant = {
   id: string;
+  name: string;
   changes: Record<string, any>;
 };
 
@@ -18,242 +20,179 @@ type ABTest = {
  * Client component that loads active A/B tests and applies them to the DOM
  * Also handles tracking impressions and conversions
  */
-const ABTestClient = () => {
-  const [initialized, setInitialized] = useState(false);
-  const [activeTests, setActiveTests] = useState<Record<string, { testId: string, variantId: string }>>({});
-  
-  useEffect(() => {
-    // Skip during SSR
-    if (typeof window === 'undefined') return;
-    
-    const fetchTests = async () => {
-      try {
-        // Fetch active tests
-        const response = await apiRequest('GET', '/api/abtesting/active');
-        const data = await response.json();
-        
-        if (!data.success || !data.data || !Array.isArray(data.data)) {
-          console.warn('Failed to load A/B tests or no tests available');
-          setInitialized(true);
-          return;
-        }
-        
-        const tests = data.data as ABTest[];
-        if (tests.length === 0) {
-          setInitialized(true);
-          return;
-        }
-        
-        // Process each test
-        const newActiveTests: Record<string, { testId: string, variantId: string }> = {};
-        
-        for (const test of tests) {
-          // Skip tests with no variants
-          if (!test.variants || test.variants.length === 0) continue;
-          
-          // Apply a random variant for each test (weighted by already active tests in localStorage)
-          applyTestVariant(test, newActiveTests);
-        }
-        
-        setActiveTests(newActiveTests);
-        setInitialized(true);
-      } catch (error) {
-        console.error('Error loading A/B tests:', error);
-        setInitialized(true);
-      }
-    };
-    
-    fetchTests();
-  }, []);
-  
-  // Handle conversions when relevant elements are clicked
-  useEffect(() => {
-    if (!initialized || Object.keys(activeTests).length === 0) return;
-    
-    // Fetch tests data again to get goal selectors
-    const setupConversionTracking = async () => {
-      try {
-        const response = await apiRequest('GET', '/api/abtesting/active');
-        const data = await response.json();
-        
-        if (!data.success || !data.data || !Array.isArray(data.data)) {
-          return;
-        }
-        
-        const tests = data.data as ABTest[];
-        
-        // Set up click handlers for goal elements
-        tests.forEach(test => {
-          if (!activeTests[test.elementSelector]) return;
-          
-          const selector = test.goalType === 'click' || test.goalType === 'form_submit' 
-            ? (test.goalSelector || test.elementSelector) 
-            : null;
-          
-          if (selector && test.goalType === 'click') {
-            const elements = document.querySelectorAll(selector);
-            
-            elements.forEach(element => {
-              // Avoid adding duplicate listeners
-              element.removeEventListener('click', () => {});
-              
-              element.addEventListener('click', () => {
-                recordConversion(test.id, activeTests[test.elementSelector].variantId);
-              });
-            });
-          }
-          
-          if (selector && test.goalType === 'form_submit') {
-            const forms = document.querySelectorAll(selector);
-            
-            forms.forEach(form => {
-              if (form instanceof HTMLFormElement) {
-                // Avoid adding duplicate listeners
-                form.removeEventListener('submit', () => {});
-                
-                form.addEventListener('submit', () => {
-                  recordConversion(test.id, activeTests[test.elementSelector].variantId);
-                });
-              }
-            });
-          }
-          
-          if (test.goalType === 'page_view') {
-            // For page view goals, we'll trigger conversion after a delay
-            // to ensure the user actually viewed the page (not just loaded it)
-            setTimeout(() => {
-              recordConversion(test.id, activeTests[test.elementSelector].variantId);
-            }, 5000);
-          }
-        });
-      } catch (error) {
-        console.error('Error setting up conversion tracking:', error);
-      }
-    };
-    
-    setupConversionTracking();
-  }, [initialized, activeTests]);
-  
-  const applyTestVariant = (
-    test: ABTest, 
-    newActiveTests: Record<string, { testId: string, variantId: string }>
-  ) => {
+export default function ABTestClient() {
+  const [appliedTests, setAppliedTests] = useState<Record<string, string>>({});
+
+  const { data: activeTests, isLoading, error } = useQuery<{ success: boolean; data: ABTest[] }>({
+    queryKey: ['/api/ab-tests/active'],
+    staleTime: 300000, // 5 minutes
+  });
+
+  // Track when a test has been applied to the DOM
+  const trackImpression = async (testId: string, variantId: string) => {
     try {
-      // Check for elements that match the selector
-      const elements = document.querySelectorAll(test.elementSelector);
-      if (elements.length === 0) {
-        console.warn(`No elements found for selector: ${test.elementSelector}`);
-        return;
-      }
-      
-      // Check if we already have a variant assigned for this test
-      const storedTestData = localStorage.getItem(`ab_test_${test.id}`);
-      let variantId: string;
-      
-      if (storedTestData) {
-        // Use previously assigned variant
-        variantId = JSON.parse(storedTestData).variantId;
-      } else {
-        // Randomly choose a variant
-        const randomIndex = Math.floor(Math.random() * test.variants.length);
-        variantId = test.variants[randomIndex].id;
-        
-        // Store the assignment
-        localStorage.setItem(`ab_test_${test.id}`, JSON.stringify({
-          testId: test.id,
-          variantId: variantId,
-          timestamp: new Date().toISOString()
-        }));
-      }
-      
-      // Find the selected variant
-      const variant = test.variants.find(v => v.id === variantId);
-      if (!variant) {
-        console.warn(`Variant ${variantId} not found in test ${test.id}`);
-        return;
-      }
-      
-      // Apply changes to the elements
-      elements.forEach(element => {
-        applyChangesToElement(element, variant.changes);
-      });
-      
-      // Record this test as active
-      newActiveTests[test.elementSelector] = {
-        testId: test.id,
-        variantId: variantId
-      };
-      
-      // Record impression
-      recordImpression(test.id, variantId);
-    } catch (error) {
-      console.error(`Error applying test ${test.id}:`, error);
+      await apiRequest('POST', '/api/ab-tests/track/impression', { testId, variantId });
+    } catch (err) {
+      console.error('Failed to track A/B test impression:', err);
     }
   };
-  
+
+  // Track when a conversion goal is achieved
+  const trackConversion = async (testId: string, variantId: string) => {
+    try {
+      await apiRequest('POST', '/api/ab-tests/track/conversion', { testId, variantId });
+    } catch (err) {
+      console.error('Failed to track A/B test conversion:', err);
+    }
+  };
+
+  // Apply a variant's changes to an element
   const applyChangesToElement = (element: Element, changes: Record<string, any>) => {
-    // Apply CSS changes
-    if (changes.css && typeof changes.css === 'object') {
-      Object.entries(changes.css).forEach(([property, value]) => {
-        if (element instanceof HTMLElement) {
-          element.style[property as any] = value as string;
+    // Apply text content if specified
+    if (changes.text && element instanceof HTMLElement) {
+      element.innerText = changes.text;
+    }
+
+    // Apply HTML content if specified
+    if (changes.html && element instanceof HTMLElement) {
+      element.innerHTML = changes.html;
+    }
+
+    // Apply CSS styles if specified
+    if (element instanceof HTMLElement) {
+      Object.entries(changes).forEach(([key, value]) => {
+        // Skip text and html as they're handled separately
+        if (key !== 'text' && key !== 'html') {
+          (element.style as any)[key] = value;
         }
       });
     }
-    
-    // Apply content changes
-    if (changes.content && typeof changes.content === 'string') {
-      element.textContent = changes.content;
-    }
-    
-    // Apply HTML changes
-    if (changes.html && typeof changes.html === 'string') {
-      element.innerHTML = changes.html;
-    }
-    
-    // Apply attribute changes
-    if (changes.attributes && typeof changes.attributes === 'object') {
+
+    // Apply attributes if specified
+    if (changes.attributes && element instanceof HTMLElement) {
       Object.entries(changes.attributes).forEach(([attr, value]) => {
-        if (value === null) {
+        if (value === null || value === undefined) {
           element.removeAttribute(attr);
         } else {
           element.setAttribute(attr, String(value));
         }
       });
     }
-    
-    // Apply class changes
-    if (changes.addClass && Array.isArray(changes.addClass)) {
-      changes.addClass.forEach((className: string) => {
-        element.classList.add(className);
-      });
-    }
-    
-    if (changes.removeClass && Array.isArray(changes.removeClass)) {
-      changes.removeClass.forEach((className: string) => {
-        element.classList.remove(className);
-      });
-    }
-  };
-  
-  const recordImpression = async (testId: string, variantId: string) => {
-    try {
-      await apiRequest('POST', `/api/abtesting/tests/${testId}/variants/${variantId}/impression`);
-    } catch (error) {
-      console.error('Error recording impression:', error);
-    }
-  };
-  
-  const recordConversion = async (testId: string, variantId: string) => {
-    try {
-      await apiRequest('POST', `/api/abtesting/tests/${testId}/variants/${variantId}/conversion`);
-    } catch (error) {
-      console.error('Error recording conversion:', error);
-    }
-  };
-  
-  // This component doesn't render anything
-  return null;
-};
 
-export default ABTestClient;
+    // Apply class changes if specified
+    if (changes.addClass && element instanceof HTMLElement) {
+      if (Array.isArray(changes.addClass)) {
+        element.classList.add(...changes.addClass);
+      } else {
+        element.classList.add(changes.addClass);
+      }
+    }
+
+    if (changes.removeClass && element instanceof HTMLElement) {
+      if (Array.isArray(changes.removeClass)) {
+        element.classList.remove(...changes.removeClass);
+      } else {
+        element.classList.remove(changes.removeClass);
+      }
+    }
+  };
+
+  const setupConversionTracking = (test: ABTest, variantId: string) => {
+    switch (test.goalType) {
+      case 'click':
+        if (test.goalSelector) {
+          const elements = document.querySelectorAll(test.goalSelector);
+          elements.forEach(element => {
+            element.addEventListener('click', () => trackConversion(test.id, variantId));
+          });
+        }
+        break;
+      case 'form_submit':
+        if (test.goalSelector) {
+          const forms = document.querySelectorAll(test.goalSelector);
+          forms.forEach(form => {
+            form.addEventListener('submit', () => trackConversion(test.id, variantId));
+          });
+        }
+        break;
+      case 'page_view':
+        // Page view conversions are tracked when navigating to a specific page
+        // This would be handled with a route listener or in a useEffect
+        const currentPath = window.location.pathname;
+        if (test.goalSelector && test.goalSelector === currentPath) {
+          trackConversion(test.id, variantId);
+        }
+        break;
+      case 'custom':
+        // Custom conversions would be triggered by specific code elsewhere
+        // Could set up a global event bus or window event
+        window.addEventListener(`ab-test-convert-${test.id}`, () => {
+          trackConversion(test.id, variantId);
+        });
+        break;
+    }
+  };
+
+  useEffect(() => {
+    const applyActiveTests = async () => {
+      if (!activeTests?.data?.length) return;
+
+      const newAppliedTests: Record<string, string> = { ...appliedTests };
+
+      for (const test of activeTests.data) {
+        // Skip if we've already applied this test
+        if (appliedTests[test.id]) continue;
+
+        // Find elements matching the test selector
+        const elements = document.querySelectorAll(test.elementSelector);
+        if (elements.length === 0) continue;
+
+        // Select a variant based on its weight
+        // Simplified version: randomly select one variant
+        // In a more complex implementation, use weighted selection
+        const variants = test.variants;
+        const variantIndex = Math.floor(Math.random() * variants.length);
+        const selectedVariant = variants[variantIndex];
+
+        // Apply the changes to all matching elements
+        elements.forEach(element => {
+          applyChangesToElement(element, selectedVariant.changes);
+        });
+
+        // Set up conversion tracking
+        setupConversionTracking(test, selectedVariant.id);
+
+        // Track the impression
+        await trackImpression(test.id, selectedVariant.id);
+
+        // Mark test as applied
+        newAppliedTests[test.id] = selectedVariant.id;
+      }
+
+      setAppliedTests(newAppliedTests);
+    };
+
+    // Apply the tests
+    applyActiveTests();
+
+    // Add listener for page changes (SPA navigation)
+    const handleRouteChange = () => {
+      // For tests that care about page views
+      Object.entries(appliedTests).forEach(([testId, variantId]) => {
+        const test = activeTests?.data?.find(t => t.id === testId);
+        if (test?.goalType === 'page_view' && test.goalSelector === window.location.pathname) {
+          trackConversion(testId, variantId);
+        }
+      });
+    };
+
+    window.addEventListener('popstate', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, [activeTests, appliedTests]);
+
+  // This component doesn't render anything, it just applies the tests
+  return null;
+}
