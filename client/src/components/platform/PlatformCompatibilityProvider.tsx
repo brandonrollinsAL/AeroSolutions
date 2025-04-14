@@ -49,7 +49,7 @@ export const PlatformCompatibilityProvider: React.FC<PlatformCompatibilityProvid
   const analyzePlatformIssues = async () => {
     try {
       setIsAnalyzing(true);
-      const response = await apiRequest('GET', '/api/platform-issues');
+      const response = await apiRequest('GET', '/api/platform-compatibility/platform-issues');
       const data = await response.json();
       setPlatformAnalysis(data);
       setLastAnalyzed(new Date());

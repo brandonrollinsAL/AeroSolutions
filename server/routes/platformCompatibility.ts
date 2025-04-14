@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { generateJson } from '../utils/xaiClient';
+import { storage } from '../storage';
+import { insertPlatformCompatibilityIssueSchema } from '@shared/schema';
 import { db } from '../db';
 import { logs } from '@shared/schema';
 
@@ -43,8 +45,8 @@ router.post('/log-platform-error', async (req, res) => {
       context: validatedData,
       timestamp: new Date(validatedData.timestamp),
       userId: req.user?.id,
-      sessionId: req.sessionID,
-      requestId: req.headers['x-request-id'] as string,
+      sessionId: req.sessionID || '',
+      requestId: req.headers['x-request-id'] as string || '',
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
@@ -57,7 +59,169 @@ router.post('/log-platform-error', async (req, res) => {
 });
 
 /**
- * Get platform compatibility issues
+ * Create a new platform compatibility issue
+ */
+router.post('/issues', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Validate the request body with our schema
+    const validatedData = insertPlatformCompatibilityIssueSchema.parse(req.body);
+    
+    // Create the issue using our storage interface
+    const newIssue = await storage.createPlatformCompatibilityIssue({
+      ...validatedData,
+      reportedBy: req.user.id,
+      status: validatedData.status || 'open',
+      occurrences: validatedData.occurrences || 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    
+    res.status(201).json(newIssue);
+  } catch (error) {
+    console.error('Error creating platform compatibility issue:', error);
+    res.status(400).json({ error: 'Failed to create platform compatibility issue' });
+  }
+});
+
+/**
+ * Get all platform compatibility issues with optional status filter
+ */
+router.get('/issues', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const status = req.query.status as string | undefined;
+    const issues = await storage.getPlatformCompatibilityIssues(status);
+    
+    res.json({ issues });
+  } catch (error) {
+    console.error('Error fetching platform compatibility issues:', error);
+    res.status(500).json({ error: 'Failed to fetch platform compatibility issues' });
+  }
+});
+
+/**
+ * Get platform compatibility issues for a specific platform
+ */
+router.get('/issues/platform/:platform', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const platform = req.params.platform;
+    const issues = await storage.getPlatformIssuesByPlatform(platform);
+    
+    res.json({ issues });
+  } catch (error) {
+    console.error(`Error fetching platform issues for platform ${req.params.platform}:`, error);
+    res.status(500).json({ error: 'Failed to fetch platform issues' });
+  }
+});
+
+/**
+ * Get a single platform compatibility issue by ID
+ */
+router.get('/issues/:id', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid issue ID' });
+    }
+    
+    const issue = await storage.getPlatformCompatibilityIssue(id);
+    if (!issue) {
+      return res.status(404).json({ error: 'Issue not found' });
+    }
+    
+    res.json(issue);
+  } catch (error) {
+    console.error(`Error fetching platform compatibility issue with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to fetch platform compatibility issue' });
+  }
+});
+
+/**
+ * Update a platform compatibility issue
+ */
+router.patch('/issues/:id', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid issue ID' });
+    }
+    
+    // Add updatedAt to the data
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+    
+    const updatedIssue = await storage.updatePlatformCompatibilityIssue(id, updateData);
+    if (!updatedIssue) {
+      return res.status(404).json({ error: 'Issue not found' });
+    }
+    
+    res.json(updatedIssue);
+  } catch (error) {
+    console.error(`Error updating platform compatibility issue with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to update platform compatibility issue' });
+  }
+});
+
+/**
+ * Increment occurrence count for an issue
+ */
+router.post('/issues/:id/increment-occurrence', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid issue ID' });
+    }
+    
+    await storage.incrementIssueOccurrence(id);
+    const updatedIssue = await storage.getPlatformCompatibilityIssue(id);
+    
+    res.json({ success: true, issue: updatedIssue });
+  } catch (error) {
+    console.error(`Error incrementing occurrence for issue ID ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to increment occurrence count' });
+  }
+});
+
+/**
+ * Get platform compatibility analysis summary and issues
+ */
+router.get('/analysis', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const analysis = await storage.analyzeCompatibilityIssues();
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing platform compatibility issues:', error);
+    res.status(500).json({ error: 'Failed to analyze platform compatibility issues' });
+  }
+});
+
+/**
+ * Get platform compatibility AI-powered analysis 
  */
 router.get('/platform-issues', async (req, res) => {
   try {
@@ -68,8 +232,13 @@ router.get('/platform-issues', async (req, res) => {
     // Get recent platform errors from logs
     const recentPlatformLogs = await db.select()
       .from(logs)
-      .where(logs.message.like('Platform error:%'))
-      .orderBy(logs.timestamp, 'desc')
+      .where((logs) => {
+        if (typeof logs.message === 'object' && logs.message.like) {
+          return logs.message.like('Platform error:%');
+        }
+        return false;
+      })
+      .orderBy('timestamp', 'desc')
       .limit(50);
     
     if (recentPlatformLogs.length === 0) {
@@ -123,6 +292,31 @@ router.get('/platform-issues', async (req, res) => {
     
     // Use XAI to analyze the platform errors
     const analysis = await generateJson(analysisPrompt, systemPrompt);
+    
+    // Store any new issues identified by the AI
+    if (analysis && analysis.platformIssues && Array.isArray(analysis.platformIssues)) {
+      for (const aiIssue of analysis.platformIssues) {
+        try {
+          // Create or update platform compatibility issues in our database
+          await storage.createPlatformCompatibilityIssue({
+            platform: aiIssue.platform,
+            issueType: aiIssue.issueType,
+            affectedComponents: aiIssue.affectedComponents,
+            description: aiIssue.description,
+            recommendedFix: aiIssue.recommendedFix,
+            priority: aiIssue.priority,
+            occurrences: aiIssue.occurrences,
+            status: 'open',
+            reportedBy: req.user.id,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        } catch (issueError) {
+          console.error('Error storing AI-identified platform issue:', issueError);
+          // Continue with other issues even if one fails
+        }
+      }
+    }
     
     res.json(analysis);
   } catch (error) {

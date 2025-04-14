@@ -162,7 +162,7 @@ export async function logPlatformError(error: Error, componentName: string): Pro
   
   try {
     // Send to server endpoint
-    const response = await fetch('/api/log-platform-error', {
+    const response = await fetch('/api/platform-compatibility/log-platform-error', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
