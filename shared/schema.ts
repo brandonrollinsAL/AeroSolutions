@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, foreignKey, varchar, primaryKey, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, foreignKey, varchar, primaryKey, date, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1079,6 +1079,76 @@ export const insertLogSchema = createInsertSchema(logs).omit({
 
 export type Log = typeof logs.$inferSelect;
 export type InsertLog = z.infer<typeof insertLogSchema>;
+
+// Performance Logs Schema
+export const performance_logs = pgTable("performance_logs", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  pageUrl: text("page_url"),
+  loadTime: integer("load_time"), // in milliseconds
+  apiEndpoint: text("api_endpoint"),
+  responseTime: integer("response_time"), // in milliseconds
+  memoryUsage: real("memory_usage"), // in MB
+  cpuUsage: real("cpu_usage"), // in percentage
+  errorType: text("error_type"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  sessionId: text("session_id"),
+  userAgent: text("user_agent"),
+  metricType: text("metric_type").default("general").notNull(), // page_load, api_response, resource, error, etc.
+});
+
+export const insertPerformanceLogSchema = createInsertSchema(performance_logs).omit({
+  id: true,
+});
+
+export type PerformanceLog = typeof performance_logs.$inferSelect;
+export type InsertPerformanceLog = z.infer<typeof insertPerformanceLogSchema>;
+
+// Performance Metrics Schema (for summary/aggregated data)
+export const performance_metrics = pgTable("performance_metrics", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  avgPageLoadTime: real("avg_page_load_time"), // in milliseconds
+  avgApiResponseTime: real("avg_api_response_time"), // in milliseconds
+  totalErrorCount: integer("total_error_count").default(0),
+  avgMemoryUsage: real("avg_memory_usage"), // in MB
+  avgCpuUsage: real("avg_cpu_usage"), // in percentage
+  slowestEndpoints: json("slowest_endpoints").$type<{path: string, avgTime: number}[]>(),
+  slowestPages: json("slowest_pages").$type<{path: string, avgTime: number}[]>(),
+  commonErrors: json("common_errors").$type<{type: string, count: number}[]>(),
+  timeframe: text("timeframe").notNull(), // hourly, daily, weekly, monthly
+});
+
+export const insertPerformanceMetricSchema = createInsertSchema(performance_metrics).omit({
+  id: true,
+});
+
+export type PerformanceMetric = typeof performance_metrics.$inferSelect;
+export type InsertPerformanceMetric = z.infer<typeof insertPerformanceMetricSchema>;
+
+// Performance Recommendations Schema
+export const performance_recommendations = pgTable("performance_recommendations", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  type: text("type").notNull(), // frontend, backend, general
+  priority: text("priority").notNull(), // high, medium, low
+  issue: text("issue").notNull(),
+  recommendation: text("recommendation").notNull(),
+  expectedImpact: text("expected_impact").notNull(),
+  implementationComplexity: text("implementation_complexity").notNull(), // easy, medium, complex
+  code: text("code"), // Optional code snippet
+  status: text("status").default("pending").notNull(), // pending, implemented, rejected, in_progress
+  implementedAt: timestamp("implemented_at"),
+  implementedBy: integer("implemented_by").references(() => users.id, { onDelete: "set null" }),
+});
+
+export const insertPerformanceRecommendationSchema = createInsertSchema(performance_recommendations).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type PerformanceRecommendation = typeof performance_recommendations.$inferSelect;
+export type InsertPerformanceRecommendation = z.infer<typeof insertPerformanceRecommendationSchema>;
 
 // Platform compatibility issues table
 export const platform_compatibility_issues = pgTable("platform_compatibility_issues", {
