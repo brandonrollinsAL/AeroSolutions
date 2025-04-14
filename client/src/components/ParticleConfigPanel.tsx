@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ColorPicker, useColor } from 'react-color-palette';
+import { ColorPicker, useColor, type IColor } from 'react-color-palette';
 import '@/styles/react-color-palette.css';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
@@ -40,7 +40,13 @@ interface ParticleConfigPanelProps {
 const ParticleConfigPanel: React.FC<ParticleConfigPanelProps> = ({ config, onChange }) => {
   const [color, setColor] = useColor('hex', '#00D1D1');
   const [colorPalette, setColorPalette] = useState<string[]>(config.colorPalette);
-  const [presets, setPresets] = useState([
+  
+  type Preset = {
+    name: string;
+    config: ParticleConfig;
+  };
+  
+  const [presets, setPresets] = useState<Preset[]>([
     {
       name: 'Elevion Default',
       config: {
@@ -123,7 +129,7 @@ const ParticleConfigPanel: React.FC<ParticleConfigPanelProps> = ({ config, onCha
     onChange({ ...config, [key]: value });
   };
 
-  const handlePresetChange = (preset: any) => {
+  const handlePresetChange = (preset: Preset) => {
     setColorPalette(preset.config.colorPalette);
     onChange(preset.config);
   };
