@@ -332,8 +332,6 @@ const ParticleConfigPanel: React.FC<ParticleConfigPanelProps> = ({ config, onCha
             </div>
             <div className="pt-2">
               <ColorPicker
-                width={250}
-                height={100}
                 color={color}
                 onChange={setColor}
                 hideHSV

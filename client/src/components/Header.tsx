@@ -22,7 +22,8 @@ export default function Header() {
       dropdown: [  
         { label: 'AI Web Development', path: '/web-development' },  
         { label: 'Small Business Growth', path: '/growth-solutions' },  
-        { label: 'Competitive Analysis', path: '/competitive-analysis' },  
+        { label: 'Competitive Analysis', path: '/competitive-analysis' },
+        { label: 'Particle Background', path: '/particle-background' },
       ],  
     },  
     { label: 'Pricing', path: '/pricing' },  
