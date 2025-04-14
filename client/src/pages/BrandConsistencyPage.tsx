@@ -1,15 +1,13 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useTranslation } from 'react-i18next';
-// Import our layout component
-import Layout from '@/components/Layout';
 import BrandConsistencyDashboard from '@/components/BrandConsistencyDashboard';
 
 const BrandConsistencyPage: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <Layout>
+    <div className="bg-background">
       <Helmet>
         <title>{t('Brand Consistency Monitor')} | Elevion</title>
         <meta
@@ -21,7 +19,7 @@ const BrandConsistencyPage: React.FC = () => {
       <div className="container py-8">
         <BrandConsistencyDashboard />
       </div>
-    </Layout>
+    </div>
   );
 };
 
