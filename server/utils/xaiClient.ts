@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-// Initialize the OpenAI client with the XAI API base URL
+// Initialize the OpenAI client with the Elevion AI API base URL
 const openai = new OpenAI({
   baseURL: 'https://api.x.ai/v1',
   apiKey: process.env.XAI_API_KEY,
@@ -11,7 +11,7 @@ let apiSuccessCount = 0;
 let apiTotalCalls = 0;
 let lastApiError: any = null;
 
-// Function to call XAI endpoints directly
+// Function to call Elevion AI endpoints directly
 export async function callXAI(endpoint: string, data: any) {
   try {
     if (!process.env.XAI_API_KEY) {
@@ -38,7 +38,7 @@ export async function callXAI(endpoint: string, data: any) {
   } catch (error) {
     // Track and log the error
     lastApiError = error;
-    console.error('XAI API call error:', error);
+    console.error('Elevion AI API call error:', error);
     
     // Log detailed diagnostic information
     console.error(`API Stats - Success: ${apiSuccessCount}/${apiTotalCalls} (${Math.round(apiSuccessCount/apiTotalCalls*100)}%)`);
@@ -127,7 +127,7 @@ export async function generateText(prompt: string, options: {
     return textResponse;
   } catch (error) {
     // Log error with diagnostics
-    console.error('XAI text generation error:', error);
+    console.error('Elevion AI text generation error:', error);
     console.error(`API Stats - Success: ${apiSuccessCount}/${apiTotalCalls} (${Math.round(apiSuccessCount/apiTotalCalls*100)}%)`);
     
     // Check if fallback was provided
