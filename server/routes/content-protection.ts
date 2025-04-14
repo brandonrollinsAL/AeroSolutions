@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { body } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateRequest } from '../utils/validation';
 import { watermarkText, detectWatermark } from '../utils/watermarkText';
+import { z } from 'zod';
 
 // Create content protection router
 const contentProtectionRouter = express.Router();
@@ -12,12 +12,12 @@ const contentProtectionRouter = express.Router();
  */
 contentProtectionRouter.post(
   '/watermark',
-  [
-    body('content').isString().notEmpty().withMessage('Content is required'),
-    body('contentId').notEmpty().withMessage('Content ID is required'),
-    body('contentType').isString().notEmpty().withMessage('Content type is required'),
-    validate()
-  ],
+  validateRequest(z.object({
+    content: z.string().min(1, 'Content is required'),
+    contentId: z.string().or(z.number()).optional(),
+    contentType: z.string().min(1, 'Content type is required'),
+    customBrand: z.string().optional()
+  })),
   async (req: Request, res: Response) => {
     try {
       const { content, contentId, contentType, customBrand } = req.body;
@@ -47,10 +47,10 @@ contentProtectionRouter.post(
  */
 contentProtectionRouter.post(
   '/detect-watermark',
-  [
-    body('content').isString().notEmpty().withMessage('Content is required'),
-    validate()
-  ],
+  validateRequest(z.object({
+    content: z.string().min(1, 'Content is required'),
+    customBrand: z.string().optional()
+  })),
   async (req: Request, res: Response) => {
     try {
       const { content, customBrand } = req.body;

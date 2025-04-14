@@ -1,6 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { body, param } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateRequest, validateParams } from '../utils/validation';
 import { authMiddleware as authenticate, adminMiddleware as authorize } from '../utils/auth';
 import { storage } from '../storage';
 import { insertAdvertisementSchema } from '@shared/schema';
@@ -82,17 +81,16 @@ advertisementRouter.post(
       return res.status(403).json({ message: 'Forbidden: Admin access required' });
     }
   },
-  [
-    body('name').isString().notEmpty(),
-    body('type').isString().notEmpty(),
-    body('imageUrl').isString().notEmpty(),
-    body('targetUrl').isString().notEmpty(),
-    body('startDate').isISO8601().toDate(),
-    body('endDate').isISO8601().toDate(),
-    body('isActive').isBoolean().optional(),
-    body('position').isString().optional(),
-    validate()
-  ],
+  validateRequest(z.object({
+    name: z.string().min(1),
+    type: z.string().min(1),
+    imageUrl: z.string().min(1),
+    targetUrl: z.string().min(1),
+    startDate: z.string().transform(val => new Date(val)),
+    endDate: z.string().transform(val => new Date(val)),
+    isActive: z.boolean().optional(),
+    position: z.string().optional()
+  })),
   async (req: Request, res: Response) => {
     try {
       const adData = insertAdvertisementSchema.parse(req.body);
@@ -134,18 +132,19 @@ advertisementRouter.patch(
       return res.status(403).json({ message: 'Forbidden: Admin access required' });
     }
   },
-  [
-    param('id').isNumeric().toInt(),
-    body('name').isString().notEmpty().optional(),
-    body('type').isString().notEmpty().optional(),
-    body('imageUrl').isString().notEmpty().optional(),
-    body('targetUrl').isString().notEmpty().optional(),
-    body('startDate').isISO8601().toDate().optional(),
-    body('endDate').isISO8601().toDate().optional(),
-    body('isActive').isBoolean().optional(),
-    body('position').isString().optional(),
-    validate()
-  ],
+  validateParams(z.object({
+    id: z.string().regex(/^\d+$/).transform(val => parseInt(val))
+  })),
+  validateRequest(z.object({
+    name: z.string().min(1).optional(),
+    type: z.string().min(1).optional(),
+    imageUrl: z.string().min(1).optional(),
+    targetUrl: z.string().min(1).optional(),
+    startDate: z.string().transform(val => new Date(val)).optional(),
+    endDate: z.string().transform(val => new Date(val)).optional(),
+    isActive: z.boolean().optional(),
+    position: z.string().optional()
+  })),
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -179,10 +178,9 @@ advertisementRouter.patch(
 // Record ad impression
 advertisementRouter.post(
   '/impression/:id',
-  [
-    param('id').isNumeric().toInt(),
-    validate()
-  ],
+  validateParams(z.object({
+    id: z.string().regex(/^\d+$/).transform(val => parseInt(val))
+  })),
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -216,10 +214,9 @@ advertisementRouter.post(
 // Record ad click
 advertisementRouter.post(
   '/click/:id',
-  [
-    param('id').isNumeric().toInt(),
-    validate()
-  ],
+  validateParams(z.object({
+    id: z.string().regex(/^\d+$/).transform(val => parseInt(val))
+  })),
   async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);

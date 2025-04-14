@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { param } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateParams } from '../utils/validation';
 import { authMiddleware as authenticate } from '../utils/auth';
 import { storage } from '../storage';
 import { grokApi } from '../grok';
 import NodeCache from 'node-cache';
 import { db } from '../db';
 import { SQL, and, asc, desc, eq, ilike, inArray, or } from 'drizzle-orm';
+import { z } from 'zod';
 
 const searchRouter = Router();
 
@@ -19,15 +19,12 @@ const searchCache = new NodeCache({
 
 // Content search endpoint with AI-enhanced results
 searchRouter.get('/content/:query', 
-  validate([
-    param('query')
-      .isString()
-      .notEmpty()
-      .withMessage('Search query is required')
-      .isLength({ min: 2, max: 100 })
-      .withMessage('Search query must be between 2 and 100 characters')
-      .trim()
-  ]), 
+  validateParams(z.object({
+    query: z.string()
+      .min(2, 'Search query is required and must be at least 2 characters')
+      .max(100, 'Search query must be between 2 and 100 characters')
+      .transform(val => val.trim())
+  })),
   async (req: Request, res: Response) => {
     try {
       const { query } = req.params;
@@ -120,7 +117,12 @@ searchRouter.get('/content/:query',
 );
 
 // Suggest features based on user's business type - authenticated route
-searchRouter.get('/suggest-features/:userId', authenticate, async (req: Request, res: Response) => {
+searchRouter.get('/suggest-features/:userId', 
+  authenticate,
+  validateParams(z.object({
+    userId: z.string().regex(/^\d+$/).transform(val => parseInt(val))
+  })),
+  async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const cacheKey = `feature_suggestions_${userId}`;

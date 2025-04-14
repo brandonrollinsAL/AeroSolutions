@@ -743,9 +743,9 @@ const seoStrategyCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 // Suggest SEO strategies for client websites based on their content
 marketplaceRouter.post(
   '/suggest-seo',
-  validate([
-    body('websiteContent').isString().notEmpty().withMessage('Website content is required')
-  ]),
+  validateRequest(z.object({
+    websiteContent: z.string().min(1, { message: 'Website content is required' })
+  })),
   async (req: Request, res: Response) => {
     try {
       const { websiteContent } = req.body;
@@ -881,10 +881,10 @@ const contentMarketingCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 // Generate content marketing suggestions based on business type
 marketplaceRouter.post(
   '/content-marketing-suggestions',
-  validate([
-    body('businessType').isString().notEmpty().withMessage('Business type is required'),
-    body('userId').optional().isNumeric().toInt()
-  ]),
+  validateRequest(z.object({
+    businessType: z.string().min(1, { message: 'Business type is required' }),
+    userId: z.number().or(z.string().regex(/^\d+$/).transform(val => parseInt(val))).optional()
+  })),
   async (req: Request, res: Response) => {
     try {
       const { businessType, userId } = req.body;
@@ -1584,11 +1584,11 @@ marketplaceRouter.post(
  * Suggest ad content for premium business slots in the marketplace
  */
 marketplaceRouter.post('/suggest-ad', 
-  validate([
-    body('businessName').isString().notEmpty().withMessage('Business name is required'),
-    body('businessType').isString().optional(),
-    body('targetAudience').isString().optional(),
-  ]),
+  validateRequest(z.object({
+    businessName: z.string().min(1, { message: 'Business name is required' }),
+    businessType: z.string().optional(),
+    targetAudience: z.string().optional(),
+  })),
   async (req: Request, res: Response) => {  
     const { businessName, businessType, targetAudience } = req.body;
     

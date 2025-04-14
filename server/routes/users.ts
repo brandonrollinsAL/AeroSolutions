@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, param } from 'express-validator';
-import { validate } from '../utils/validation';
+import { validateRequest } from '../utils/validation';
 import { authMiddleware } from '../utils/auth';
 import { storage } from '../storage';
 import { db } from '../db';
@@ -26,7 +26,13 @@ const validateUserUpdate = [
   body('lastName').optional().isString().trim().notEmpty().withMessage('Last name cannot be empty'),
   body('businessType').optional().isString().trim().withMessage('Business type must be a string'),
   body('preferences').optional().isString().trim().withMessage('Preferences must be a string'),
-  validate()
+  validateRequest(z.object({
+    email: z.string().email().optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    businessType: z.string().optional(),
+    preferences: z.string().optional()
+  }))
 ];
 
 /**

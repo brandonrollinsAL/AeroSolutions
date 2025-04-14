@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 // Secret key for JWT signing - in production, use environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'elevion-secret-key';
@@ -16,6 +18,37 @@ export const verifyToken = (token: string): any => {
   } catch (error) {
     return null;
   }
+};
+
+// Generate a random token for verification or password reset
+export const generateRandomToken = (): string => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+// Hash password using bcrypt
+export const hashPassword = (password: string): string => {
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync(password, salt);
+};
+
+// Verify password using bcrypt
+export const verifyPassword = (plainPassword: string, hashedPassword: string): boolean => {
+  return bcrypt.compareSync(plainPassword, hashedPassword);
+};
+
+// Generate email verification link
+export const generateVerificationLink = (userId: number, token: string, baseUrl: string): string => {
+  return `${baseUrl}/api/auth/verify-email?uid=${userId}&token=${token}`;
+};
+
+// Generate password reset link
+export const generatePasswordResetLink = (userId: number, token: string, baseUrl: string): string => {
+  return `${baseUrl}/reset-password?uid=${userId}&token=${token}`;
+};
+
+// Check if a user is an admin
+export const isAdmin = (req: Request): boolean => {
+  return !!(req.user && req.user.role === 'admin');
 };
 
 // Authentication middleware using JWT
@@ -97,5 +130,11 @@ export default {
   verifyToken,
   authMiddleware,
   adminMiddleware,
-  requireAuth
+  requireAuth,
+  hashPassword,
+  verifyPassword,
+  generateRandomToken,
+  generateVerificationLink,
+  generatePasswordResetLink,
+  isAdmin
 };
