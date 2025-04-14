@@ -11,7 +11,9 @@ import {
   type UserSession, type ContentViewMetric, type Feedback,
   type InsertUserSession, type InsertContentViewMetric, type InsertFeedback,
   posts, mockupRequests, mockupEngagement, marketplaceServiceEngagement,
-  type MockupRequest, type InsertMockupRequest, type MarketplaceServiceEngagement,
+  type MockupRequest, type InsertMockupRequest, type MockupEngagement, type InsertMockupEngagement,
+  type MarketplaceServiceEngagement,
+  generatedMockups, type GeneratedMockup, type InsertGeneratedMockup,
   priceRecommendations, subscriptionPriceHistory,
   type PriceRecommendation, type InsertPriceRecommendation,
   type PriceHistory, type InsertPriceHistory,
@@ -125,6 +127,13 @@ export interface IStorage {
   updateMockupRequest(id: number, data: Partial<MockupRequest>): Promise<MockupRequest>;
   getRecentMockupRequests(limit?: number): Promise<MockupRequest[]>;
   getMockupRequestsByStatus(status: string, limit?: number): Promise<MockupRequest[]>;
+  
+  // Generated mockups methods
+  createGeneratedMockup(mockup: InsertGeneratedMockup): Promise<GeneratedMockup>;
+  getGeneratedMockup(id: number): Promise<GeneratedMockup | undefined>;
+  getGeneratedMockupsByRequestId(requestId: number): Promise<GeneratedMockup[]>;
+  getGeneratedMockupByAccessToken(accessToken: string): Promise<GeneratedMockup | undefined>;
+  updateGeneratedMockup(id: number, data: Partial<InsertGeneratedMockup>): Promise<GeneratedMockup>;
   
   // Marketplace service engagement methods
   getMarketplaceServiceEngagement(): Promise<any[]>;
@@ -936,6 +945,62 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error tracking service inquiry:', error);
       return false;
+    }
+  }
+  
+  // Generated mockups methods
+  async createGeneratedMockup(mockup: InsertGeneratedMockup): Promise<GeneratedMockup> {
+    try {
+      const [generatedMockup] = await db.insert(generatedMockups).values(mockup).returning();
+      return generatedMockup;
+    } catch (error) {
+      console.error('Error creating generated mockup:', error);
+      throw error;
+    }
+  }
+  
+  async getGeneratedMockup(id: number): Promise<GeneratedMockup | undefined> {
+    try {
+      const [mockup] = await db.select().from(generatedMockups).where(eq(generatedMockups.id, id));
+      return mockup;
+    } catch (error) {
+      console.error(`Error getting generated mockup with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getGeneratedMockupsByRequestId(requestId: number): Promise<GeneratedMockup[]> {
+    try {
+      return await db.select().from(generatedMockups)
+        .where(eq(generatedMockups.requestId, requestId))
+        .orderBy(desc(generatedMockups.createdAt));
+    } catch (error) {
+      console.error(`Error getting generated mockups for request ID ${requestId}:`, error);
+      return [];
+    }
+  }
+  
+  async getGeneratedMockupByAccessToken(accessToken: string): Promise<GeneratedMockup | undefined> {
+    try {
+      const [mockup] = await db.select().from(generatedMockups)
+        .where(eq(generatedMockups.accessToken, accessToken));
+      return mockup;
+    } catch (error) {
+      console.error(`Error getting generated mockup by access token:`, error);
+      return undefined;
+    }
+  }
+  
+  async updateGeneratedMockup(id: number, data: Partial<InsertGeneratedMockup>): Promise<GeneratedMockup> {
+    try {
+      const [mockup] = await db.update(generatedMockups)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(generatedMockups.id, id))
+        .returning();
+      return mockup;
+    } catch (error) {
+      console.error(`Error updating generated mockup with ID ${id}:`, error);
+      throw error;
     }
   }
 

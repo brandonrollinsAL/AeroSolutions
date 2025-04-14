@@ -776,6 +776,34 @@ export const insertMockupEngagementSchema = createInsertSchema(mockupEngagement)
 export type MockupEngagement = typeof mockupEngagement.$inferSelect;
 export type InsertMockupEngagement = z.infer<typeof insertMockupEngagementSchema>;
 
+// Generated mockups schema for storing AI-generated mockups
+export const generatedMockups = pgTable("generated_mockups", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").references(() => mockupRequests.id).notNull(),
+  templateName: text("template_name").notNull(),
+  mockupData: json("mockup_data").$type<Record<string, any>>().notNull(), // Stores the template configuration
+  thumbnailUrl: text("thumbnail_url"),
+  fullPreviewUrl: text("full_preview_url"),
+  htmlContent: text("html_content"), // Stores the rendered HTML content
+  cssContent: text("css_content"), // Custom CSS if any
+  aiAnalysisNotes: text("ai_analysis_notes"), // XAI analysis notes
+  industryRelevanceScore: decimal("industry_relevance_score", { precision: 3, scale: 1 }),
+  conversionOptimizationScore: decimal("conversion_optimization_score", { precision: 3, scale: 1 }),
+  accessToken: text("access_token"), // For secure sharing
+  status: text("status").default("active").notNull(), // active, archived, deleted
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertGeneratedMockupSchema = createInsertSchema(generatedMockups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type GeneratedMockup = typeof generatedMockups.$inferSelect;
+export type InsertGeneratedMockup = z.infer<typeof insertGeneratedMockupSchema>;
+
 // Email Campaigns schema for tracking client email campaign suggestions and templates
 export const emailCampaigns = pgTable("email_campaigns", {
   id: serial("id").primaryKey(),
