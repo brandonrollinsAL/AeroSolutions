@@ -44,7 +44,8 @@ export async function handleSupportQuery(req: Request, res: Response) {
   }
 
   const { query, sessionId, userId, userContext = {} } = req.body;
-  const authenticatedUserId = req.isAuthenticated() ? req.user.id : null;
+  // Safer check for authentication that won't throw an error if isAuthenticated is not available
+  const authenticatedUserId = req.user && typeof req.isAuthenticated === 'function' && req.isAuthenticated() ? req.user.id : null;
   const actualUserId = userId || authenticatedUserId;
 
   try {
@@ -273,8 +274,8 @@ async function analyzeQuery(
  */
 export async function getSupportTickets(req: Request, res: Response) {
   try {
-    // Check if user is admin
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    // Check if user is admin with safer authentication check
+    if (!(req.user && typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Admin access required'
@@ -328,8 +329,8 @@ export async function getSupportTickets(req: Request, res: Response) {
  */
 export async function resolveTicket(req: Request, res: Response) {
   try {
-    // Check if user is admin
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    // Check if user is admin with safer authentication check
+    if (!(req.user && typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Admin access required'
