@@ -1,17 +1,19 @@
-import { grokApi } from './grok';
 import { db } from '../db';
-import { performance_logs, performance_metrics } from '@shared/schema';
-import { eq, gte, lte, and, desc } from 'drizzle-orm';
+import { performance_logs, performance_metrics, performance_recommendations } from '@shared/schema';
+import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
 import NodeCache from 'node-cache';
+import { callXAI, generateJson } from './xaiClient';
 
-// Cache for performance data and recommendations
+// Cache for performance data (5 minute TTL, check period 1 minute)
 const performanceCache = new NodeCache({
-  stdTTL: 3600, // 1 hour TTL
-  checkperiod: 600, // Check every 10 minutes
-  maxKeys: 100
+  stdTTL: 300,
+  checkperiod: 60,
+  useClones: false
 });
 
-// Define performance data interface
+/**
+ * Interface for performance data used in analysis
+ */
 export interface PerformanceData {
   pageLoadTimes: Record<string, number[]>;
   apiResponseTimes: Record<string, number[]>;
@@ -28,7 +30,9 @@ export interface PerformanceData {
   slowestPages: { path: string; avgTime: number }[];
 }
 
-// Define optimization recommendation interface
+/**
+ * Interface for optimization recommendations
+ */
 export interface OptimizationRecommendation {
   type: 'frontend' | 'backend' | 'general';
   priority: 'high' | 'medium' | 'low';
@@ -47,117 +51,78 @@ export interface OptimizationRecommendation {
  * @returns Performance data for the specified time period
  */
 export async function getPerformanceData(startDate: Date, endDate: Date): Promise<PerformanceData> {
+  // Try to get from cache first
   const cacheKey = `performance_data_${startDate.toISOString()}_${endDate.toISOString()}`;
-  
-  // Check if data is already in cache
   const cachedData = performanceCache.get<PerformanceData>(cacheKey);
   if (cachedData) {
     return cachedData;
   }
-  
-  // Get page load times
-  const pageLogs = await db.select()
+
+  // Query database for performance logs in the given date range
+  const logs = await db.select()
     .from(performance_logs)
     .where(
       and(
         gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate),
-        eq(performance_logs.metricType, 'page_load')
+        lte(performance_logs.timestamp, endDate)
       )
-    );
+    )
+    .orderBy(desc(performance_logs.timestamp));
 
-  // Get API response times
-  const apiLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate),
-        eq(performance_logs.metricType, 'api_response')
-      )
-    );
-
-  // Get resource usage
-  const resourceLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate),
-        eq(performance_logs.metricType, 'resource')
-      )
-    );
-
-  // Get errors
-  const errorLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate),
-        eq(performance_logs.metricType, 'error')
-      )
-    );
-
-  // Organize data
+  // Process logs to extract performance metrics
   const pageLoadTimes: Record<string, number[]> = {};
   const apiResponseTimes: Record<string, number[]> = {};
   const memory: number[] = [];
   const cpu: number[] = [];
   const timestamps: string[] = [];
   const errorTypes: Record<string, number> = {};
+  let errorCount = 0;
 
-  // Process page load times
-  pageLogs.forEach(log => {
-    if (log.pageUrl && log.loadTime) {
+  // Process each log
+  logs.forEach(log => {
+    // Track page load times
+    if (log.metricType === 'page_load' && log.pageUrl && typeof log.loadTime === 'number') {
       if (!pageLoadTimes[log.pageUrl]) {
         pageLoadTimes[log.pageUrl] = [];
       }
       pageLoadTimes[log.pageUrl].push(log.loadTime);
     }
-  });
 
-  // Process API response times
-  apiLogs.forEach(log => {
-    if (log.apiEndpoint && log.responseTime) {
+    // Track API response times
+    if (log.metricType === 'api_response' && log.apiEndpoint && typeof log.responseTime === 'number') {
       if (!apiResponseTimes[log.apiEndpoint]) {
         apiResponseTimes[log.apiEndpoint] = [];
       }
       apiResponseTimes[log.apiEndpoint].push(log.responseTime);
     }
-  });
 
-  // Process resource usage
-  resourceLogs.forEach(log => {
-    if (log.memoryUsage !== null) memory.push(log.memoryUsage);
-    if (log.cpuUsage !== null) cpu.push(log.cpuUsage);
-    if (log.timestamp) timestamps.push(new Date(log.timestamp).toISOString());
-  });
+    // Track resource usage
+    if (log.metricType === 'resource_usage') {
+      if (typeof log.memoryUsage === 'number') {
+        memory.push(log.memoryUsage);
+      }
+      if (typeof log.cpuUsage === 'number') {
+        cpu.push(log.cpuUsage);
+      }
+      timestamps.push(log.timestamp.toISOString());
+    }
 
-  // Process errors
-  errorLogs.forEach(log => {
-    if (log.errorType) {
-      errorTypes[log.errorType] = (errorTypes[log.errorType] || 0) + 1;
+    // Track errors
+    if (log.metricType === 'error' && log.errorType) {
+      errorCount++;
+      if (errorTypes[log.errorType]) {
+        errorTypes[log.errorType]++;
+      } else {
+        errorTypes[log.errorType] = 1;
+      }
     }
   });
 
   // Calculate slowest endpoints and pages
-  const slowestEndpoints = Object.entries(apiResponseTimes)
-    .map(([path, times]) => ({
-      path,
-      avgTime: calculateAverage(times)
-    }))
-    .sort((a, b) => b.avgTime - a.avgTime)
-    .slice(0, 5);
+  const slowestEndpoints = calculateSlowestItems(apiResponseTimes);
+  const slowestPages = calculateSlowestItems(pageLoadTimes);
 
-  const slowestPages = Object.entries(pageLoadTimes)
-    .map(([path, times]) => ({
-      path,
-      avgTime: calculateAverage(times)
-    }))
-    .sort((a, b) => b.avgTime - a.avgTime)
-    .slice(0, 5);
-
+  // Assemble performance data
   const performanceData: PerformanceData = {
     pageLoadTimes,
     apiResponseTimes,
@@ -167,16 +132,16 @@ export async function getPerformanceData(startDate: Date, endDate: Date): Promis
       timestamps
     },
     errors: {
-      count: errorLogs.length,
+      count: errorCount,
       types: errorTypes
     },
     slowestEndpoints,
     slowestPages
   };
-  
-  // Cache the data
+
+  // Cache the result
   performanceCache.set(cacheKey, performanceData);
-  
+
   return performanceData;
 }
 
@@ -190,106 +155,69 @@ export async function generateOptimizationRecommendations(
   performanceData: PerformanceData
 ): Promise<OptimizationRecommendation[]> {
   try {
-    const cacheKey = 'performance_recommendations_' + new Date().toISOString().split('T')[0];
-    
-    // Check if recommendations are already in cache
-    const cachedRecommendations = performanceCache.get<OptimizationRecommendation[]>(cacheKey);
-    if (cachedRecommendations) {
-      return cachedRecommendations;
-    }
-    
-    // Analyze slow pages
-    const slowPagesText = performanceData.slowestPages.map(
-      p => `${p.path}: ${p.avgTime.toFixed(2)}ms`
-    ).join(', ');
-    
-    // Analyze slow endpoints
-    const slowEndpointsText = performanceData.slowestEndpoints.map(
-      e => `${e.path}: ${e.avgTime.toFixed(2)}ms`
-    ).join(', ');
-    
-    // Analyze errors
-    const errorTypesText = Object.entries(performanceData.errors.types)
-      .map(([type, count]) => `${type}: ${count} occurrences`)
-      .join(', ');
-    
-    // Calculate averages
-    const avgPageLoadTime = calculateAverageOfAllArrays(performanceData.pageLoadTimes);
-    const avgApiResponseTime = calculateAverageOfAllArrays(performanceData.apiResponseTimes);
-    const avgMemoryUsage = performanceData.resourceUsage.memory.length > 0
-      ? performanceData.resourceUsage.memory.reduce((a, b) => a + b, 0) / performanceData.resourceUsage.memory.length
-      : 0;
-    const avgCpuUsage = performanceData.resourceUsage.cpu.length > 0
-      ? performanceData.resourceUsage.cpu.reduce((a, b) => a + b, 0) / performanceData.resourceUsage.cpu.length
-      : 0;
-    
-    const prompt = `
-      You are an expert web performance engineer. Analyze the following performance metrics and provide 3-5 prioritized, specific optimization recommendations.
-      
-      PERFORMANCE DATA:
-      - Average page load time: ${avgPageLoadTime.toFixed(2)}ms
-      - Average API response time: ${avgApiResponseTime.toFixed(2)}ms
-      - Average memory usage: ${avgMemoryUsage.toFixed(2)}MB
-      - Average CPU usage: ${avgCpuUsage.toFixed(2)}%
-      - Total errors: ${performanceData.errors.count}
-      - Error types: ${errorTypesText || 'None reported'}
-      - Slowest pages: ${slowPagesText || 'No data'}
-      - Slowest endpoints: ${slowEndpointsText || 'No data'}
-      
-      For each recommendation, provide the following:
-      1. Type (frontend, backend, or general)
-      2. Priority (high, medium, low)
-      3. Issue description
-      4. Specific, actionable recommendation with step-by-step guidance
-      5. Expected performance impact
-      6. Implementation complexity (easy, medium, complex)
-      7. Code sample where appropriate
-      
-      Respond with JSON in the following format:
-      { 
-        "recommendations": [
+    // Use XAI's powerful analysis capabilities
+    const aiResponse = await generateJson({
+      model: 'grok-3-latest',
+      systemPrompt: `
+        You are a performance optimization expert for web applications.
+        Analyze the provided performance data and generate specific, actionable recommendations
+        to improve application performance. Each recommendation should include:
+        1. The type (frontend, backend, or general)
+        2. Priority level (high, medium, low) based on potential impact
+        3. The specific issue identified
+        4. A clear recommendation to fix the issue
+        5. Expected impact of the fix
+        6. Implementation complexity (easy, medium, complex)
+        7. Sample code when applicable (optional)
+      `,
+      prompt: `
+        Please analyze this performance data and generate optimization recommendations:
+        
+        Page Load Times:
+        ${JSON.stringify(performanceData.pageLoadTimes)}
+        
+        API Response Times:
+        ${JSON.stringify(performanceData.apiResponseTimes)}
+        
+        Resource Usage:
+        ${JSON.stringify(performanceData.resourceUsage)}
+        
+        Errors:
+        ${JSON.stringify(performanceData.errors)}
+        
+        Slowest Endpoints:
+        ${JSON.stringify(performanceData.slowestEndpoints)}
+        
+        Slowest Pages:
+        ${JSON.stringify(performanceData.slowestPages)}
+        
+        Return an array of recommendations in the following format:
+        [
           {
-            "type": "frontend|backend|general",
-            "priority": "high|medium|low",
-            "issue": "Issue description",
-            "recommendation": "Detailed recommendation",
-            "expectedImpact": "Expected performance improvement",
-            "implementationComplexity": "easy|medium|complex",
-            "code": "Optional code sample"
+            "type": "frontend"|"backend"|"general",
+            "priority": "high"|"medium"|"low",
+            "issue": "Description of the issue",
+            "recommendation": "Specific recommendation to fix the issue",
+            "expectedImpact": "Expected impact of the fix",
+            "implementationComplexity": "easy"|"medium"|"complex",
+            "code": "Sample code if applicable (optional)"
           }
         ]
-      }
-    `;
-    
-    const result = await grokApi.generateJson<{ recommendations: OptimizationRecommendation[] }>({
-      prompt,
-      model: 'grok-2-mini',
-      temperature: 0.2,
-      systemPrompt: "You are an expert performance engineer who specializes in web application optimization. Provide detailed, actionable recommendations based on the performance data provided."
+      `
     });
-    
-    // If no recommendations were generated, return an empty array
-    if (!result.recommendations) {
-      console.error('No recommendations were generated from AI service');
-      return [];
+
+    // Parse AI response
+    try {
+      // Ensure the response is an array of recommendations
+      const recommendations = ensureRecommendationsFormat(aiResponse);
+      return recommendations;
+    } catch (error) {
+      console.error('Error parsing AI recommendations:', error);
+      return generateFallbackRecommendations(performanceData);
     }
-    
-    // Cache the recommendations
-    performanceCache.set(cacheKey, result.recommendations);
-    
-    return result.recommendations;
   } catch (error) {
     console.error('Error generating optimization recommendations:', error);
-    return [
-      {
-        type: 'general',
-        priority: 'medium',
-        issue: 'Error generating AI-powered recommendations',
-        recommendation: 'Please try again later or check the system logs for more information.',
-        expectedImpact: 'N/A',
-        implementationComplexity: 'medium'
-      }
-    ];
+    return generateFallbackRecommendations(performanceData);
   }
 }
 
@@ -303,107 +231,101 @@ export async function generateOptimizationRecommendations(
 export async function analyzePerformanceAspect(
   aspect: string,
   data: PerformanceData
-): Promise<{ recommendations: string[], code?: string }> {
+): Promise<any> {
   try {
-    const cacheKey = `performance_aspect_${aspect}_${new Date().toISOString().split('T')[0]}`;
-    
-    // Check if analysis is already in cache
-    const cachedAnalysis = performanceCache.get<{ recommendations: string[], code?: string }>(cacheKey);
-    if (cachedAnalysis) {
-      return cachedAnalysis;
-    }
-    
-    // Calculate averages
-    const avgPageLoadTime = calculateAverageOfAllArrays(data.pageLoadTimes);
-    const avgApiResponseTime = calculateAverageOfAllArrays(data.apiResponseTimes);
-    
-    let aspectSpecificData = '';
-    let systemPrompt = '';
-    
-    switch (aspect) {
-      case 'caching':
-        aspectSpecificData = `
-          Page load times: ${JSON.stringify(data.pageLoadTimes)}
-          API response times: ${JSON.stringify(data.apiResponseTimes)}
-        `;
-        systemPrompt = "You are a caching and performance expert. Analyze the data and provide specific recommendations for implementing effective caching strategies.";
-        break;
+    // Define aspect-specific analysis prompts
+    const aspectPrompts: Record<string, string> = {
+      caching: `Analyze potential caching improvements for this application. Focus on:
+        - Browser caching strategies
+        - API response caching opportunities
+        - Static asset optimization
+        - Service worker implementation considerations`,
         
-      case 'memory':
-        aspectSpecificData = `
-          Memory usage (in MB): ${data.resourceUsage.memory.join(', ')}
-          CPU usage (in %): ${data.resourceUsage.cpu.join(', ')}
-          Timestamps: ${data.resourceUsage.timestamps.join(', ')}
-        `;
-        systemPrompt = "You are a memory management expert. Analyze the memory usage data and provide recommendations for reducing memory consumption.";
-        break;
+      memory: `Analyze memory usage patterns and provide recommendations. Consider:
+        - Memory leak identification
+        - Large component optimization
+        - Garbage collection patterns
+        - Resource disposal strategies`,
         
-      case 'rendering':
-        aspectSpecificData = `
-          Page load times: ${JSON.stringify(data.pageLoadTimes)}
-          Slowest pages: ${JSON.stringify(data.slowestPages)}
-        `;
-        systemPrompt = "You are a frontend rendering optimization expert. Analyze the page load times and provide recommendations for improving rendering performance.";
-        break;
+      rendering: `Analyze rendering performance and provide recommendations. Focus on:
+        - Component rendering optimization
+        - Virtual DOM diffing improvements
+        - Layout thrashing prevention
+        - Expensive CSS reduction strategies`,
         
-      case 'api':
-        aspectSpecificData = `
-          API response times: ${JSON.stringify(data.apiResponseTimes)}
-          Slowest endpoints: ${JSON.stringify(data.slowestEndpoints)}
-        `;
-        systemPrompt = "You are an API optimization expert. Analyze the API response times and provide recommendations for improving API performance.";
-        break;
+      api: `Analyze API performance and provide recommendations. Consider:
+        - Request batching opportunities
+        - Response size optimization
+        - Endpoint consolidation
+        - GraphQL vs REST considerations
+        - Network payload optimization`,
         
-      default:
-        aspectSpecificData = `
-          Page load times: ${JSON.stringify(data.pageLoadTimes)}
-          API response times: ${JSON.stringify(data.apiResponseTimes)}
-          Memory usage: ${data.resourceUsage.memory.join(', ')}
-          CPU usage: ${data.resourceUsage.cpu.join(', ')}
-          Errors: ${JSON.stringify(data.errors)}
-        `;
-        systemPrompt = "You are a web performance expert. Analyze the performance data and provide recommendations for improving overall performance.";
-    }
-    
-    const prompt = `
-      Analyze the following performance data related to ${aspect} and provide 3-5 specific, actionable recommendations.
-      
-      PERFORMANCE DATA:
-      - Average page load time: ${avgPageLoadTime.toFixed(2)}ms
-      - Average API response time: ${avgApiResponseTime.toFixed(2)}ms
-      ${aspectSpecificData}
-      
-      For each recommendation:
-      1. Describe the specific issue based on the data
-      2. Provide a detailed, step-by-step solution
-      3. Include code examples where appropriate
-      
-      Format your response as JSON:
-      {
-        "recommendations": [
-          "Detailed recommendation 1",
-          "Detailed recommendation 2",
-          ...
-        ],
-        "code": "Sample code that could help implement these recommendations (if applicable)"
-      }
-    `;
-    
-    const result = await grokApi.generateJson<{ recommendations: string[], code?: string }>({
-      prompt,
-      model: 'grok-2-mini',
-      temperature: 0.2,
-      systemPrompt
+      general: `Provide general performance recommendations considering all aspects of the application.`
+    };
+
+    const prompt = aspectPrompts[aspect] || aspectPrompts.general;
+
+    // Use XAI for intelligent analysis
+    const analysis = await generateJson({
+      model: 'grok-3-latest',
+      systemPrompt: `
+        You are a performance optimization expert specializing in ${aspect} optimization for web applications.
+        Analyze the provided performance data and generate detailed insights and recommendations
+        specifically for ${aspect} optimization.
+      `,
+      prompt: `
+        ${prompt}
+        
+        Here is the performance data:
+        
+        Page Load Times:
+        ${JSON.stringify(data.pageLoadTimes)}
+        
+        API Response Times:
+        ${JSON.stringify(data.apiResponseTimes)}
+        
+        Resource Usage:
+        ${JSON.stringify(data.resourceUsage)}
+        
+        Errors:
+        ${JSON.stringify(data.errors)}
+        
+        Slowest Endpoints:
+        ${JSON.stringify(data.slowestEndpoints)}
+        
+        Slowest Pages:
+        ${JSON.stringify(data.slowestPages)}
+        
+        Return your analysis as a JSON object with the following structure:
+        {
+          "findings": [
+            {
+              "issue": "Description of the issue",
+              "impact": "Impact level and description",
+              "recommendation": "Specific recommendation",
+              "implementationSteps": ["Step 1", "Step 2", ...]
+            }
+          ],
+          "summary": "Overall summary of findings",
+          "prioritizedActions": ["Action 1", "Action 2", ...]
+        }
+      `
     });
-    
-    // Cache the analysis
-    performanceCache.set(cacheKey, result);
-    
-    return result;
+
+    return analysis;
   } catch (error) {
-    console.error(`Error analyzing performance aspect '${aspect}':`, error);
+    console.error(`Error analyzing ${aspect} performance:`, error);
     return {
-      recommendations: ['Error generating recommendations. Please try again later.']
+      findings: [
+        {
+          issue: `Could not complete ${aspect} analysis`,
+          impact: "Unknown",
+          recommendation: "Try again later or contact system administrator",
+          implementationSteps: []
+        }
+      ],
+      summary: "Analysis failed due to technical error",
+      prioritizedActions: ["Check system logs for more information"]
     };
   }
 }
@@ -415,30 +337,30 @@ export async function analyzePerformanceAspect(
  * @returns Calculated aggregate metrics
  */
 export function calculatePerformanceMetrics(performanceData: PerformanceData) {
-  // Calculate averages
+  // Calculate average page load time across all pages
   const avgPageLoadTime = calculateAverageOfAllArrays(performanceData.pageLoadTimes);
+  
+  // Calculate average API response time across all endpoints
   const avgApiResponseTime = calculateAverageOfAllArrays(performanceData.apiResponseTimes);
+  
+  // Calculate average memory and CPU usage
   const avgMemoryUsage = performanceData.resourceUsage.memory.length > 0
-    ? performanceData.resourceUsage.memory.reduce((a, b) => a + b, 0) / performanceData.resourceUsage.memory.length
+    ? performanceData.resourceUsage.memory.reduce((sum, val) => sum + val, 0) / performanceData.resourceUsage.memory.length
     : 0;
+    
   const avgCpuUsage = performanceData.resourceUsage.cpu.length > 0
-    ? performanceData.resourceUsage.cpu.reduce((a, b) => a + b, 0) / performanceData.resourceUsage.cpu.length
+    ? performanceData.resourceUsage.cpu.reduce((sum, val) => sum + val, 0) / performanceData.resourceUsage.cpu.length
     : 0;
   
-  // Calculate trends (if we have enough data points)
-  const memoryTrend = performanceData.resourceUsage.memory.length >= 3
-    ? calculateTrend(performanceData.resourceUsage.memory)
-    : { direction: 'stable', percentChange: 0 };
+  // Calculate memory and CPU trends
+  const memoryTrend = calculateTrend(performanceData.resourceUsage.memory);
+  const cpuTrend = calculateTrend(performanceData.resourceUsage.cpu);
   
-  const cpuTrend = performanceData.resourceUsage.cpu.length >= 3
-    ? calculateTrend(performanceData.resourceUsage.cpu)
-    : { direction: 'stable', percentChange: 0 };
-  
-  // Sort error types by occurrence count
+  // Get common error types
   const commonErrors = Object.entries(performanceData.errors.types)
-    .map(([type, count]) => ({ type, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([type, count]) => ({ type, count }));
   
   return {
     avgPageLoadTime,
@@ -448,8 +370,8 @@ export function calculatePerformanceMetrics(performanceData: PerformanceData) {
     avgCpuUsage,
     memoryTrend,
     cpuTrend,
-    slowestEndpoints: performanceData.slowestEndpoints,
-    slowestPages: performanceData.slowestPages,
+    slowestEndpoints: performanceData.slowestEndpoints.slice(0, 5),
+    slowestPages: performanceData.slowestPages.slice(0, 5),
     commonErrors
   };
 }
@@ -465,25 +387,24 @@ function calculateTrend(values: number[]): { direction: 'up' | 'down' | 'stable'
     return { direction: 'stable', percentChange: 0 };
   }
   
-  // Calculate moving average over last half of values to smooth out noise
-  const firstHalf = values.slice(0, Math.floor(values.length / 2));
-  const secondHalf = values.slice(Math.floor(values.length / 2));
+  // Take the first 25% and last 25% of values to compare trends
+  const quarter = Math.max(1, Math.floor(values.length / 4));
+  const firstQuarter = values.slice(0, quarter);
+  const lastQuarter = values.slice(-quarter);
   
-  const firstAvg = firstHalf.reduce((sum, value) => sum + value, 0) / firstHalf.length;
-  const secondAvg = secondHalf.reduce((sum, value) => sum + value, 0) / secondHalf.length;
+  const firstAvg = firstQuarter.reduce((sum, val) => sum + val, 0) / firstQuarter.length;
+  const lastAvg = lastQuarter.reduce((sum, val) => sum + val, 0) / lastQuarter.length;
   
-  const change = secondAvg - firstAvg;
-  const percentChange = firstAvg !== 0 ? (change / firstAvg) * 100 : 0;
+  const difference = lastAvg - firstAvg;
+  const percentChange = firstAvg !== 0 ? (difference / firstAvg) * 100 : 0;
   
   let direction: 'up' | 'down' | 'stable';
-  
-  // Only count as a trend if change is significant (>5%)
-  if (percentChange > 5) {
-    direction = 'up';
-  } else if (percentChange < -5) {
-    direction = 'down';
-  } else {
+  if (Math.abs(percentChange) < 5) {
     direction = 'stable';
+  } else if (percentChange > 0) {
+    direction = 'up';
+  } else {
+    direction = 'down';
   }
   
   return {
@@ -506,98 +427,102 @@ export async function generatePerformanceReport(
   performanceData: PerformanceData
 ): Promise<any> {
   try {
-    const cacheKey = `performance_report_${startDate.toISOString()}_${endDate.toISOString()}`;
-    
-    // Check if report is already in cache
-    const cachedReport = performanceCache.get(cacheKey);
-    if (cachedReport) {
-      return cachedReport;
-    }
-    
     // Calculate metrics
     const metrics = calculatePerformanceMetrics(performanceData);
     
-    // Get historical data for comparison
-    const historyStartDate = new Date(startDate);
-    historyStartDate.setDate(historyStartDate.getDate() - (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Get stored recommendations for this period
+    const storedRecommendations = await db.select()
+      .from(performance_recommendations)
+      .where(
+        and(
+          gte(performance_recommendations.createdAt, startDate),
+          lte(performance_recommendations.createdAt, endDate)
+        )
+      )
+      .orderBy(desc(performance_recommendations.priority));
     
-    // Get historical metrics
-    const historicalData = await db.select()
-      .from(performance_metrics)
-      .orderBy(desc(performance_metrics.timestamp))
-      .limit(5);
-    
-    const avgHistoricalPageLoadTime = historicalData.length > 0
-      ? historicalData.reduce((sum, m) => sum + Number(m.avgPageLoadTime), 0) / historicalData.length
-      : 0;
-    
-    const pageLoadImprovement = avgHistoricalPageLoadTime > 0
-      ? ((avgHistoricalPageLoadTime - metrics.avgPageLoadTime) / avgHistoricalPageLoadTime) * 100
-      : 0;
-    
-    // Generate report with AI analysis
-    const prompt = `
-      Generate a comprehensive performance report summary based on the following metrics.
-      
-      CURRENT METRICS (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}):
-      - Average page load time: ${metrics.avgPageLoadTime.toFixed(2)}ms
-      - Average API response time: ${metrics.avgApiResponseTime.toFixed(2)}ms
-      - Memory usage (avg): ${metrics.avgMemoryUsage.toFixed(2)}MB (${metrics.memoryTrend.direction}, ${metrics.memoryTrend.percentChange.toFixed(1)}%)
-      - CPU usage (avg): ${metrics.avgCpuUsage.toFixed(2)}% (${metrics.cpuTrend.direction}, ${metrics.cpuTrend.percentChange.toFixed(1)}%)
-      - Total errors: ${metrics.totalErrorCount}
-      - Slowest endpoints: ${JSON.stringify(metrics.slowestEndpoints)}
-      - Slowest pages: ${JSON.stringify(metrics.slowestPages)}
-      
-      HISTORICAL COMPARISON:
-      - Previous avg page load time: ${avgHistoricalPageLoadTime.toFixed(2)}ms
-      - Improvement: ${pageLoadImprovement.toFixed(1)}%
-      
-      Generate a JSON report with these sections:
-      1. Executive summary (brief overview of performance)
-      2. Key findings (what stands out, both positive and negative)
-      3. Detailed metrics analysis (technical details)
-      4. Recommendations (prioritized list of actions)
-      5. Conclusion (overall assessment)
-      
-      Format as JSON:
-      {
-        "executiveSummary": "Text here",
-        "keyFindings": ["finding 1", "finding 2", ...],
-        "metricsAnalysis": {
-          "frontend": "Text analysis",
-          "backend": "Text analysis",
-          "resources": "Text analysis"
+    // Use XAI to generate an executive summary
+    const executiveSummary = await callXAI('/chat/completions', {
+      model: 'grok-3-latest',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a performance analytics expert creating executive summaries of web application performance.
+          Your summaries should be concise, highlight key findings, and provide strategic recommendations.`
         },
-        "recommendations": ["rec 1", "rec 2", ...],
-        "conclusion": "Text here",
-        "performanceScore": 85 // 0-100 score
-      }
-    `;
-    
-    const report = await grokApi.generateJson({
-      prompt,
-      model: 'grok-2-mini',
-      temperature: 0.3,
-      systemPrompt: "You are an expert performance analyst creating a performance report for technical stakeholders. Be data-driven, insightful, and provide actionable recommendations."
+        {
+          role: 'user',
+          content: `
+            Generate an executive summary of this performance report for the period from 
+            ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}.
+            
+            Performance Metrics:
+            - Average Page Load Time: ${metrics.avgPageLoadTime.toFixed(2)}ms
+            - Average API Response Time: ${metrics.avgApiResponseTime.toFixed(2)}ms
+            - Total Error Count: ${metrics.totalErrorCount}
+            - Average Memory Usage: ${metrics.avgMemoryUsage.toFixed(2)}MB
+            - Average CPU Usage: ${metrics.avgCpuUsage.toFixed(2)}%
+            - Memory Trend: ${metrics.memoryTrend.direction} by ${metrics.memoryTrend.percentChange.toFixed(2)}%
+            - CPU Trend: ${metrics.cpuTrend.direction} by ${metrics.cpuTrend.percentChange.toFixed(2)}%
+            
+            Slowest Endpoints:
+            ${metrics.slowestEndpoints.map(e => `- ${e.path}: ${e.avgTime.toFixed(2)}ms`).join('\n')}
+            
+            Slowest Pages:
+            ${metrics.slowestPages.map(p => `- ${p.path}: ${p.avgTime.toFixed(2)}ms`).join('\n')}
+            
+            Common Errors:
+            ${metrics.commonErrors.map(e => `- ${e.type}: ${e.count} occurrences`).join('\n')}
+            
+            Key Recommendations:
+            ${storedRecommendations.slice(0, 3).map(r => `- [${r.priority}] ${r.issue}: ${r.recommendation}`).join('\n')}
+            
+            Keep the summary concise, professional, and focused on actionable insights.
+          `
+        }
+      ]
     });
     
-    // Cache the report
-    performanceCache.set(cacheKey, report);
+    const summary = executiveSummary.choices[0].message.content;
     
-    return report;
+    // Assemble the full report
+    return {
+      period: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      },
+      executiveSummary: summary,
+      metrics,
+      recommendations: storedRecommendations,
+      rawData: {
+        pageLoadSampleCount: Object.values(performanceData.pageLoadTimes)
+          .reduce((total, times) => total + times.length, 0),
+        apiResponseSampleCount: Object.values(performanceData.apiResponseTimes)
+          .reduce((total, times) => total + times.length, 0),
+        resourceUsageSampleCount: performanceData.resourceUsage.memory.length
+      }
+    };
   } catch (error) {
     console.error('Error generating performance report:', error);
+    // Return a basic report without AI-generated content
+    const metrics = calculatePerformanceMetrics(performanceData);
+    
     return {
-      executiveSummary: 'Error generating performance report',
-      keyFindings: ['Unable to analyze performance data at this time.'],
-      metricsAnalysis: {
-        frontend: 'Data analysis unavailable',
-        backend: 'Data analysis unavailable',
-        resources: 'Data analysis unavailable'
+      period: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       },
-      recommendations: ['Please try again later or contact support.'],
-      conclusion: 'Performance report generation failed.',
-      performanceScore: null
+      executiveSummary: "Unable to generate executive summary. Please review metrics directly.",
+      metrics,
+      recommendations: [],
+      rawData: {
+        pageLoadSampleCount: Object.values(performanceData.pageLoadTimes)
+          .reduce((total, times) => total + times.length, 0),
+        apiResponseSampleCount: Object.values(performanceData.apiResponseTimes)
+          .reduce((total, times) => total + times.length, 0),
+        resourceUsageSampleCount: performanceData.resourceUsage.memory.length
+      },
+      error: "Failed to generate complete report"
     };
   }
 }
@@ -607,8 +532,9 @@ export async function generatePerformanceReport(
  */
 export function clearPerformanceCache(): void {
   performanceCache.flushAll();
-  console.log('Performance analytics cache cleared');
 }
+
+// Helper functions
 
 /**
  * Helper function to calculate average of all values across all keys in a Record of arrays
@@ -617,12 +543,12 @@ function calculateAverageOfAllArrays(data: Record<string, number[]>): number {
   let totalSum = 0;
   let totalCount = 0;
   
-  for (const values of Object.values(data)) {
-    if (values.length > 0) {
-      totalSum += values.reduce((sum, value) => sum + value, 0);
-      totalCount += values.length;
-    }
-  }
+  Object.values(data).forEach(values => {
+    values.forEach(value => {
+      totalSum += value;
+      totalCount++;
+    });
+  });
   
   return totalCount > 0 ? totalSum / totalCount : 0;
 }
@@ -631,6 +557,121 @@ function calculateAverageOfAllArrays(data: Record<string, number[]>): number {
  * Helper function to calculate average of values in an array
  */
 function calculateAverage(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+  return values.length > 0
+    ? values.reduce((sum, val) => sum + val, 0) / values.length
+    : 0;
+}
+
+/**
+ * Helper function to calculate slowest items from a record of timing arrays
+ */
+function calculateSlowestItems(data: Record<string, number[]>): { path: string; avgTime: number }[] {
+  return Object.entries(data)
+    .map(([path, times]) => ({
+      path,
+      avgTime: calculateAverage(times)
+    }))
+    .sort((a, b) => b.avgTime - a.avgTime);
+}
+
+/**
+ * Helper function to ensure AI recommendations are in the correct format
+ */
+function ensureRecommendationsFormat(response: any): OptimizationRecommendation[] {
+  // Check if response is already an array
+  if (Array.isArray(response)) {
+    return response;
+  }
+  
+  // Check if response has a recommendations property that's an array
+  if (response && Array.isArray(response.recommendations)) {
+    return response.recommendations;
+  }
+  
+  // Check if we need to parse the response
+  if (typeof response === 'string') {
+    try {
+      const parsed = JSON.parse(response);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      if (parsed && Array.isArray(parsed.recommendations)) {
+        return parsed.recommendations;
+      }
+    } catch (e) {
+      throw new Error('Could not parse AI response as JSON');
+    }
+  }
+  
+  throw new Error('AI response is not in the expected format');
+}
+
+/**
+ * Helper function to generate fallback recommendations when AI fails
+ */
+function generateFallbackRecommendations(data: PerformanceData): OptimizationRecommendation[] {
+  const recommendations: OptimizationRecommendation[] = [];
+  
+  // Add recommendations based on slow pages
+  if (data.slowestPages.length > 0) {
+    recommendations.push({
+      type: 'frontend',
+      priority: 'high',
+      issue: `Slow page load time for ${data.slowestPages[0].path}`,
+      recommendation: 'Implement code splitting, lazy loading for non-critical components, and optimize asset loading',
+      expectedImpact: 'Improved user experience with faster initial page load',
+      implementationComplexity: 'medium'
+    });
+  }
+  
+  // Add recommendations based on slow API endpoints
+  if (data.slowestEndpoints.length > 0) {
+    recommendations.push({
+      type: 'backend',
+      priority: 'high',
+      issue: `Slow API response for ${data.slowestEndpoints[0].path}`,
+      recommendation: 'Add caching for response data, optimize database queries, and add indexes if needed',
+      expectedImpact: 'Reduced API response times and improved application responsiveness',
+      implementationComplexity: 'medium'
+    });
+  }
+  
+  // Add recommendations based on memory usage
+  if (data.resourceUsage.memory.length > 0) {
+    const memoryTrend = calculateTrend(data.resourceUsage.memory);
+    if (memoryTrend.direction === 'up' && memoryTrend.percentChange > 10) {
+      recommendations.push({
+        type: 'general',
+        priority: 'medium',
+        issue: `Increasing memory usage (${memoryTrend.percentChange.toFixed(2)}% trend up)`,
+        recommendation: 'Check for memory leaks in components and implement proper cleanup in useEffect hooks',
+        expectedImpact: 'Stabilized memory usage and improved long-term performance',
+        implementationComplexity: 'complex'
+      });
+    }
+  }
+  
+  // Add recommendation for error handling
+  if (data.errors.count > 0) {
+    recommendations.push({
+      type: 'general',
+      priority: 'medium',
+      issue: `${data.errors.count} errors detected`,
+      recommendation: 'Implement centralized error tracking and monitoring, fix most common errors',
+      expectedImpact: 'Reduced error rate and improved application stability',
+      implementationComplexity: 'medium'
+    });
+  }
+  
+  // Add a general performance recommendation
+  recommendations.push({
+    type: 'frontend',
+    priority: 'low',
+    issue: 'General performance optimization',
+    recommendation: 'Implement React.memo for expensive components, use virtualization for long lists, and optimize renders',
+    expectedImpact: 'Overall performance improvement across the application',
+    implementationComplexity: 'medium'
+  });
+  
+  return recommendations;
 }
