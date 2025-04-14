@@ -102,9 +102,7 @@ export default function TestElevateBot() {
       </Card>
 
       {/* Embed the ElevateBot component */}
-      <div className="hidden">
-        <ElevateBot isOpen={isOpen} initialOption={initialOption} hideFloatingButton={false} />
-      </div>
+      <ElevateBot isOpen={isOpen} initialOption={initialOption} hideFloatingButton={false} />
     </div>
   );
 }
