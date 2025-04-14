@@ -183,7 +183,7 @@ export default function SearchBox() {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Results ranked using xAI Grok technology for more accurate and relevant matches</p>
+                    <p className="max-w-xs">Results ranked using Elevion AI technology for more accurate and relevant matches</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

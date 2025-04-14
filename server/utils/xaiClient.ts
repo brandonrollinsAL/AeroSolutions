@@ -12,7 +12,7 @@ let apiTotalCalls = 0;
 let lastApiError: any = null;
 
 // Function to call Elevion AI endpoints directly
-export async function callXAI(endpoint: string, data: any) {
+export async function callXAI(endpoint: string, data: any) { // Function name kept for backward compatibility
   try {
     if (!process.env.XAI_API_KEY) {
       throw new Error('Elevion AI API key (XAI_API_KEY) environment variable is not set');
@@ -161,7 +161,7 @@ export async function generateText(prompt: string, options: {
   }
 }
 
-// Helper function to generate structured JSON using XAI models
+// Helper function to generate structured JSON using Elevion AI models
 export async function generateJson<T>(prompt: string, options: {
   model?: string;
   maxTokens?: number;
@@ -390,7 +390,7 @@ export async function validateUserProfileChanges(changes: any, userData: any) {
     4. Privacy concerns in the information being shared
     `;
 
-    // Call XAI for validation
+    // Call Elevion AI for validation
     const validationResult = await generateJson<{
       isValid: boolean;
       issues: string[];
@@ -438,7 +438,7 @@ export async function analyzeUserDataChanges(oldData: any, newData: any) {
     4. Personalization opportunities based on the updated profile
     `;
 
-    // Call XAI for analysis
+    // Call Elevion AI for analysis
     const analysisResult = await generateJson<{
       significantChanges: string[];
       suggestedActions: string[];
@@ -464,7 +464,7 @@ export async function analyzeUserDataChanges(oldData: any, newData: any) {
 }
 
 export default {
-  callXAI,
+  callElevionAI: callXAI, // Renamed for API compatibility
   generateText,
   generateJson,
   analyzeImage,
