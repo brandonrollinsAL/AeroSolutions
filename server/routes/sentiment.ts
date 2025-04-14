@@ -1,11 +1,16 @@
 import express, { Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
-import { analyzeSentiment, processPendingFeedbackSentiment, getSentimentTrends } from '../utils/sentimentAnalysis';
+import { body, param, query, validationResult } from 'express-validator';
+import { 
+  analyzeSentiment,
+  getSentimentStats,
+  getFeedbackSentimentTrends as getSentimentTrends,
+  getFeedbackSentimentBySource as getSentimentBySource
+} from '../utils/sentimentAnalysis';
 import { isAdmin } from '../utils/auth';
 
 const router = express.Router();
 
-// Analyze sentiment for provided text
+// Analyze sentiment from text
 router.post('/analyze', [
   body('text')
     .notEmpty().withMessage('Text is required')
@@ -18,19 +23,17 @@ router.post('/analyze', [
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: "Invalid input",
+        message: "Invalid input data",
         errors: errors.array()
       });
     }
-
-    const { text } = req.body;
     
-    // Analyze the text
-    const sentiment = await analyzeSentiment(text);
+    const { text } = req.body;
+    const result = await analyzeSentiment(text);
     
     res.status(200).json({
       success: true,
-      data: sentiment
+      data: result
     });
   } catch (error) {
     console.error("Error analyzing sentiment:", error);
@@ -44,8 +47,8 @@ router.post('/analyze', [
   }
 });
 
-// Process pending feedback sentiment - admin only
-router.post('/process-feedback', async (req: Request, res: Response) => {
+// Get sentiment statistics - admin only
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     // Verify admin privileges
     if (!req.isAuthenticated || !req.isAuthenticated() || !isAdmin(req)) {
@@ -55,32 +58,41 @@ router.post('/process-feedback', async (req: Request, res: Response) => {
       });
     }
     
-    // Get limit from request, default to 50
-    const limit = req.body.limit ? parseInt(req.body.limit, 10) : 50;
-    
-    // Process pending feedback
-    const processed = await processPendingFeedbackSentiment(limit);
+    const timeRange = req.query.timeRange as string || 'week';
+    const result = await getSentimentStats(timeRange);
     
     res.status(200).json({
       success: true,
-      message: `Processed sentiment for ${processed} feedback items`,
-      processedCount: processed
+      data: result
     });
   } catch (error) {
-    console.error("Error processing sentiment:", error);
+    console.error("Error getting sentiment stats:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     
     res.status(500).json({
       success: false,
-      message: "Failed to process sentiment",
+      message: "Failed to get sentiment statistics",
       error: errorMessage
     });
   }
 });
 
-// Get sentiment trends for dashboard - admin only
-router.get('/trends', async (req: Request, res: Response) => {
+// Get sentiment trends - admin only
+router.get('/trends', [
+  query('startDate').optional().isDate().withMessage('Start date must be a valid date'),
+  query('endDate').optional().isDate().withMessage('End date must be a valid date')
+], async (req: Request, res: Response) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid parameters",
+        errors: errors.array()
+      });
+    }
+    
     // Verify admin privileges
     if (!req.isAuthenticated || !req.isAuthenticated() || !isAdmin(req)) {
       return res.status(403).json({
@@ -89,15 +101,14 @@ router.get('/trends', async (req: Request, res: Response) => {
       });
     }
     
-    // Get days parameter, default to 30
-    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
+    const startDate = req.query.startDate as string || undefined;
+    const endDate = req.query.endDate as string || undefined;
     
-    // Get sentiment trends
-    const trends = await getSentimentTrends(days);
+    const result = await getFeedbackSentimentTrends(startDate, endDate);
     
     res.status(200).json({
       success: true,
-      data: trends
+      data: result
     });
   } catch (error) {
     console.error("Error getting sentiment trends:", error);
@@ -106,6 +117,36 @@ router.get('/trends', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to get sentiment trends",
+      error: errorMessage
+    });
+  }
+});
+
+// Get sentiment by source - admin only
+router.get('/by-source', async (req: Request, res: Response) => {
+  try {
+    // Verify admin privileges
+    if (!req.isAuthenticated || !req.isAuthenticated() || !isAdmin(req)) {
+      return res.status(403).json({
+        success: false,
+        message: "Administrator access required"
+      });
+    }
+    
+    const timeRange = req.query.timeRange as string || 'month';
+    const result = await getFeedbackSentimentBySource(timeRange);
+    
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error("Error getting sentiment by source:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
+    res.status(500).json({
+      success: false,
+      message: "Failed to get sentiment by source",
       error: errorMessage
     });
   }

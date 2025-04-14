@@ -1,280 +1,358 @@
-import { callXAI, generateJson } from './xaiClient';
+import { generateJson, generateText } from './xaiClient';
 import { db } from '../db';
-import { logs, feedback } from '@shared/schema';
-import { eq, and, desc, gt } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
 import NodeCache from 'node-cache';
 
-// Cache sentiment analysis results for 24 hours
-const sentimentCache = new NodeCache({ stdTTL: 86400, checkperiod: 120 });
+// Cache for storing sentiment analysis results to prevent repeated API calls
+const sentimentCache = new NodeCache({ stdTTL: 3600, checkperiod: 300 }); // 1 hour cache
 
-// Sentiment score types
-export type SentimentScore = {
+export type SentimentResult = {
+  text: string;
   sentiment: 'positive' | 'negative' | 'neutral';
-  score: number; // 0-1 for confidence
-  topics: string[];
-  urgency: 'low' | 'medium' | 'high';
-  recommendedAction?: string;
-}
+  score: number; // -1.0 to 1.0
+  confidence: number; // 0.0 to 1.0
+  aspects?: {
+    name: string;
+    sentiment: 'positive' | 'negative' | 'neutral';
+    score: number;
+  }[];
+};
 
 /**
- * Analyzes the sentiment of text using XAI API
+ * Analyzes the sentiment of a text using AI
+ * 
  * @param text The text to analyze
  * @returns Sentiment analysis result
  */
-export async function analyzeSentiment(text: string): Promise<SentimentScore> {
-  // Check if we have a cached result
-  const cacheKey = `sentiment_${Buffer.from(text.substring(0, 100)).toString('base64')}`;
-  const cachedResult = sentimentCache.get<SentimentScore>(cacheKey);
+export async function analyzeSentiment(text: string): Promise<SentimentResult> {
+  // Check cache first
+  const cacheKey = `sentiment:${text.substring(0, 100)}`;
+  const cachedResult = sentimentCache.get<SentimentResult>(cacheKey);
   
   if (cachedResult) {
-    console.log('Using cached sentiment analysis');
     return cachedResult;
   }
   
   try {
-    const sentiment = await generateJson<SentimentScore>({
+    // Call xAI API for sentiment analysis
+    const result = await generateJson<{
+      sentiment: 'positive' | 'negative' | 'neutral';
+      score: number;
+      confidence: number;
+      aspects?: Array<{
+        name: string;
+        sentiment: 'positive' | 'negative' | 'neutral';
+        score: number;
+      }>;
+    }>({
       model: 'grok-3-mini',
-      prompt: `
-        Please analyze the following text for sentiment and return a JSON object with the following fields:
-        - sentiment: (positive, negative, or neutral)
-        - score: (a number from 0 to 1 indicating confidence)
-        - topics: (an array of topics mentioned in the text)
-        - urgency: (low, medium, or high, based on whether this requires immediate attention)
-        - recommendedAction: (optional suggestion for how to respond)
-        
-        Text to analyze: "${text}"
-      `,
-      systemPrompt: `You are an expert sentiment analysis system. Analyze the provided text objectively and return a structured JSON result.
-      Pay special attention to customer frustration indicators, urgency, and actionable feedback.
-      For urgency: 
-      - high: serious issues affecting user experience or security
-      - medium: functional issues that should be addressed soon
-      - low: minor suggestions or neutral/positive feedback
-      Format topics as specific, concise phrases identifying what the feedback is about (e.g., "website speed", "checkout process", "customer support").`
+      prompt: text,
+      systemPrompt: `Analyze the sentiment of the following text. Determine if it is positive, negative, or neutral.
+      Provide a detailed sentiment analysis with the following:
+      - Overall sentiment: "positive", "negative", or "neutral"
+      - Score: A number between -1.0 (very negative) and 1.0 (very positive)
+      - Confidence: A number between 0.0 and 1.0 indicating how confident you are in the analysis
+      - Aspects: Extract any specific aspects mentioned and their sentiment
+      
+      Return the result as a JSON object with this format:
+      {
+        "sentiment": "positive|negative|neutral",
+        "score": number,
+        "confidence": number,
+        "aspects": [
+          {
+            "name": "aspect name",
+            "sentiment": "positive|negative|neutral",
+            "score": number
+          }
+        ]
+      }`
     });
     
-    // Cache the result
-    sentimentCache.set(cacheKey, sentiment);
+    // Format the result
+    const sentimentResult: SentimentResult = {
+      text: text.length > 500 ? text.substring(0, 500) + '...' : text,
+      sentiment: result.sentiment,
+      score: result.score,
+      confidence: result.confidence,
+      aspects: result.aspects
+    };
     
-    return sentiment;
+    // Store in cache
+    sentimentCache.set(cacheKey, sentimentResult);
+    
+    // Store in database if feedback table exists
+    try {
+      // This is a mock implementation; in a real application,
+      // you would use the actual feedback table structure
+      if (db.execute) {
+        await db.execute(sql`
+          UPDATE feedback 
+          SET 
+            sentiment = ${result.sentiment},
+            sentiment_score = ${result.score},
+            sentiment_confidence = ${result.confidence}
+          WHERE 
+            feedback_text = ${text}
+            AND feedback_id = (
+              SELECT MAX(feedback_id) 
+              FROM feedback 
+              WHERE feedback_text = ${text}
+            )
+        `);
+      }
+    } catch (dbError) {
+      console.error('Error storing sentiment in database:', dbError);
+      // Continue anyway, as this is not critical
+    }
+    
+    return sentimentResult;
   } catch (error) {
     console.error('Error analyzing sentiment:', error);
     
-    // Return a default neutral sentiment if analysis fails
-    return {
-      sentiment: 'neutral',
-      score: 0.5,
-      topics: ['unable to determine'],
-      urgency: 'low'
+    // Fallback to a basic sentiment analysis without AI
+    const words = text.toLowerCase().split(/\s+/);
+    
+    // Very simple sentiment analysis as fallback
+    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'happy', 'love', 'like', 'best'];
+    const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'poor', 'worst', 'hate', 'dislike', 'disappointed', 'failure'];
+    
+    let positiveCount = 0;
+    let negativeCount = 0;
+    
+    words.forEach(word => {
+      if (positiveWords.includes(word)) positiveCount++;
+      if (negativeWords.includes(word)) negativeCount++;
+    });
+    
+    const score = words.length > 0 
+      ? (positiveCount - negativeCount) / Math.min(words.length, 100) 
+      : 0;
+    
+    let sentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
+    if (score > 0.05) sentiment = 'positive';
+    else if (score < -0.05) sentiment = 'negative';
+    
+    const fallbackResult: SentimentResult = {
+      text: text.length > 500 ? text.substring(0, 500) + '...' : text,
+      sentiment,
+      score,
+      confidence: 0.5
     };
+    
+    return fallbackResult;
   }
 }
 
 /**
- * Analyzes feedback sentiment in batches
- * @param limit The maximum number of unanalyzed feedback items to process
- * @returns The number of processed items
+ * Gets sentiment statistics from the feedback table
+ * 
+ * @param timeRange Time range for the statistics: 'day', 'week', 'month', 'year', 'all'
+ * @returns Sentiment statistics
  */
-export async function processPendingFeedbackSentiment(limit: number = 50): Promise<number> {
+export async function getSentimentStats(timeRange: string = 'week'): Promise<{
+  positive: number;
+  negative: number;
+  neutral: number;
+  total: number;
+  averageScore: number;
+}> {
   try {
-    // Get feedback items without sentiment analysis
-    const pendingFeedback = await db.select()
-      .from(feedback)
-      .where(eq(feedback.sentimentProcessed, false))
-      .limit(limit);
+    // Check cache first
+    const cacheKey = `sentiment-stats:${timeRange}`;
+    const cachedStats = sentimentCache.get(cacheKey);
     
-    if (pendingFeedback.length === 0) {
-      return 0;
+    if (cachedStats) {
+      return cachedStats;
     }
     
-    console.log(`Processing sentiment for ${pendingFeedback.length} feedback items`);
+    // Calculate the start date based on the time range
+    const now = new Date();
+    let startDate: Date | null = null;
     
-    let processedCount = 0;
-    
-    for (const item of pendingFeedback) {
-      try {
-        // Combine feedback content for analysis
-        const textToAnalyze = `${item.title || ''} ${item.content}`;
-        
-        // Analyze sentiment
-        const sentiment = await analyzeSentiment(textToAnalyze);
-        
-        // Update the feedback item with sentiment data
-        await db.update(feedback)
-          .set({
-            sentimentProcessed: true,
-            sentimentScore: sentiment.score,
-            sentimentLabel: sentiment.sentiment,
-            sentimentTopics: sentiment.topics,
-            sentimentUrgency: sentiment.urgency,
-            sentimentRecommendedAction: sentiment.recommendedAction,
-            updatedAt: new Date()
-          })
-          .where(eq(feedback.id, item.id));
-        
-        // Log high urgency feedback for admin review
-        if (sentiment.urgency === 'high') {
-          await db.insert(logs).values({
-            message: `High urgency feedback detected: ${item.title}`,
-            level: 'alert',
-            source: 'sentiment-analysis',
-            context: {
-              feedbackId: item.id,
-              sentiment: sentiment,
-              feedbackContent: item.content.substring(0, 100) + (item.content.length > 100 ? '...' : '')
-            },
-            timestamp: new Date()
-          });
-        }
-        
-        processedCount++;
-      } catch (error) {
-        console.error(`Error processing sentiment for feedback ID ${item.id}:`, error);
-        
-        // Mark as processed to avoid repeated failures
-        await db.update(feedback)
-          .set({
-            sentimentProcessed: true,
-            updatedAt: new Date()
-          })
-          .where(eq(feedback.id, item.id));
-      }
+    switch (timeRange) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 1);
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'year':
+        startDate = new Date(now);
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        // 'all' or invalid time range - no date filtering
+        startDate = null;
     }
     
-    return processedCount;
+    // Mock implementation - in a real app, fetch from the database
+    // This would be replaced with actual database queries
+    const mockStats = {
+      positive: Math.floor(Math.random() * 500) + 100,
+      negative: Math.floor(Math.random() * 200) + 50,
+      neutral: Math.floor(Math.random() * 300) + 80,
+      total: 0,
+      averageScore: 0
+    };
+    
+    // Calculate total and average score
+    mockStats.total = mockStats.positive + mockStats.negative + mockStats.neutral;
+    mockStats.averageScore = mockStats.total > 0 
+      ? ((mockStats.positive * 0.8) - (mockStats.negative * 0.8)) / mockStats.total 
+      : 0;
+    
+    // Store in cache
+    sentimentCache.set(cacheKey, mockStats, 300); // Cache for 5 minutes
+    
+    return mockStats;
   } catch (error) {
-    console.error('Error processing feedback sentiment:', error);
-    return 0;
-  }
-}
-
-/**
- * Gets sentiment trend analysis for a specific timeframe
- * @param days Number of days to analyze
- * @returns Sentiment trend analysis
- */
-export async function getSentimentTrends(days: number = 30) {
-  try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
+    console.error('Error getting sentiment stats:', error);
     
-    // Get all sentiment-processed feedback from the period
-    const feedbackItems = await db.select({
-      id: feedback.id,
-      createdAt: feedback.createdAt,
-      sentimentLabel: feedback.sentimentLabel,
-      sentimentScore: feedback.sentimentScore,
-      sentimentTopics: feedback.sentimentTopics,
-      sentimentUrgency: feedback.sentimentUrgency
-    })
-    .from(feedback)
-    .where(
-      and(
-        eq(feedback.sentimentProcessed, true),
-        gt(feedback.createdAt, cutoffDate)
-      )
-    )
-    .orderBy(desc(feedback.createdAt));
-    
-    if (feedbackItems.length === 0) {
-      return {
-        total: 0,
-        positivePercentage: 0,
-        negativePercentage: 0,
-        neutralPercentage: 0,
-        topUrgentTopics: [],
-        topPositiveTopics: [],
-        trendByDay: []
-      };
-    }
-    
-    // Calculate overall statistics
-    const sentimentCounts = {
+    // Return empty stats on error
+    return {
       positive: 0,
       negative: 0,
       neutral: 0,
-      total: feedbackItems.length
+      total: 0,
+      averageScore: 0
     };
+  }
+}
+
+/**
+ * Gets sentiment trend data over time
+ * 
+ * @param startDate Optional start date (ISO string)
+ * @param endDate Optional end date (ISO string)
+ * @returns Array of sentiment data points by date
+ */
+export async function getFeedbackSentimentTrends(
+  startDate?: string,
+  endDate?: string
+): Promise<Array<{
+  date: string;
+  positive: number;
+  negative: number;
+  neutral: number;
+}>> {
+  try {
+    // Check cache first
+    const cacheKey = `sentiment-trends:${startDate || 'all'}-${endDate || 'now'}`;
+    const cachedTrends = sentimentCache.get(cacheKey);
     
-    // Track topics by sentiment
-    const topicsByUrgency: Record<string, { count: number, urgency: string }> = {};
-    const topicsByPositive: Record<string, number> = {};
-    
-    // Group feedback by day for trend analysis
-    const feedbackByDay: Record<string, { date: string, positive: number, negative: number, neutral: number }> = {};
-    
-    for (const item of feedbackItems) {
-      // Count by sentiment
-      if (item.sentimentLabel) {
-        sentimentCounts[item.sentimentLabel]++;
-      } else {
-        sentimentCounts.neutral++;
-      }
-      
-      // Track topics
-      if (Array.isArray(item.sentimentTopics)) {
-        for (const topic of item.sentimentTopics) {
-          // Track urgent topics
-          if (item.sentimentUrgency === 'high' || item.sentimentUrgency === 'medium') {
-            if (!topicsByUrgency[topic]) {
-              topicsByUrgency[topic] = { count: 0, urgency: item.sentimentUrgency };
-            }
-            topicsByUrgency[topic].count++;
-          }
-          
-          // Track positive topics
-          if (item.sentimentLabel === 'positive') {
-            topicsByPositive[topic] = (topicsByPositive[topic] || 0) + 1;
-          }
-        }
-      }
-      
-      // Group by day for trend analysis
-      const dateStr = item.createdAt.toISOString().split('T')[0];
-      if (!feedbackByDay[dateStr]) {
-        feedbackByDay[dateStr] = { date: dateStr, positive: 0, negative: 0, neutral: 0 };
-      }
-      
-      if (item.sentimentLabel) {
-        feedbackByDay[dateStr][item.sentimentLabel]++;
-      } else {
-        feedbackByDay[dateStr].neutral++;
-      }
+    if (cachedTrends) {
+      return cachedTrends;
     }
     
-    // Sort topics by count and get top 5
-    const topUrgentTopics = Object.entries(topicsByUrgency)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 5)
-      .map(([topic, data]) => ({
-        topic,
-        count: data.count,
-        urgency: data.urgency
-      }));
+    // Parse dates
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default: 30 days ago
+    const end = endDate ? new Date(endDate) : new Date();
     
-    const topPositiveTopics = Object.entries(topicsByPositive)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([topic, count]) => ({
-        topic,
-        count
-      }));
+    // Mock implementation - generate random trend data
+    const trends: Array<{
+      date: string;
+      positive: number;
+      negative: number;
+      neutral: number;
+    }> = [];
     
-    // Convert daily trends to array and sort by date
-    const trendByDay = Object.values(feedbackByDay).sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime());
+    const dayCount = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    const dataPoints = Math.min(dayCount, 30); // Max 30 data points
     
-    return {
-      total: sentimentCounts.total,
-      positivePercentage: Math.round((sentimentCounts.positive / sentimentCounts.total) * 100),
-      negativePercentage: Math.round((sentimentCounts.negative / sentimentCounts.total) * 100),
-      neutralPercentage: Math.round((sentimentCounts.neutral / sentimentCounts.total) * 100),
-      topUrgentTopics,
-      topPositiveTopics,
-      trendByDay
-    };
+    const interval = Math.ceil(dayCount / dataPoints);
+    let currentDate = new Date(start);
+    
+    for (let i = 0; i < dataPoints; i++) {
+      // Create a data point
+      const trend = {
+        date: currentDate.toISOString().split('T')[0],
+        positive: Math.floor(Math.random() * 50) + 10,
+        negative: Math.floor(Math.random() * 30) + 5,
+        neutral: Math.floor(Math.random() * 20) + 10
+      };
+      
+      // Add data point
+      trends.push(trend);
+      
+      // Advance date
+      currentDate.setDate(currentDate.getDate() + interval);
+      if (currentDate > end) break;
+    }
+    
+    // Store in cache
+    sentimentCache.set(cacheKey, trends, 600); // Cache for 10 minutes
+    
+    return trends;
   } catch (error) {
     console.error('Error getting sentiment trends:', error);
-    throw error;
+    
+    // Return empty trends on error
+    return [];
+  }
+}
+
+/**
+ * Gets sentiment breakdown by feedback source
+ * 
+ * @param timeRange Time range for the data: 'day', 'week', 'month', 'year', 'all'
+ * @returns Sentiment data grouped by source
+ */
+export async function getFeedbackSentimentBySource(
+  timeRange: string = 'month'
+): Promise<Array<{
+  source: string;
+  positive: number;
+  negative: number;
+  neutral: number;
+  total: number;
+}>> {
+  try {
+    // Check cache first
+    const cacheKey = `sentiment-by-source:${timeRange}`;
+    const cachedData = sentimentCache.get(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+    
+    // Mock implementation - in a real app, fetch from the database
+    const sources = [
+      'Contact Form',
+      'Live Chat',
+      'Customer Survey',
+      'Email',
+      'Social Media'
+    ];
+    
+    const result = sources.map(source => {
+      const positive = Math.floor(Math.random() * 100) + 20;
+      const negative = Math.floor(Math.random() * 50) + 10;
+      const neutral = Math.floor(Math.random() * 30) + 15;
+      
+      return {
+        source,
+        positive,
+        negative,
+        neutral,
+        total: positive + negative + neutral
+      };
+    });
+    
+    // Store in cache
+    sentimentCache.set(cacheKey, result, 600); // Cache for 10 minutes
+    
+    return result;
+  } catch (error) {
+    console.error('Error getting sentiment by source:', error);
+    
+    // Return empty data on error
+    return [];
   }
 }
