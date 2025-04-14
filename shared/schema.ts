@@ -364,11 +364,20 @@ export const contentViewMetrics = pgTable("content_view_metrics", {
 export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  title: text("title"),
   message: text("message").notNull(),
+  content: text("content").notNull(),
   source: text("source").default("website").notNull(), // website, email, support, etc.
   category: text("category"), // bug, feature_request, general, etc.
   rating: integer("rating"), // 1-5 rating if applicable
   status: text("status").default("new").notNull(), // new, reviewed, addressed
+  // Sentiment analysis fields
+  sentimentProcessed: boolean("sentiment_processed").default(false).notNull(),
+  sentimentLabel: text("sentiment_label"), // positive, negative, neutral
+  sentimentScore: decimal("sentiment_score", { precision: 4, scale: 3 }), // 0-1 confidence score
+  sentimentTopics: json("sentiment_topics").$type<string[]>(),
+  sentimentUrgency: text("sentiment_urgency"), // low, medium, high
+  sentimentRecommendedAction: text("sentiment_recommended_action"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

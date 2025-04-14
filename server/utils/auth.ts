@@ -70,6 +70,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   return res.status(401).json({ message: 'Unauthorized access' });
 };
 
+// Helper function to check if a user is an admin
+export const isAdmin = (req: Request): boolean => {
+  if (!req.user) return false;
+  return req.user.role === 'admin';
+};
+
 // Middleware to check if a user is an admin
 export const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
