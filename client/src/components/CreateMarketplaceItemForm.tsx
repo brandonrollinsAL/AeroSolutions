@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import ListingDescriptionGenerator from './ListingDescriptionGenerator';
+import MarketplaceCategorySelector from './MarketplaceCategorySelector';
 
 // Form validation schema
 const createItemSchema = z.object({
@@ -249,27 +250,12 @@ const CreateMarketplaceItemForm: React.FC = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="web_development">Web Development</SelectItem>
-                              <SelectItem value="design">Design</SelectItem>
-                              <SelectItem value="marketing">Digital Marketing</SelectItem>
-                              <SelectItem value="content">Content Creation</SelectItem>
-                              <SelectItem value="seo">SEO Services</SelectItem>
-                              <SelectItem value="consulting">Consulting</SelectItem>
-                              <SelectItem value="ecommerce">E-Commerce Solutions</SelectItem>
-                              <SelectItem value="mobile">Mobile App Development</SelectItem>
-                              <SelectItem value="other">Other Services</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <MarketplaceCategorySelector
+                              selectedCategory={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
                           <FormDescription>
                             Select the most appropriate category for your listing
                           </FormDescription>
