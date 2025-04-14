@@ -130,6 +130,21 @@ export interface IStorage {
   getMarketplaceServiceEngagement(): Promise<any[]>;
   trackServiceClick(serviceId: number): Promise<boolean>;
   trackServiceInquiry(serviceId: number): Promise<boolean>;
+  
+  // Bug monitoring methods
+  createBugReport(report: InsertBugReport): Promise<BugReport>;
+  getBugReports(status?: string, limit?: number): Promise<BugReport[]>;
+  getBugReport(id: number): Promise<BugReport | undefined>;
+  updateBugReport(id: number, data: Partial<BugReport>): Promise<BugReport | undefined>;
+  getRecentLogs(level: string, limit: number): Promise<any[]>;
+  getRecentFeedback(limit: number): Promise<any[]>;
+  
+  // Brand consistency methods
+  createBrandConsistencyIssue(issue: InsertBrandConsistencyIssue): Promise<BrandConsistencyIssue>;
+  getBrandConsistencyIssues(status?: string): Promise<BrandConsistencyIssue[]>;
+  getBrandConsistencyIssue(id: number): Promise<BrandConsistencyIssue | undefined>;
+  updateBrandConsistencyIssue(id: number, data: Partial<BrandConsistencyIssue>): Promise<BrandConsistencyIssue | undefined>;
+  getRecentContent(limit: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
