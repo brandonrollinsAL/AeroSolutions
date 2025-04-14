@@ -129,8 +129,8 @@ export default function ElevateBot({
     
     try {
       // Send request to dedicated ElevateBot endpoint powered by xAI
-      const response = await apiRequest("POST", "/api/elevate-bot", { 
-        message: `User selected option: ${option}. ${getOptionText(option)}` 
+      const response = await apiRequest("POST", "/api/elevatebot/support", { 
+        query: `User selected option: ${option}. ${getOptionText(option)}` 
       });
       
       if (!response.ok) {
@@ -215,7 +215,7 @@ export default function ElevateBot({
     
     try {
       // Send request to dedicated ElevateBot endpoint powered by xAI
-      const response = await apiRequest("POST", "/api/elevate-bot", { message: userInput });
+      const response = await apiRequest("POST", "/api/elevatebot/support", { query: userInput });
       
       if (!response.ok) {
         throw new Error("Failed to get response from ElevateBot");
