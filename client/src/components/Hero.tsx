@@ -171,39 +171,123 @@ export default function Hero() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
                 >
-                  {/* 3D 'E' with shadow effect */}
-                  <div className="relative mb-6">
+                  {/* Fully 3D 'E' with advanced effects */}
+                  <div className="relative mb-6" style={{ perspective: "1000px" }}>
                     <motion.div
+                      className="w-48 h-48 relative"
+                      style={{ transformStyle: "preserve-3d" }}
                       initial={{ rotateY: 0 }}
-                      animate={{ rotateY: 360 }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="w-40 h-40 bg-gradient-to-br from-electric-cyan to-slate-blue rounded-xl flex items-center justify-center transform rotate-45 origin-center shadow-[0_10px_30px_rgba(0,209,209,0.4)]"
+                      animate={{ 
+                        rotateY: 360,
+                        rotateX: [5, -5, 5],
+                        rotateZ: [2, -2, 2]
+                      }}
+                      transition={{ 
+                        rotateY: { duration: 20, repeat: Infinity, ease: "linear" },
+                        rotateX: { duration: 8, repeat: Infinity, ease: "easeInOut" },
+                        rotateZ: { duration: 10, repeat: Infinity, ease: "easeInOut" }
+                      }}
                     >
-                      <div className="transform -rotate-45 text-9xl font-bold text-white">E</div>
+                      {/* Main E face - front */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-electric-cyan to-slate-blue shadow-[0_10px_30px_rgba(0,209,209,0.4)] flex items-center justify-center rounded-xl z-10"
+                           style={{ transformStyle: "preserve-3d" }}>
+                        <div className="flex flex-col items-center justify-center gap-2 h-full w-full" 
+                             style={{ transform: "translateZ(2px)" }}>
+                          <div className="w-3/4 h-1/6 bg-white rounded-md shadow-md"></div>
+                          <div className="w-2/5 h-1/4 bg-white rounded-md shadow-md"></div>
+                          <div className="w-2/3 h-1/6 bg-white rounded-md shadow-md"></div>
+                          <div className="w-2/5 h-1/4 bg-white rounded-md shadow-md"></div>
+                          <div className="w-3/4 h-1/6 bg-white rounded-md shadow-md"></div>
+                        </div>
+                      </div>
+                      
+                      {/* Right side */}
+                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/80 rounded-xl"
+                           style={{ 
+                             transform: "rotateY(90deg) translateZ(24px)",
+                             transformOrigin: "right"
+                           }}></div>
+                      
+                      {/* Left side */}
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue rounded-xl"
+                           style={{ 
+                             transform: "rotateY(-90deg) translateZ(24px)",
+                             transformOrigin: "left"
+                           }}></div>
+                      
+                      {/* Top side */}
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue/60 rounded-xl"
+                           style={{ 
+                             transform: "rotateX(90deg) translateZ(24px)",
+                             transformOrigin: "top"
+                           }}></div>
+                      
+                      {/* Bottom side */}
+                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/60 rounded-xl"
+                           style={{ 
+                             transform: "rotateX(-90deg) translateZ(24px)",
+                             transformOrigin: "bottom"
+                           }}></div>
+                      
+                      {/* Inner light glow */}
+                      <div className="absolute inset-0 bg-white/20 rounded-xl filter blur-lg animate-pulse"
+                           style={{ transform: "translateZ(-10px)" }}></div>
+                      
+                      {/* Reflective shine overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent rounded-xl opacity-50"
+                           style={{ transform: "translateZ(3px)" }}></div>
+                      
+                      {/* Edge highlights */}
+                      <div className="absolute inset-0 rounded-xl border-2 border-white/20"
+                           style={{ transform: "translateZ(1px)" }}></div>
                     </motion.div>
-                    {/* Digital circuit lines */}
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <motion.div 
-                        key={`circuit-${i}`}
-                        className="absolute bg-electric-cyan h-[2px]"
-                        style={{ 
-                          width: `${10 + Math.random() * 30}px`, 
-                          top: `${Math.random() * 100}%`, 
-                          left: i % 2 === 0 ? '100%' : 'auto',
-                          right: i % 2 !== 0 ? '100%' : 'auto',
-                        }}
-                        animate={{ 
-                          width: [`${10 + Math.random() * 30}px`, `${40 + Math.random() * 60}px`, `${10 + Math.random() * 30}px`],
-                          opacity: [0.4, 1, 0.4]
-                        }}
-                        transition={{ 
-                          duration: 3 + Math.random() * 2, 
-                          repeat: Infinity, 
-                          ease: "easeInOut", 
-                          delay: Math.random() * 2
-                        }}
-                      />
-                    ))}
+                    
+                    {/* Enhanced circuit lines with animations */}
+                    <motion.div className="absolute -right-20 top-1/4 h-[2px] bg-electric-cyan" 
+                      initial={{ width: 20, opacity: 0.4 }}
+                      animate={{ 
+                        width: [20, 80, 20],
+                        opacity: [0.4, 1, 0.4],
+                        boxShadow: ['0 0 2px rgba(0,209,209,0.5)', '0 0 8px rgba(0,209,209,0.8)', '0 0 2px rgba(0,209,209,0.5)']
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div className="absolute -left-20 top-1/3 h-[2px] bg-electric-cyan" 
+                      initial={{ width: 15, opacity: 0.4 }}
+                      animate={{ 
+                        width: [15, 70, 15],
+                        opacity: [0.4, 1, 0.4],
+                        boxShadow: ['0 0 2px rgba(0,209,209,0.5)', '0 0 8px rgba(0,209,209,0.8)', '0 0 2px rgba(0,209,209,0.5)']
+                      }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                    />
+                    <motion.div className="absolute -right-20 top-1/2 h-[2px] bg-electric-cyan" 
+                      initial={{ width: 25, opacity: 0.4 }}
+                      animate={{ 
+                        width: [25, 90, 25],
+                        opacity: [0.4, 1, 0.4],
+                        boxShadow: ['0 0 2px rgba(0,209,209,0.5)', '0 0 8px rgba(0,209,209,0.8)', '0 0 2px rgba(0,209,209,0.5)']
+                      }}
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                    />
+                    <motion.div className="absolute -left-20 top-2/3 h-[2px] bg-electric-cyan" 
+                      initial={{ width: 10, opacity: 0.4 }}
+                      animate={{ 
+                        width: [10, 60, 10],
+                        opacity: [0.4, 1, 0.4],
+                        boxShadow: ['0 0 2px rgba(0,209,209,0.5)', '0 0 8px rgba(0,209,209,0.8)', '0 0 2px rgba(0,209,209,0.5)']
+                      }}
+                      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                    />
+                    <motion.div className="absolute -right-20 bottom-1/4 h-[2px] bg-electric-cyan" 
+                      initial={{ width: 30, opacity: 0.4 }}
+                      animate={{ 
+                        width: [30, 100, 30],
+                        opacity: [0.4, 1, 0.4],
+                        boxShadow: ['0 0 2px rgba(0,209,209,0.5)', '0 0 8px rgba(0,209,209,0.8)', '0 0 2px rgba(0,209,209,0.5)']
+                      }}
+                      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                    />
                   </div>
                   
                   {/* Company name with glow effect */}
@@ -220,27 +304,65 @@ export default function Hero() {
                   
                   {/* Floating particles around button */}
                   <div className="relative">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <motion.div 
-                        key={`particle-${i}`}
-                        className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
-                        style={{ 
-                          left: `${Math.random() * 100}%`, 
-                          top: `${Math.random() * 100}%`,
-                        }}
-                        animate={{ 
-                          x: [0, Math.random() * 60 - 30, 0], 
-                          y: [0, Math.random() * 60 - 30, 0],
-                          opacity: [0, 0.8, 0]
-                        }}
-                        transition={{ 
-                          duration: 3 + Math.random() * 2, 
-                          repeat: Infinity, 
-                          ease: "easeInOut", 
-                          delay: Math.random() * 2
-                        }}
-                      />
-                    ))}
+                    <motion.div 
+                      className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
+                      style={{ left: "20%", top: "30%" }}
+                      animate={{ 
+                        x: [0, 15, 0], 
+                        y: [0, -20, 0],
+                        opacity: [0, 0.8, 0]
+                      }}
+                      transition={{ 
+                        duration: 3, 
+                        repeat: Infinity, 
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
+                      style={{ left: "70%", top: "20%" }}
+                      animate={{ 
+                        x: [0, -20, 0], 
+                        y: [0, 15, 0],
+                        opacity: [0, 0.8, 0]
+                      }}
+                      transition={{ 
+                        duration: 4, 
+                        repeat: Infinity, 
+                        ease: "easeInOut",
+                        delay: 1
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
+                      style={{ left: "80%", top: "70%" }}
+                      animate={{ 
+                        x: [0, -10, 0], 
+                        y: [0, -15, 0],
+                        opacity: [0, 0.8, 0]
+                      }}
+                      transition={{ 
+                        duration: 3.5, 
+                        repeat: Infinity, 
+                        ease: "easeInOut",
+                        delay: 0.5
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
+                      style={{ left: "30%", top: "80%" }}
+                      animate={{ 
+                        x: [0, 25, 0], 
+                        y: [0, 5, 0],
+                        opacity: [0, 0.8, 0]
+                      }}
+                      transition={{ 
+                        duration: 4.5, 
+                        repeat: Infinity, 
+                        ease: "easeInOut",
+                        delay: 1.5
+                      }}
+                    />
                     
                     {/* Tech Assistant Chat Button */}
                     <motion.button 
