@@ -115,7 +115,7 @@ const PlatformCompatibilityDebugger = () => {
               {platformIssues.map((issue, index) => (
                 <Alert 
                   key={index} 
-                  variant={issue.priority === 'high' ? 'destructive' : (issue.priority === 'medium' ? 'default' : 'outline')}
+                  variant={issue.priority === 'high' ? 'destructive' : 'default'}
                   className="mb-2"
                 >
                   <div className="flex items-start">
