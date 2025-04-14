@@ -49,6 +49,7 @@ import PriceOptimizationPage from "@/pages/PriceOptimizationPage";
 import BugMonitoringPage from "@/pages/BugMonitoringPage";
 import BrandConsistencyPage from "@/pages/BrandConsistencyPage";
 import TestElevateBot from "@/pages/TestElevateBot";
+import ParticleBackgroundDemo from "@/pages/ParticleBackgroundDemo";
 
 export default function App() {
   const { t, i18n } = useTranslation();
