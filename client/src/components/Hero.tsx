@@ -1,8 +1,54 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import { FaCode, FaLaptop, FaHandshake, FaClock, FaDesktop, FaUsers, FaLaptopCode, FaShieldAlt, FaMobileAlt, FaStore } from "react-icons/fa";
 import { Link } from "wouter";
+import { useState, useEffect } from "react";
 
 export default function Hero() {
+  // Auto-rotation state
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  
+  // Motion values for user controlled rotation
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  // Transform mouse position to rotation values with dampening
+  const rotateY = useTransform(mouseX, [-200, 200], [60, -60]);
+  const rotateX = useTransform(mouseY, [-200, 200], [-30, 30]);
+  
+  // Animation controls for auto-rotation
+  const controls = useAnimation();
+  
+  // Handle click to toggle auto-rotation
+  const handleCubeClick = () => {
+    setIsAutoRotating(!isAutoRotating);
+  };
+  
+  // Update auto-rotation based on state
+  useEffect(() => {
+    if (isAutoRotating) {
+      controls.start({
+        rotateY: 360,
+        rotateX: [5, -5, 5],
+        rotateZ: [2, -2, 2],
+        transition: { 
+          rotateY: { duration: 20, repeat: Infinity, ease: "linear" },
+          rotateX: { duration: 8, repeat: Infinity, ease: "easeInOut" },
+          rotateZ: { duration: 10, repeat: Infinity, ease: "easeInOut" }
+        }
+      });
+    } else {
+      controls.stop();
+    }
+  }, [isAutoRotating, controls]);
+  
+  // Mouse drag handler
+  const handleDrag = (event: any, info: any) => {
+    if (!isAutoRotating) {
+      mouseX.set(info.offset.x);
+      mouseY.set(info.offset.y);
+    }
+  };
+  
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
     visible: (custom: number) => ({
@@ -174,19 +220,19 @@ export default function Hero() {
                   {/* Fully 3D 'E' with advanced effects */}
                   <div className="relative mb-6" style={{ perspective: "1000px" }}>
                     <motion.div
-                      className="w-48 h-48 relative"
-                      style={{ transformStyle: "preserve-3d" }}
+                      className="w-48 h-48 relative cursor-pointer"
+                      style={{ 
+                        transformStyle: "preserve-3d",
+                        rotate: isAutoRotating ? undefined : `${rotateX.get()}deg ${rotateY.get()}deg 0deg`
+                      }}
                       initial={{ rotateY: 0 }}
-                      animate={{ 
-                        rotateY: 360,
-                        rotateX: [5, -5, 5],
-                        rotateZ: [2, -2, 2]
-                      }}
-                      transition={{ 
-                        rotateY: { duration: 20, repeat: Infinity, ease: "linear" },
-                        rotateX: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-                        rotateZ: { duration: 10, repeat: Infinity, ease: "easeInOut" }
-                      }}
+                      animate={controls}
+                      drag={!isAutoRotating}
+                      dragConstraints={{ top: -100, left: -100, right: 100, bottom: 100 }}
+                      dragElastic={0.2}
+                      whileTap={{ scale: 1.1 }}
+                      onDragEnd={handleDrag}
+                      onClick={handleCubeClick}
                     >
                       {/* Main E face - front */}
                       <div className="absolute inset-0 bg-gradient-to-br from-electric-cyan to-slate-blue shadow-[0_10px_30px_rgba(0,209,209,0.4)] flex items-center justify-center rounded-xl z-10"
@@ -265,6 +311,22 @@ export default function Hero() {
                         </div>
                       </div>
                       
+                      {/* Back side - E logo */}
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-blue to-electric-cyan/80 rounded-xl flex items-center justify-center"
+                           style={{ 
+                             transform: "rotateY(180deg) translateZ(24px)",
+                             transformOrigin: "center"
+                           }}>
+                        {/* Back side E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 mirror">
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
+                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        </div>
+                      </div>
+                      
                       {/* Inner light glow */}
                       <div className="absolute inset-0 bg-white/20 rounded-xl filter blur-lg animate-pulse"
                            style={{ transform: "translateZ(-10px)" }}></div>
@@ -276,6 +338,13 @@ export default function Hero() {
                       {/* Edge highlights */}
                       <div className="absolute inset-0 rounded-xl border-2 border-white/20"
                            style={{ transform: "translateZ(1px)" }}></div>
+                      
+                      {/* User instructions */}
+                      <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-900/80 text-electric-cyan text-xs px-3 py-1 rounded-full border border-electric-cyan/30 whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity">
+                        {isAutoRotating 
+                          ? "Click to interact with cube" 
+                          : "Drag to rotate • Click to auto-rotate"}
+                      </div>
                     </motion.div>
                     
                     {/* Enhanced circuit lines with animations */}
