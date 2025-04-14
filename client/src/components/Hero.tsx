@@ -118,27 +118,147 @@ export default function Hero() {
             animate="visible"
           >
             {/* Web development image */}
-            <div className="relative overflow-hidden rounded-lg shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-500 max-h-[500px] h-[500px] w-full bg-gradient-to-br from-slate-blue/50 to-electric-cyan/30 p-1">
-              <div className="absolute inset-0 bg-black/40 rounded-lg backdrop-blur-sm z-10"></div>
-              <div className="absolute inset-0 flex items-center justify-center z-20">
-                <div className="text-center p-8">
-                  <div className="text-9xl text-electric-cyan mb-6">E</div>
-                  <div className="text-2xl text-white font-poppins font-bold tracking-wider mb-4">ELEVION</div>
-                  <div className="text-light-gray font-lato">Web Development Excellence</div>
-                  
-                  {/* Tech Assistant Chat Button */}
-                  <div className="mt-6">
-                    <button 
-                      onClick={() => window.dispatchEvent(new CustomEvent('openTechAssistant'))}
-                      className="bg-electric-cyan/20 hover:bg-electric-cyan/30 text-white font-semibold py-3 px-6 rounded-lg border border-electric-cyan/30 transition-all duration-300 hover:scale-105 font-inter flex items-center justify-center gap-2 mx-auto"
-                    >
-                      <FaLaptopCode className="text-electric-cyan" />
-                      <span>Ask Tech Assistant</span>
-                    </button>
+            <motion.div 
+              className="relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] max-h-[550px] h-[550px] w-full perspective-1000 transform hover:scale-105 transition-all duration-700"
+              initial={{ rotateY: 10, rotateX: -10 }}
+              animate={{ 
+                rotateY: [10, -10, 10], 
+                rotateX: [-10, 10, -10],
+                z: [0, 30, 0]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 15, 
+                ease: "easeInOut" 
+              }}
+            >
+              {/* 3D hexagonal backdrop */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-blue via-slate-blue/80 to-electric-cyan/20 z-10 rounded-xl">
+                {/* Geometric accent lines */}
+                <div className="absolute w-full h-full">
+                  <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div 
+                        key={`line-${i}`} 
+                        className="absolute h-[1px] bg-electric-cyan"
+                        style={{ 
+                          width: `${Math.random() * 100}%`, 
+                          top: `${Math.random() * 100}%`, 
+                          left: `${Math.random() * 100}%`,
+                          transform: `rotate(${Math.random() * 360}deg)`,
+                          opacity: Math.random() * 0.8 + 0.2
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
+                
+                {/* Glowing orbs */}
+                <div className="absolute top-1/4 left-1/4 w-4 h-4 rounded-full bg-electric-cyan blur-md animate-pulse"></div>
+                <div className="absolute bottom-1/3 right-1/3 w-6 h-6 rounded-full bg-electric-cyan blur-md animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                <div className="absolute top-1/2 right-1/4 w-3 h-3 rounded-full bg-sunset-orange/80 blur-sm animate-pulse" style={{ animationDelay: '2.3s' }}></div>
+                <div className="absolute bottom-1/4 left-1/3 w-5 h-5 rounded-full bg-sunset-orange/70 blur-md animate-pulse" style={{ animationDelay: '0.7s' }}></div>
               </div>
-            </div>
+              
+              {/* Holographic shine overlay */}
+              <div className="absolute inset-0 opacity-20 z-20 bg-gradient-to-tr from-transparent via-white/30 to-transparent rounded-xl"></div>
+              
+              {/* 3D Logo Effect */}
+              <div className="absolute inset-0 flex items-center justify-center z-30">
+                <motion.div 
+                  className="text-center p-8 relative z-10 flex flex-col items-center justify-center"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+                >
+                  {/* 3D 'E' with shadow effect */}
+                  <div className="relative mb-6">
+                    <motion.div
+                      initial={{ rotateY: 0 }}
+                      animate={{ rotateY: 360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      className="w-40 h-40 bg-gradient-to-br from-electric-cyan to-slate-blue rounded-xl flex items-center justify-center transform rotate-45 origin-center shadow-[0_10px_30px_rgba(0,209,209,0.4)]"
+                    >
+                      <div className="transform -rotate-45 text-9xl font-bold text-white">E</div>
+                    </motion.div>
+                    {/* Digital circuit lines */}
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <motion.div 
+                        key={`circuit-${i}`}
+                        className="absolute bg-electric-cyan h-[2px]"
+                        style={{ 
+                          width: `${10 + Math.random() * 30}px`, 
+                          top: `${Math.random() * 100}%`, 
+                          left: i % 2 === 0 ? '100%' : 'auto',
+                          right: i % 2 !== 0 ? '100%' : 'auto',
+                        }}
+                        animate={{ 
+                          width: [`${10 + Math.random() * 30}px`, `${40 + Math.random() * 60}px`, `${10 + Math.random() * 30}px`],
+                          opacity: [0.4, 1, 0.4]
+                        }}
+                        transition={{ 
+                          duration: 3 + Math.random() * 2, 
+                          repeat: Infinity, 
+                          ease: "easeInOut", 
+                          delay: Math.random() * 2
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Company name with glow effect */}
+                  <motion.div 
+                    className="text-3xl text-white font-poppins font-bold tracking-widest mb-6 relative"
+                    animate={{ textShadow: ['0 0 5px rgba(0,209,209,0.5)', '0 0 20px rgba(0,209,209,0.8)', '0 0 5px rgba(0,209,209,0.5)'] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    ELEVION
+                    <div className="absolute -bottom-2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-electric-cyan to-transparent"></div>
+                  </motion.div>
+                  
+                  <div className="text-light-gray font-lato text-lg mb-8">Web Development Excellence</div>
+                  
+                  {/* Floating particles around button */}
+                  <div className="relative">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <motion.div 
+                        key={`particle-${i}`}
+                        className="absolute w-1 h-1 rounded-full bg-electric-cyan opacity-70"
+                        style={{ 
+                          left: `${Math.random() * 100}%`, 
+                          top: `${Math.random() * 100}%`,
+                        }}
+                        animate={{ 
+                          x: [0, Math.random() * 60 - 30, 0], 
+                          y: [0, Math.random() * 60 - 30, 0],
+                          opacity: [0, 0.8, 0]
+                        }}
+                        transition={{ 
+                          duration: 3 + Math.random() * 2, 
+                          repeat: Infinity, 
+                          ease: "easeInOut", 
+                          delay: Math.random() * 2
+                        }}
+                      />
+                    ))}
+                    
+                    {/* Tech Assistant Chat Button */}
+                    <motion.button 
+                      onClick={() => window.dispatchEvent(new CustomEvent('openTechAssistant'))}
+                      className="bg-gradient-to-r from-electric-cyan/30 to-slate-blue/40 hover:from-electric-cyan/40 hover:to-slate-blue/50 text-white font-semibold py-3 px-8 rounded-xl backdrop-blur-sm border border-electric-cyan/40 transition-all duration-300 hover:scale-105 font-inter flex items-center justify-center gap-2 shadow-[0_5px_15px_rgba(0,209,209,0.25)] relative overflow-hidden group"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {/* Button glow effect */}
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      
+                      <FaLaptopCode className="text-electric-cyan text-lg" />
+                      <span>Ask Tech Assistant</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
         

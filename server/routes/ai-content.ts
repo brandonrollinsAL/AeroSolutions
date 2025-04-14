@@ -5,7 +5,7 @@ const router = express.Router();
 
 /**
  * Generate blog post ideas endpoint
- * Uses xAI to generate blog post topic ideas based on keywords and audience
+ * Uses Elevion AI to generate blog post topic ideas based on keywords and audience
  */
 router.post('/blog-ideas', async (req, res) => {
   const { keywords, audience, industry, count = 5 } = req.body;
@@ -79,7 +79,7 @@ router.post('/blog-ideas', async (req, res) => {
 
 /**
  * Generate product descriptions endpoint
- * Uses xAI to create compelling product descriptions
+ * Uses Elevion AI to create compelling product descriptions
  */
 router.post('/product-description', async (req, res) => {
   const { 

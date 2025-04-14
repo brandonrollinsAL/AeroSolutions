@@ -116,7 +116,7 @@ export class RetentionService {
   }
 
   /**
-   * Generates a personalized retention message using xAI
+   * Generates a personalized retention message using Elevion AI
    * @param userId User to generate message for
    * @param messageType Type of message (email, in-app, etc)
    */

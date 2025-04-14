@@ -347,7 +347,7 @@ Only generate variants that follow these rules:
 - Include only the requested information in your response
 - Make sure the response is valid JSON`;
 
-    // Call xAI to generate suggestions
+    // Call Elevion AI to generate suggestions
     const response = await xaiClient.generateJson(prompt, {
       model: 'grok-3', 
       systemPrompt: systemPrompt

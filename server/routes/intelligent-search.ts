@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * Semantic search endpoint
- * Uses xAI to perform intelligent semantic search on website content
+ * Uses Elevion AI to perform intelligent semantic search on website content
  */
 router.post('/semantic', async (req, res) => {
   const { query, filters = {}, limit = 10 } = req.body;
