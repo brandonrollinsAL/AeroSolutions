@@ -37,15 +37,15 @@ interface ParticleConfigPanelProps {
   onChange: (config: ParticleConfig) => void;
 }
 
+// Preset type for configuration presets
+type Preset = {
+  name: string;
+  config: ParticleConfig;
+};
+
 const ParticleConfigPanel: React.FC<ParticleConfigPanelProps> = ({ config, onChange }) => {
   const [color, setColor] = useColor('hex', '#00D1D1');
   const [colorPalette, setColorPalette] = useState<string[]>(config.colorPalette);
-  
-  type Preset = {
-    name: string;
-    config: ParticleConfig;
-  };
-  
   const [presets, setPresets] = useState<Preset[]>([
     {
       name: 'Elevion Default',
