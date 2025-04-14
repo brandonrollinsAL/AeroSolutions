@@ -32,8 +32,7 @@ import twitterRouter from './routes/twitter';
 import retentionRouter from './routes/retention';
 import landingPagesRouter from './routes/landing-pages';
 import checkoutOptimizationRouter from './routes/checkout-optimization';
-import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
-import elevateBotAnalyticsRouter from './routes/elevatebot';
+// Using only the new structured router from the elevatebot folder
 import elevateBotRouter from './routes/elevatebot/index';
 import emailCampaignsRouter from './routes/email-campaigns';
 import contentProtectionRouter from './routes/content-protection';
@@ -169,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/search', searchRouter);
   app.use('/api/feedback', feedbackAnalysisRouter);
   app.use('/api/mockups', mockupsRouter);
-  app.use('/api/elevatebot', elevateBotAnalyticsRouter);
+  // Only use the new structured router system
   app.use('/api/elevatebot', elevateBotRouter);
   app.use('/api/email-campaigns', emailCampaignsRouter);
   app.use('/api/content', contentProtectionRouter);
@@ -664,6 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ElevateBot business assistant API - dedicated endpoint for business-specific queries
+  // Redirect old endpoint to new structured API
   app.post("/api/elevate-bot", [
     // Express-validator validations
     body('message')
@@ -671,7 +671,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .isString().withMessage('Message must be a string')
       .isLength({ min: 1, max: 1000 }).withMessage('Message must be between 1 and 1000 characters')
       .trim()
-  ], handleElevateBotQuery);
+  ], (req, res, next) => {
+    console.log(`Redirecting old /api/elevate-bot endpoint to new /api/elevatebot/support endpoint`);
+    req.url = '/api/elevatebot/support';
+    app._router.handle(req, res, next);
+  });
   
   // Copilot chatbot API with caching and express-validator
   app.post("/api/copilot", [
@@ -746,83 +750,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ElevateBot specialized business AI assistant endpoint
-  app.post("/api/elevate-bot", [
+  // Redirect old endpoint to new structured API
+  app.post("/api/elevate-bot-legacy", [
     // Express-validator validations
     body('message')
       .notEmpty().withMessage('Message is required')
       .isString().withMessage('Message must be a string')
       .isLength({ min: 1, max: 1000 }).withMessage('Message must be between 1 and 1000 characters')
       .trim()
-  ], async (req: Request, res: Response) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-
-    const { message } = req.body;
-    const cacheKey = `elevate_bot_${message.substring(0, 50).trim()}`;
-    
-    try {
-      // Check if we have a cached response
-      const cachedResponse = apiCache.get(cacheKey);
-      if (cachedResponse) {
-        return res.status(200).json({
-          success: true,
-          response: cachedResponse,
-          timestamp: new Date().toISOString(),
-          cached: true
-        });
-      }
-      
-      // Prepare system prompt for business context
-      const systemPrompt = `You are ElevateBot, Elevion's specialized AI assistant for businesses. 
-      You provide expert guidance on web development, digital marketing, 
-      and business technology solutions. Your responses should be professional, 
-      concise, and focused on actionable business advice. 
-      Elevion is a premier web development company that specializes in small business websites, 
-      ecommerce solutions, and custom web applications.`;
-      
-      // Call Grok API with timeout protection
-      const aiResponse = await Promise.race([
-        grokApi.createChatCompletion([
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ], { model: "grok-3-mini" }),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('ElevateBot response timed out')), 30000)
-        )
-      ]);
-      
-      const botResponse = aiResponse.choices[0].message.content;
-      
-      // Cache the successful response
-      apiCache.set(cacheKey, botResponse);
-      
-      return res.status(200).json({
-        success: true,
-        response: botResponse,
-        timestamp: new Date().toISOString(),
-        cached: false
-      });
-      
-    } catch (error) {
-      console.error("ElevateBot error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      
-      // Provide a fallback response
-      const fallbackResponse = "I'm currently experiencing technical difficulties. Here are some general tips for optimizing your web presence: ensure mobile responsiveness, optimize page loading speed, implement SEO best practices, and create clear calls-to-action. Please try your specific question again later.";
-      
-      res.status(200).json({
-        success: true,
-        response: fallbackResponse,
-        error: errorMessage,
-        fallback: true
-      });
-    }
+  ], (req, res, next) => {
+    console.log(`Redirecting old /api/elevate-bot-legacy endpoint to new /api/elevatebot/support endpoint`);
+    req.url = '/api/elevatebot/support';
+    app._router.handle(req, res, next);
   });
 
   const httpServer = createServer(app);
