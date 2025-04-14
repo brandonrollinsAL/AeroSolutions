@@ -1008,6 +1008,206 @@ export const insertUserRetentionMessageSchema = createInsertSchema(userRetention
 export type UserRetentionMessage = typeof userRetentionMessages.$inferSelect;
 export type InsertUserRetentionMessage = z.infer<typeof insertUserRetentionMessageSchema>;
 
+// Ad platforms for external integrations
+export const adPlatforms = pgTable("ad_platforms", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(), // google_ads, facebook_ads, linkedin_ads, etc.
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  description: text("description"),
+  apiConfig: json("api_config").$type<{
+    baseUrl?: string;
+    endpoints?: Record<string, string>;
+    authType?: string;
+    scopes?: string[];
+  }>().default({}),
+  isActive: boolean("is_active").default(true).notNull(),
+  icon: varchar("icon", { length: 50 }), // CSS class for platform icon
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdPlatformSchema = createInsertSchema(adPlatforms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdPlatform = typeof adPlatforms.$inferSelect;
+export type InsertAdPlatform = z.infer<typeof insertAdPlatformSchema>;
+
+// Ad campaigns for targeted advertising
+export const adCampaigns = pgTable("ad_campaigns", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  objective: varchar("objective", { length: 50 }).notNull(), // awareness, consideration, conversion
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, active, paused, completed, archived
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  budget: decimal("budget", { precision: 10, scale: 2 }), // Total campaign budget
+  dailyBudget: decimal("daily_budget", { precision: 10, scale: 2 }), // Daily spend limit
+  targetAudience: json("target_audience").$type<{
+    demographics?: {
+      ageRange?: string[];
+      gender?: string[];
+      location?: string[];
+      language?: string[];
+    };
+    interests?: string[];
+    behaviors?: string[];
+    customAudiences?: string[];
+  }>().default({}),
+  platformIds: json("platform_ids").$type<number[]>().default([]), // References to ad_platforms
+  metrics: json("metrics").$type<{
+    impressions?: number;
+    clicks?: number;
+    conversions?: number;
+    ctr?: number; // Click-through rate
+    cpc?: number; // Cost per click
+    cpm?: number; // Cost per thousand impressions
+    roas?: number; // Return on ad spend
+    spend?: number; // Total spent so far
+  }>().default({}),
+  externalIds: json("external_ids").$type<Record<string, string>>().default({}), // Map platform IDs to external campaign IDs
+  tags: json("tags").$type<string[]>().default([]),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdCampaignSchema = createInsertSchema(adCampaigns).omit({
+  id: true,
+  metrics: true,
+  externalIds: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdCampaign = typeof adCampaigns.$inferSelect;
+export type InsertAdCampaign = z.infer<typeof insertAdCampaignSchema>;
+
+// Ad groups within campaigns
+export const adGroups = pgTable("ad_groups", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull().references(() => adCampaigns.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, active, paused, archived
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  budget: decimal("budget", { precision: 10, scale: 2 }),
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }),
+  bidStrategy: varchar("bid_strategy", { length: 50 }), // cpc, cpm, cpa, etc.
+  metrics: json("metrics").$type<{
+    impressions?: number;
+    clicks?: number;
+    conversions?: number;
+    ctr?: number;
+    cpc?: number;
+    cpm?: number;
+    spend?: number;
+  }>().default({}),
+  externalIds: json("external_ids").$type<Record<string, string>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdGroupSchema = createInsertSchema(adGroups).omit({
+  id: true,
+  metrics: true,
+  externalIds: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdGroup = typeof adGroups.$inferSelect;
+export type InsertAdGroup = z.infer<typeof insertAdGroupSchema>;
+
+// Ads within ad groups
+export const adCreatives = pgTable("ad_creatives", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => adGroups.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 30 }).notNull(), // image, video, carousel, text, dynamic
+  headline: varchar("headline", { length: 100 }),
+  description: text("description"),
+  callToAction: varchar("call_to_action", { length: 50 }),
+  imageUrls: json("image_urls").$type<string[]>().default([]),
+  videoUrl: varchar("video_url", { length: 255 }),
+  destinationUrl: varchar("destination_url", { length: 255 }),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, active, paused, approved, rejected, archived
+  rejectionReason: text("rejection_reason"),
+  aiGenerated: boolean("ai_generated").default(false).notNull(),
+  aiPrompt: text("ai_prompt"), // Prompt used to generate this ad
+  metrics: json("metrics").$type<{
+    impressions?: number;
+    clicks?: number;
+    conversions?: number;
+    ctr?: number;
+    cpc?: number;
+    cpm?: number;
+    relevanceScore?: number; // Platform-specific quality score
+  }>().default({}),
+  externalIds: json("external_ids").$type<Record<string, string>>().default({}),
+  performanceRating: integer("performance_rating"), // 1-10 AI-generated rating of ad effectiveness
+  abTestGroup: varchar("ab_test_group", { length: 50 }), // For A/B testing different creatives
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdCreativeSchema = createInsertSchema(adCreatives).omit({
+  id: true,
+  metrics: true,
+  externalIds: true,
+  performanceRating: true,
+  rejectionReason: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdCreative = typeof adCreatives.$inferSelect;
+export type InsertAdCreative = z.infer<typeof insertAdCreativeSchema>;
+
+// Ad targeting profiles for reusable audience segments
+export const adTargetingProfiles = pgTable("ad_targeting_profiles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  criteria: json("criteria").$type<{
+    demographics?: {
+      ageRange?: string[];
+      gender?: string[];
+      location?: string[];
+      language?: string[];
+      income?: string[];
+      education?: string[];
+      occupation?: string[];
+    };
+    interests?: string[];
+    behaviors?: string[];
+    keywords?: string[];
+    lookalikes?: string[];
+    excludedAudiences?: string[];
+    platforms?: string[];
+    devices?: string[];
+  }>().default({}),
+  size: integer("size"), // Estimated audience size
+  lastUsed: timestamp("last_used"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAdTargetingProfileSchema = createInsertSchema(adTargetingProfiles).omit({
+  id: true,
+  size: true,
+  lastUsed: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdTargetingProfile = typeof adTargetingProfiles.$inferSelect;
+export type InsertAdTargetingProfile = z.infer<typeof insertAdTargetingProfileSchema>;
+
 // In-app notifications schema
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
