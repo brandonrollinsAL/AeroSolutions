@@ -46,6 +46,7 @@ import OptimizedLandingPage from "@/pages/OptimizedLandingPage";
 import CheckoutOptimizationPage from "@/pages/CheckoutOptimizationPage";
 import PriceOptimizationPage from "@/pages/PriceOptimizationPage";
 import BugMonitoringPage from "@/pages/BugMonitoringPage";
+import BrandConsistencyPage from "@/pages/BrandConsistencyPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -525,6 +526,36 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <PriceOptimizationPage />
+            </>
+          )}
+        </Route>
+        <Route path="/bug-monitoring">
+          {() => (
+            <>
+              <Helmet>
+                <title>Bug Monitoring | Elevion</title>
+                <meta name="description" content="Monitor and fix bugs in your website with our advanced bug monitoring dashboard." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/bug-monitoring" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <BugMonitoringPage />
+            </>
+          )}
+        </Route>
+        <Route path="/brand-consistency">
+          {() => (
+            <>
+              <Helmet>
+                <title>Brand Consistency Monitor | Elevion</title>
+                <meta name="description" content="Track and manage brand consistency issues across your digital presence with our brand consistency monitoring dashboard." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/brand-consistency" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <BrandConsistencyPage />
             </>
           )}
         </Route>
