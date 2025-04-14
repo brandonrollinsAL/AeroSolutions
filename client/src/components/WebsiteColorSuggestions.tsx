@@ -153,7 +153,7 @@ export default function WebsiteColorSuggestions() {
         )}
       </CardContent>
       <CardFooter className="flex justify-between text-xs text-muted-foreground">
-        <p>Powered by xAI Grok</p>
+        <p>Powered by Elevion AI</p>
         <p>Results may vary based on business type</p>
       </CardFooter>
     </Card>

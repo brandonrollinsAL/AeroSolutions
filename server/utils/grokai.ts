@@ -52,15 +52,15 @@ function generateCacheKey(input: string): string {
 }
 
 /**
- * Generates a response for the copilot feature using xAI's Grok API with caching and optimized performance
+ * Generates a response for the copilot feature using Elevion AI's Grok API with caching and optimized performance
  * @param userMessage The message from the user
  * @returns A response from the AI assistant
  */
 export async function generateCopilotResponse(userMessage: string): Promise<string> {
-  // Ensure xAI API key is available
+  // Ensure Elevion AI API key is available
   if (!process.env.XAI_API_KEY) {
     console.error("Missing XAI_API_KEY in environment variables");
-    throw new Error("xAI Grok API key not configured");
+    throw new Error("Elevion AI Grok API key not configured");
   }
   
   try {

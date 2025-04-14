@@ -80,7 +80,7 @@ Article Content: ${truncatedContent}
 Write ONLY the tweet text without any other explanations or formatting. It MUST be under 280 characters.`;
 
     try {
-      // Use Elevion's xAI client to generate the tweet
+      // Use Elevion's AI client to generate the tweet
       const tweetContent = await generateText(prompt, 'grok-3-mini');
       
       // Ensure the tweet is under 280 characters

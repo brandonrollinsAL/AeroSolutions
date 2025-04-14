@@ -61,7 +61,7 @@ export default function UIAnalyticsDashboard() {
     <div className="container mx-auto py-8">
       <Helmet>
         <title>UI/UX Analytics Dashboard | Elevion</title>
-        <meta name="description" content="Advanced UI/UX analytics powered by xAI for identifying improvement opportunities" />
+        <meta name="description" content="Advanced UI/UX analytics powered by Elevion AI for identifying improvement opportunities" />
       </Helmet>
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">

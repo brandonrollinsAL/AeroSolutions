@@ -23,13 +23,13 @@ if (!process.env.XAI_API_KEY) {
   console.warn('No XAI_API_KEY found in environment. AI-powered features will not work.');
 }
 
-// Initialize the OpenAI client with xAI configuration
+// Initialize the OpenAI client with Elevion AI configuration
 const openai = new OpenAI({
   baseURL: 'https://api.x.ai/v1',
   apiKey: process.env.XAI_API_KEY,
 });
 
-// GrokAPI class for interaction with xAI
+// GrokAPI class for interaction with Elevion AI
 class GrokApi {
   // Generate text based on a prompt
   async generateText({
