@@ -421,17 +421,8 @@ router.post('/forgot-password', [
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
     .normalizeEmail()
-], async (req: Request, res: Response) => {
+], validateRequest("Invalid email"), async (req: Request, res: Response) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email",
-        errors: errors.array()
-      });
-    }
     
     const { email } = req.body;
     
@@ -492,17 +483,8 @@ router.post('/reset-password', [
     .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
     .matches(/[0-9]/).withMessage('Password must contain at least one number')
     .matches(/[^A-Za-z0-9]/).withMessage('Password must contain at least one special character')
-], async (req: Request, res: Response) => {
+], validateRequest("Invalid reset data"), async (req: Request, res: Response) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid reset data",
-        errors: errors.array()
-      });
-    }
     
     const { userId, token, password } = req.body;
     
@@ -566,17 +548,8 @@ router.post('/change-password', authMiddleware, [
     .matches(/[a-z]/).withMessage('New password must contain at least one lowercase letter')
     .matches(/[0-9]/).withMessage('New password must contain at least one number')
     .matches(/[^A-Za-z0-9]/).withMessage('New password must contain at least one special character')
-], async (req: Request, res: Response) => {
+], validateRequest("Invalid password data"), async (req: Request, res: Response) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid password data",
-        errors: errors.array()
-      });
-    }
     
     const userId = req.user.userId;
     const { currentPassword, newPassword } = req.body;

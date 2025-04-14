@@ -8,7 +8,7 @@ import { z } from 'zod';
  * @param schema The Zod schema to validate against
  * @returns Express middleware function
  */
-export function validateRequest(schema: z.ZodType<any, any, any>) {
+export function validateZodSchema(schema: z.ZodType<any, any, any>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await schema.safeParseAsync(req.body);
@@ -101,8 +101,29 @@ export function validateQuery(schema: z.ZodType<any, any, any>) {
   };
 }
 
+/**
+ * Middleware that checks for express-validator validation errors
+ * 
+ * @param errorMessage The error message to display if validation fails
+ * @returns Express middleware function
+ */
+export function validateRequest(errorMessage: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: errorMessage,
+        errors: errors.array()
+      });
+    }
+    next();
+  };
+}
+
 export default {
-  validateRequest,
+  validateZodSchema,
   validateParams,
-  validateQuery
+  validateQuery,
+  validateRequest
 };
