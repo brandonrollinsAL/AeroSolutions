@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import { storage } from '../storage';
 import { 
   generateToken, 
@@ -13,6 +13,7 @@ import {
 import { z } from 'zod';
 import { insertUserSchema } from '@shared/schema';
 import { callXAI } from '../utils/xaiClient';
+import { validateRequest } from '../utils/validation';
 
 const router = Router();
 
@@ -37,17 +38,8 @@ router.post('/register', [
     .optional()
     .isLength({ max: 100 }).withMessage('Name must be less than 100 characters')
     .trim(),
-], async (req: Request, res: Response) => {
+], validateRequest("Invalid registration data"), async (req: Request, res: Response) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid registration data",
-        errors: errors.array()
-      });
-    }
 
     // Check if user already exists
     const existingUser = await storage.getUserByUsername(req.body.username);
@@ -182,17 +174,8 @@ router.post('/register', [
 router.post('/login', [
   body('username').notEmpty().withMessage('Username is required'),
   body('password').notEmpty().withMessage('Password is required')
-], async (req: Request, res: Response) => {
+], validateRequest("Invalid login data"), async (req: Request, res: Response) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid login data",
-        errors: errors.array()
-      });
-    }
 
     const { username, password } = req.body;
 
