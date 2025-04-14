@@ -47,6 +47,7 @@ import CheckoutOptimizationPage from "@/pages/CheckoutOptimizationPage";
 import PriceOptimizationPage from "@/pages/PriceOptimizationPage";
 import BugMonitoringPage from "@/pages/BugMonitoringPage";
 import BrandConsistencyPage from "@/pages/BrandConsistencyPage";
+import TestElevateBot from "@/pages/TestElevateBot";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -703,6 +704,20 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <UIAnalyticsDashboard />
+            </>
+          )}
+        </Route>
+        <Route path="/test-elevatebot">
+          {() => (
+            <>
+              <Helmet>
+                <title>Test ElevateBot | Elevion</title>
+                <meta name="description" content="Testing page for ElevateBot integration." />
+                <meta name="robots" content="noindex, nofollow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <TestElevateBot />
             </>
           )}
         </Route>
