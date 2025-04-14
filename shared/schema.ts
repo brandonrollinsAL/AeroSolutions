@@ -1083,3 +1083,30 @@ export const insertBugReportSchema = createInsertSchema(bug_reports).omit({
 
 export type BugReport = typeof bug_reports.$inferSelect;
 export type InsertBugReport = z.infer<typeof insertBugReportSchema>;
+
+// Brand consistency issues table for tracking brand guideline violations
+export const brand_consistency_issues = pgTable("brand_consistency_issues", {
+  id: serial("id").primaryKey(),
+  type: varchar("type", { length: 50 }).notNull(), // color, typography, tone, logo, other
+  severity: varchar("severity", { length: 20 }).notNull(), // low, medium, high
+  location: text("location").notNull(), // file path, content ID, etc.
+  description: text("description").notNull(),
+  recommendation: text("recommendation").notNull(),
+  canAutoFix: boolean("can_auto_fix").default(false),
+  autoFixCode: text("auto_fix_code"),
+  status: varchar("status", { length: 20 }).notNull().default("open"), // open, fixed, ignored
+  fixedByUserId: integer("fixed_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  ignoredByUserId: integer("ignored_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  fixedAt: timestamp("fixed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertBrandConsistencyIssueSchema = createInsertSchema(brand_consistency_issues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type BrandConsistencyIssue = typeof brand_consistency_issues.$inferSelect;
+export type InsertBrandConsistencyIssue = z.infer<typeof insertBrandConsistencyIssueSchema>;
