@@ -17,9 +17,10 @@ import {
   priceRecommendations, subscriptionPriceHistory,
   type PriceRecommendation, type InsertPriceRecommendation,
   type PriceHistory, type InsertPriceHistory,
-  logs, bug_reports,
+  logs, bug_reports, platform_compatibility_issues,
   type Log, type InsertLog, 
-  type BugReport, type InsertBugReport
+  type BugReport, type InsertBugReport,
+  type PlatformCompatibilityIssue, type InsertPlatformCompatibilityIssue
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
@@ -154,6 +155,15 @@ export interface IStorage {
   getBrandConsistencyIssue(id: number): Promise<BrandConsistencyIssue | undefined>;
   updateBrandConsistencyIssue(id: number, data: Partial<BrandConsistencyIssue>): Promise<BrandConsistencyIssue | undefined>;
   getRecentContent(limit: number): Promise<any[]>;
+  
+  // Platform compatibility methods
+  createPlatformCompatibilityIssue(issue: InsertPlatformCompatibilityIssue): Promise<PlatformCompatibilityIssue>;
+  getPlatformCompatibilityIssues(status?: string): Promise<PlatformCompatibilityIssue[]>;
+  getPlatformCompatibilityIssue(id: number): Promise<PlatformCompatibilityIssue | undefined>;
+  updatePlatformCompatibilityIssue(id: number, data: Partial<PlatformCompatibilityIssue>): Promise<PlatformCompatibilityIssue | undefined>;
+  incrementIssueOccurrence(id: number): Promise<void>;
+  getPlatformIssuesByPlatform(platform: string): Promise<PlatformCompatibilityIssue[]>;
+  analyzeCompatibilityIssues(): Promise<{ summary: any, issues: PlatformCompatibilityIssue[] }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1180,6 +1190,170 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching content for brand consistency analysis:', error);
       return [];
+    }
+  }
+
+  // Platform compatibility methods
+  async createPlatformCompatibilityIssue(issue: InsertPlatformCompatibilityIssue): Promise<PlatformCompatibilityIssue> {
+    try {
+      const [platformIssue] = await db.insert(platform_compatibility_issues).values(issue).returning();
+      return platformIssue;
+    } catch (error) {
+      console.error("Error creating platform compatibility issue:", error);
+      throw new Error("Failed to create platform compatibility issue");
+    }
+  }
+
+  async getPlatformCompatibilityIssues(status?: string): Promise<PlatformCompatibilityIssue[]> {
+    try {
+      if (status) {
+        return await db
+          .select()
+          .from(platform_compatibility_issues)
+          .where(eq(platform_compatibility_issues.status, status))
+          .orderBy(desc(platform_compatibility_issues.priority), desc(platform_compatibility_issues.occurrences));
+      }
+      
+      return await db
+        .select()
+        .from(platform_compatibility_issues)
+        .orderBy(desc(platform_compatibility_issues.priority), desc(platform_compatibility_issues.occurrences));
+    } catch (error) {
+      console.error("Error fetching platform compatibility issues:", error);
+      return [];
+    }
+  }
+
+  async getPlatformCompatibilityIssue(id: number): Promise<PlatformCompatibilityIssue | undefined> {
+    try {
+      const [issue] = await db
+        .select()
+        .from(platform_compatibility_issues)
+        .where(eq(platform_compatibility_issues.id, id));
+      
+      return issue;
+    } catch (error) {
+      console.error(`Error fetching platform compatibility issue with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async updatePlatformCompatibilityIssue(id: number, data: Partial<PlatformCompatibilityIssue>): Promise<PlatformCompatibilityIssue | undefined> {
+    try {
+      const [issue] = await db
+        .update(platform_compatibility_issues)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(platform_compatibility_issues.id, id))
+        .returning();
+      
+      return issue;
+    } catch (error) {
+      console.error(`Error updating platform compatibility issue with ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async incrementIssueOccurrence(id: number): Promise<void> {
+    try {
+      await db
+        .update(platform_compatibility_issues)
+        .set({
+          occurrences: sql`${platform_compatibility_issues.occurrences} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(platform_compatibility_issues.id, id));
+    } catch (error) {
+      console.error(`Error incrementing occurrence count for issue ID ${id}:`, error);
+    }
+  }
+
+  async getPlatformIssuesByPlatform(platform: string): Promise<PlatformCompatibilityIssue[]> {
+    try {
+      return await db
+        .select()
+        .from(platform_compatibility_issues)
+        .where(eq(platform_compatibility_issues.platform, platform))
+        .orderBy(desc(platform_compatibility_issues.priority), desc(platform_compatibility_issues.occurrences));
+    } catch (error) {
+      console.error(`Error fetching platform issues for platform ${platform}:`, error);
+      return [];
+    }
+  }
+
+  async analyzeCompatibilityIssues(): Promise<{ summary: any, issues: PlatformCompatibilityIssue[] }> {
+    try {
+      // Get all issues, sorted by priority and occurrences
+      const allIssues = await this.getPlatformCompatibilityIssues();
+      
+      // Default response if no issues are found
+      if (!allIssues || allIssues.length === 0) {
+        return {
+          summary: {
+            mostAffectedPlatforms: [],
+            mostAffectedComponents: [],
+            criticalIssues: 0,
+            topRecommendations: []
+          },
+          issues: []
+        };
+      }
+      
+      // Calculate platform frequency
+      const platformCounts: Record<string, number> = {};
+      allIssues.forEach(issue => {
+        platformCounts[issue.platform] = (platformCounts[issue.platform] || 0) + 1;
+      });
+      
+      // Get most affected platforms (top 3)
+      const mostAffectedPlatforms = Object.entries(platformCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(entry => entry[0]);
+      
+      // Calculate component frequency
+      const componentCounts: Record<string, number> = {};
+      allIssues.forEach(issue => {
+        const components = issue.affectedComponents as string[];
+        components.forEach(component => {
+          componentCounts[component] = (componentCounts[component] || 0) + 1;
+        });
+      });
+      
+      // Get most affected components (top 5)
+      const mostAffectedComponents = Object.entries(componentCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(entry => entry[0]);
+      
+      // Count critical issues (high priority)
+      const criticalIssues = allIssues.filter(issue => issue.priority === 'high').length;
+      
+      // Extract top recommendations (from high priority issues)
+      const topRecommendations = allIssues
+        .filter(issue => issue.priority === 'high')
+        .slice(0, 3)
+        .map(issue => issue.recommendedFix);
+      
+      return {
+        summary: {
+          mostAffectedPlatforms,
+          mostAffectedComponents,
+          criticalIssues,
+          topRecommendations
+        },
+        issues: allIssues
+      };
+    } catch (error) {
+      console.error("Error analyzing platform compatibility issues:", error);
+      return {
+        summary: {
+          mostAffectedPlatforms: [],
+          mostAffectedComponents: [],
+          criticalIssues: 0,
+          topRecommendations: []
+        },
+        issues: []
+      };
     }
   }
 }

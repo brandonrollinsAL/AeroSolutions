@@ -1080,6 +1080,35 @@ export const insertLogSchema = createInsertSchema(logs).omit({
 export type Log = typeof logs.$inferSelect;
 export type InsertLog = z.infer<typeof insertLogSchema>;
 
+// Platform compatibility issues table
+export const platform_compatibility_issues = pgTable("platform_compatibility_issues", {
+  id: serial("id").primaryKey(),
+  platform: text("platform").notNull(), // ios, android, web, specific browser
+  issueType: text("issue_type").notNull(), // rendering, performance, input handling
+  affectedComponents: json("affected_components").notNull(), // Array of component names
+  description: text("description").notNull(),
+  recommendedFix: text("recommended_fix").notNull(),
+  priority: text("priority").notNull(), // high, medium, low
+  occurrences: integer("occurrences").default(1).notNull(),
+  status: text("status").default("open").notNull(), // open, in-progress, resolved, closed
+  fixedInVersion: text("fixed_in_version"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  closedAt: timestamp("closed_at"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  logIds: json("log_ids"), // Array of log IDs related to this issue
+});
+
+export const insertPlatformCompatibilityIssueSchema = createInsertSchema(platform_compatibility_issues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  occurrences: true,
+});
+
+export type PlatformCompatibilityIssue = typeof platform_compatibility_issues.$inferSelect;
+export type InsertPlatformCompatibilityIssue = z.infer<typeof insertPlatformCompatibilityIssueSchema>;
+
 // Bug reports table for tracking detected issues
 export const bug_reports = pgTable("bug_reports", {
   id: serial("id").primaryKey(),
