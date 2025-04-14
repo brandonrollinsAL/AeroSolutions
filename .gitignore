@@ -1,51 +1,6 @@
-# Dependencies
 node_modules
-/.pnp
-.pnp.js
-
-# Testing
-/coverage
-
-# Production build
-/dist
-/build
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-logs
-*.log
-
-# Editor directories and files
+dist
 .DS_Store
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.zip
-*.tar.gz
-
-# Keep Firebase config files
-!firebase.json
-!.firebaserc
-!.firebase/
-
-# Specific to this project
 server/public
 vite.config.ts.*
+*.tar.gz
