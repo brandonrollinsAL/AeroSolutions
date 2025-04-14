@@ -168,7 +168,7 @@ export default function ElevateBot({
     setMessages(prev => [...prev, botMessage]);
     
     try {
-      // Send request to dedicated ElevateBot endpoint powered by xAI
+      // Send request to dedicated ElevateBot endpoint powered by Elevion AI
       const response = await apiRequest("POST", "/api/elevatebot/support", { 
         query: `User selected option: ${option}. ${getOptionText(option)}` 
       });
@@ -254,7 +254,7 @@ export default function ElevateBot({
     setMessages(prev => [...prev, botMessage]);
     
     try {
-      // Send request to dedicated ElevateBot endpoint powered by xAI
+      // Send request to dedicated ElevateBot endpoint powered by Elevion AI
       // Include business info in the request if available
       const hasBusinessInfo = Object.values(businessInfo).some(value => value.trim() !== '');
       
@@ -395,7 +395,7 @@ export default function ElevateBot({
                       </div>
                     ) : typingComplete ? (
                       <p className="text-gray-800 font-lato">
-                        Hi there! I'm your Elevion Tech Assistant, powered by xAI Grok. How can I help you with your web development needs today?
+                        Hi there! I'm your Elevion Tech Assistant, powered by Elevion AI. How can I help you with your web development needs today?
                       </p>
                     ) : null}
                   </div>

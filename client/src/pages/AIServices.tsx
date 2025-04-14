@@ -44,7 +44,7 @@ export default function AIServices() {
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1 space-y-6">
             <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-[#00D1D1] text-[#EDEFF2]">
-              <BrainCircuit className="mr-1 h-3 w-3" /> Powered by xAI Grok
+              <BrainCircuit className="mr-1 h-3 w-3" /> Powered by Elevion AI
             </div>
             <h1 className="text-4xl font-bold font-poppins text-[#3B5B9D]">
               Intelligent Web Solutions
@@ -69,7 +69,7 @@ export default function AIServices() {
                 <div className="w-16 h-16 bg-[#EDEFF2] rounded-full flex items-center justify-center mb-4">
                   <BrainCircuit className="w-8 h-8 text-[#3B5B9D]" />
                 </div>
-                <h3 className="text-xl font-semibold font-poppins mb-2">xAI Integration</h3>
+                <h3 className="text-xl font-semibold font-poppins mb-2">Elevion AI Integration</h3>
                 <p className="text-gray-600 font-lato mb-4">
                   Elevion leverages cutting-edge AI technology to deliver unparalleled web solutions for your business.
                 </p>
@@ -150,7 +150,7 @@ export default function AIServices() {
                     ElevateBot AI Assistant
                   </h2>
                   <p className="text-gray-700 font-lato">
-                    Meet ElevateBot, your intelligent business assistant powered by xAI Grok. Get instant answers to your web development questions, technical support, and business guidance.
+                    Meet ElevateBot, your intelligent business assistant powered by Elevion AI. Get instant answers to your web development questions, technical support, and business guidance.
                   </p>
                   <ul className="space-y-2">
                     {[
@@ -182,7 +182,7 @@ export default function AIServices() {
                       <h3 className="font-medium font-poppins">ElevateBot</h3>
                     </div>
                     <p className="text-gray-700 font-lato text-sm mb-2">
-                      Hi there! I'm your Elevion Tech Assistant, powered by xAI Grok. How can I help you with your web development needs today?
+                      Hi there! I'm your Elevion Tech Assistant, powered by Elevion AI. How can I help you with your web development needs today?
                     </p>
                   </div>
                   <div className="bg-[#00D1D1] rounded-lg p-4 shadow-sm text-white mb-4 ml-auto max-w-[80%]">
