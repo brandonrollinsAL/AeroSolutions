@@ -235,63 +235,79 @@ export default function Hero() {
                       onClick={handleCubeClick}
                     >
                       {/* Main E face - front */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-electric-cyan to-slate-blue shadow-[0_10px_30px_rgba(0,209,209,0.4)] flex items-center justify-center rounded-xl z-10"
+                      <div className="absolute inset-0 bg-gradient-to-br from-electric-cyan to-slate-blue shadow-[0_10px_30px_rgba(0,209,209,0.4)] flex flex-col items-center justify-center rounded-xl z-10"
                            style={{ transformStyle: "preserve-3d" }}>
-                        <div className="flex flex-col items-center justify-center gap-2 h-full w-full" 
+                        {/* E Logo and Brand Name Layout */}
+                        <div className="flex flex-col items-center justify-center gap-2 h-3/4 w-3/4" 
                              style={{ transform: "translateZ(2px)" }}>
-                          <div className="w-3/4 h-1/6 bg-white rounded-md shadow-md"></div>
-                          <div className="w-2/5 h-1/4 bg-white rounded-md shadow-md"></div>
-                          <div className="w-2/3 h-1/6 bg-white rounded-md shadow-md"></div>
-                          <div className="w-2/5 h-1/4 bg-white rounded-md shadow-md"></div>
-                          <div className="w-3/4 h-1/6 bg-white rounded-md shadow-md"></div>
+                          {/* E Logo */}
+                          <div className="flex flex-col items-center justify-center gap-1 mb-4">
+                            <div className="w-full h-2 bg-white rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white rounded-sm shadow-md"></div>
+                            <div className="w-3/4 h-2 bg-white rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white rounded-sm shadow-md"></div>
+                            <div className="w-full h-2 bg-white rounded-sm shadow-md"></div>
+                          </div>
+                          {/* ELEVION text */}
+                          <div className="text-white text-xl font-bold tracking-widest mt-2">ELEVION</div>
                         </div>
                       </div>
                       
                       {/* Right side */}
-                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/80 rounded-xl flex items-center justify-center"
+                      <div className="absolute inset-0 w-full h-full bg-electric-cyan/80 rounded-xl flex flex-col items-center justify-center"
                            style={{ 
                              transform: "rotateY(90deg) translateZ(24px)",
                              transformOrigin: "right"
                            }}>
-                        {/* Right side E Logo */}
-                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 rotate-12">
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        {/* E Logo and Brand Name Layout */}
+                        <div className="flex flex-col items-center justify-center gap-2 h-3/4 w-3/4 rotate-12">
+                          {/* E Logo */}
+                          <div className="flex flex-col items-center justify-center gap-1 mb-4">
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-3/4 h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                          </div>
+                          {/* ELEVION text */}
+                          <div className="text-white text-sm font-bold tracking-widest mt-2 rotate-12">ELEVION</div>
                         </div>
                       </div>
                       
                       {/* Left side */}
-                      <div className="absolute inset-0 w-full h-full bg-slate-blue rounded-xl flex items-center justify-center"
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue rounded-xl flex flex-col items-center justify-center"
                            style={{ 
                              transform: "rotateY(-90deg) translateZ(24px)",
                              transformOrigin: "left"
                            }}>
-                        {/* Left side E Logo */}
-                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 -rotate-12">
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        {/* E Logo and Brand Name Layout */}
+                        <div className="flex flex-col items-center justify-center gap-2 h-3/4 w-3/4 -rotate-12">
+                          {/* E Logo */}
+                          <div className="flex flex-col items-center justify-center gap-1 mb-4">
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-3/4 h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                          </div>
+                          {/* ELEVION text */}
+                          <div className="text-white text-sm font-bold tracking-widest mt-2 -rotate-12">ELEVION</div>
                         </div>
                       </div>
                       
                       {/* Top side */}
-                      <div className="absolute inset-0 w-full h-full bg-slate-blue/60 rounded-xl flex items-center justify-center"
+                      <div className="absolute inset-0 w-full h-full bg-slate-blue/60 rounded-xl flex flex-col items-center justify-center"
                            style={{ 
                              transform: "rotateX(90deg) translateZ(24px)",
                              transformOrigin: "top"
                            }}>
-                        {/* Top side E Logo */}
-                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 rotate-45">
-                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-3/4 h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
+                        {/* E Logo */}
+                        <div className="flex flex-col items-center justify-center gap-1 rotate-45">
+                          <div className="w-full h-2 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-3/4 h-2 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-1/2 h-6 bg-white/70 rounded-sm shadow-sm"></div>
+                          <div className="w-full h-2 bg-white/70 rounded-sm shadow-sm"></div>
                         </div>
                       </div>
                       
@@ -301,29 +317,28 @@ export default function Hero() {
                              transform: "rotateX(-90deg) translateZ(24px)",
                              transformOrigin: "bottom"
                            }}>
-                        {/* Bottom side E Logo */}
-                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 -rotate-45">
-                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-3/4 h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-1/2 h-1/4 bg-white/70 rounded-sm shadow-sm"></div>
-                          <div className="w-full h-1/6 bg-white/70 rounded-sm shadow-sm"></div>
-                        </div>
+                        {/* ELEVION text */}
+                        <div className="text-white text-xl font-bold tracking-widest">ELEVION</div>
                       </div>
                       
-                      {/* Back side - E logo */}
-                      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-blue to-electric-cyan/80 rounded-xl flex items-center justify-center"
+                      {/* Back side */}
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-blue to-electric-cyan/80 rounded-xl flex flex-col items-center justify-center"
                            style={{ 
                              transform: "rotateY(180deg) translateZ(24px)",
                              transformOrigin: "center"
                            }}>
-                        {/* Back side E Logo */}
-                        <div className="flex flex-col items-center justify-center gap-1 h-3/4 w-3/4 mirror">
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-3/4 h-1/6 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-1/2 h-1/4 bg-white/90 rounded-sm shadow-md"></div>
-                          <div className="w-full h-1/6 bg-white/90 rounded-sm shadow-md"></div>
+                        {/* E Logo and Brand Name Layout */}
+                        <div className="flex flex-col items-center justify-center gap-2 h-3/4 w-3/4">
+                          {/* E Logo */}
+                          <div className="flex flex-col items-center justify-center gap-1 mb-4">
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-3/4 h-2 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-1/2 h-6 bg-white/90 rounded-sm shadow-md"></div>
+                            <div className="w-full h-2 bg-white/90 rounded-sm shadow-md"></div>
+                          </div>
+                          {/* ELEVION text */}
+                          <div className="text-white text-xl font-bold tracking-widest mt-2">ELEVION</div>
                         </div>
                       </div>
                       
