@@ -1,6 +1,8 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal, json, foreignKey, varchar, primaryKey, date, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+// Define the Json type locally instead of importing from drizzle-orm
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 // User schema with Stripe integration and enhanced security
 export const users = pgTable("users", {
@@ -1149,6 +1151,53 @@ export const insertPerformanceRecommendationSchema = createInsertSchema(performa
 
 export type PerformanceRecommendation = typeof performance_recommendations.$inferSelect;
 export type InsertPerformanceRecommendation = z.infer<typeof insertPerformanceRecommendationSchema>;
+
+// Support tickets table
+export const support_tickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  query: text("query").notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  sessionId: text("session_id"),
+  status: text("status").default("open").notNull(), // open, escalated, resolved, closed
+  priority: text("priority").default("medium").notNull(), // low, medium, high, critical
+  category: text("category"), // billing, technical, account, feature, other
+  metadata: json("metadata"), // For additional context
+  firstResponseTime: integer("first_response_time"), // Time in seconds to first response
+  resolutionTime: integer("resolution_time"), // Time in seconds to resolution
+  internalNotes: text("internal_notes"), // For internal use
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(support_tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type SupportTicket = typeof support_tickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+
+// Support responses table
+export const support_responses = pgTable("support_responses", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => support_tickets.id, { onDelete: "cascade" }),
+  response: text("response").notNull(),
+  isAutomated: boolean("is_automated").default(false).notNull(),
+  responderId: integer("responder_id").references(() => users.id, { onDelete: "set null" }),
+  metadata: json("metadata"), // For AI analysis and additional context
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSupportResponseSchema = createInsertSchema(support_responses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type SupportResponse = typeof support_responses.$inferSelect;
+export type InsertSupportResponse = z.infer<typeof insertSupportResponseSchema>;
 
 // Platform compatibility issues table
 export const platform_compatibility_issues = pgTable("platform_compatibility_issues", {

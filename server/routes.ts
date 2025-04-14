@@ -34,6 +34,7 @@ import landingPagesRouter from './routes/landing-pages';
 import checkoutOptimizationRouter from './routes/checkout-optimization';
 import { handleElevateBotQuery, handleElevateBotQuerySimple } from './routes/elevateBot';
 import elevateBotAnalyticsRouter from './routes/elevatebot';
+import elevateBotRouter from './routes/elevatebot/index';
 import emailCampaignsRouter from './routes/email-campaigns';
 import contentProtectionRouter from './routes/content-protection';
 import complianceRouter from './routes/compliance';
