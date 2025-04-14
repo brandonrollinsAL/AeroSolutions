@@ -47,6 +47,7 @@ import priceOptimizationRouter from './routes/priceOptimization';
 import bugMonitoringRouter from './routes/bugMonitoring';
 import brandConsistencyRouter from './routes/brandConsistency';
 import platformCompatibilityRouter from './routes/platformCompatibility';
+import performanceRouter from './routes/performance';
 import { loggerMiddleware, registerGlobalErrorHandlers } from './middlewares/logger';
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
@@ -183,6 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/bug-monitoring', bugMonitoringRouter);
   app.use('/api/brand-consistency', brandConsistencyRouter);
   app.use('/api/platform-compatibility', platformCompatibilityRouter);
+  app.use('/api/performance', performanceRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {

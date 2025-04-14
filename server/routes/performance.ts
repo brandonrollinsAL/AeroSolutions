@@ -1,344 +1,317 @@
-import { Router, Request, Response } from 'express';
-import { NextFunction } from 'express';
-import { db } from '../db';
-import { performance_metrics, performance_logs } from '@shared/schema';
-import { eq, desc, and, gte, lte } from 'drizzle-orm';
-import { grokApi } from '../utils/grok';
-import { addDays, subDays, format } from 'date-fns';
+import express, { Request, Response, NextFunction, Router } from 'express';
+import { storage } from '../storage';
 import { 
+  getPerformanceData, 
   generateOptimizationRecommendations, 
-  analyzePerformanceAspect,
+  analyzePerformanceAspect, 
+  calculatePerformanceMetrics,
   generatePerformanceReport,
-  clearPerformanceCache
+  clearPerformanceCache,
+  type OptimizationRecommendation 
 } from '../utils/performanceAnalytics';
+import { body, query, param, validationResult } from 'express-validator';
+import { db } from '../db';
+import { performance_logs, performance_metrics, performance_recommendations } from '@shared/schema';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
 
 const router = Router();
 
-// Middleware to check if user is authenticated and has admin access
+// Middleware to check if user is admin
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
   }
-  
-  const user = req.user;
-  if (!user || !user.roles || !user.roles.includes('admin')) {
-    return res.status(403).json({ error: 'Forbidden: Admin access required' });
-  }
-  
   next();
 };
 
-// Log performance metrics
+// Log performance metrics (public endpoint)
 router.post('/log', async (req: Request, res: Response) => {
   try {
-    const { 
-      pageUrl, 
-      loadTime, 
+    const {
+      metricType,
+      timestamp = new Date(),
+      pageUrl,
+      loadTime,
       apiEndpoint,
-      responseTime, 
-      resourceUsage,
+      responseTime,
+      memoryUsage,
+      cpuUsage,
       errorType,
-      userId,
+      errorMessage,
       userAgent,
-      metricType
+      deviceInfo
     } = req.body;
-    
-    const sessionId = req.sessionID || 'anonymous';
-    
+
+    // Validate required fields
+    if (!metricType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Metric type is required'
+      });
+    }
+
+    // Associate with user session if available
+    const sessionId = req.sessionID;
+
+    // Insert log
     await db.insert(performance_logs).values({
-      timestamp: new Date(),
-      pageUrl: pageUrl || null,
-      loadTime: loadTime || null,
-      apiEndpoint: apiEndpoint || null,
-      responseTime: responseTime || null,
-      memoryUsage: resourceUsage?.memory || null,
-      cpuUsage: resourceUsage?.cpu || null,
-      errorType: errorType || null,
-      userId: userId || null,
+      userId: req.isAuthenticated() ? req.user.id : null,
       sessionId,
-      userAgent: userAgent || req.headers['user-agent'] || null,
-      metricType: metricType || 'general'
+      metricType,
+      timestamp: new Date(timestamp),
+      pageUrl,
+      loadTime,
+      apiEndpoint,
+      responseTime,
+      memoryUsage,
+      cpuUsage,
+      errorType,
+      errorMessage,
+      userAgent,
+      deviceInfo
     });
-    
-    res.status(200).json({ success: true });
+
+    res.status(201).json({
+      success: true,
+      message: 'Performance log recorded'
+    });
   } catch (error) {
-    console.error('Error logging performance metrics:', error);
-    res.status(500).json({ error: 'Failed to log performance metrics' });
+    console.error('Error logging performance data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to record performance log',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
-// Get performance recommendations
+// Get AI-powered optimization recommendations
 router.get('/recommendations', isAdmin, async (req: Request, res: Response) => {
   try {
-    // Get the date range (default to last 7 days)
+    // Parse date range (defaults to last 7 days)
     const endDate = new Date();
-    const startDate = subDays(endDate, 7);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    if (req.query.startDate) {
+      startDate.setTime(Date.parse(req.query.startDate as string));
+    }
     
-    // Fetch performance data
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
+    }
+
+    // Get performance data
     const performanceData = await getPerformanceData(startDate, endDate);
     
     // Generate recommendations
     const recommendations = await generateOptimizationRecommendations(performanceData);
     
+    // Store recommendations in database
+    const storedRecommendations = [];
+    for (const rec of recommendations) {
+      const [inserted] = await db.insert(performance_recommendations).values({
+        type: rec.type,
+        priority: rec.priority,
+        issue: rec.issue,
+        recommendation: rec.recommendation,
+        expectedImpact: rec.expectedImpact,
+        implementationComplexity: rec.implementationComplexity,
+        code: rec.code || null,
+        implementedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      
+      storedRecommendations.push(inserted);
+    }
+    
     res.status(200).json({
-      recommendations,
-      performanceMetrics: {
-        pageLoadTimes: calculateAverages(performanceData.pageLoadTimes),
-        apiResponseTimes: calculateAverages(performanceData.apiResponseTimes),
-        resourceUsage: {
-          average: {
-            memory: calculateAverage(performanceData.resourceUsage.memory),
-            cpu: calculateAverage(performanceData.resourceUsage.cpu)
-          }
-        },
-        errors: performanceData.errors,
-        slowestEndpoints: performanceData.slowestEndpoints.slice(0, 5),
-        slowestPages: performanceData.slowestPages.slice(0, 5)
+      success: true,
+      recommendations: storedRecommendations,
+      dateRange: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       }
     });
   } catch (error) {
-    console.error('Error generating performance recommendations:', error);
-    res.status(500).json({ error: 'Failed to generate performance recommendations' });
+    console.error('Error generating optimization recommendations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate optimization recommendations',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
-// Get detailed analysis for a specific performance aspect
+// Get AI analysis for a specific performance aspect
 router.get('/analyze/:aspect', isAdmin, async (req: Request, res: Response) => {
   try {
     const { aspect } = req.params;
-    const endDate = new Date();
-    const startDate = subDays(endDate, parseInt(req.query.days as string) || 7);
     
-    const performanceData = await getPerformanceData(startDate, endDate);
-    let aspectData: any;
-    
-    switch (aspect) {
-      case 'caching':
-        aspectData = {
-          apiResponseTimes: performanceData.apiResponseTimes,
-          endpoints: performanceData.slowestEndpoints
-        };
-        break;
-      case 'rendering':
-        aspectData = {
-          pageLoadTimes: performanceData.pageLoadTimes,
-          slowestPages: performanceData.slowestPages
-        };
-        break;
-      case 'memory':
-        aspectData = {
-          memoryUsage: performanceData.resourceUsage.memory,
-          timestamps: performanceData.resourceUsage.timestamps
-        };
-        break;
-      case 'api':
-        aspectData = {
-          responseTimeByEndpoint: performanceData.apiResponseTimes,
-          slowestEndpoints: performanceData.slowestEndpoints
-        };
-        break;
-      default:
-        aspectData = { message: 'Invalid aspect specified' };
+    // Validate aspect
+    const validAspects = ['caching', 'memory', 'rendering', 'api', 'general'];
+    if (!validAspects.includes(aspect)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid performance aspect',
+        validAspects
+      });
     }
     
-    const analysis = await analyzePerformanceAspect(aspect, aspectData);
+    // Parse date range (defaults to last 7 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    if (req.query.startDate) {
+      startDate.setTime(Date.parse(req.query.startDate as string));
+    }
+    
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
+    }
+    
+    // Get performance data
+    const performanceData = await getPerformanceData(startDate, endDate);
+    
+    // Analyze the specific aspect
+    const analysis = await analyzePerformanceAspect(aspect, performanceData);
     
     res.status(200).json({
+      success: true,
       aspect,
       analysis,
-      data: aspectData
+      dateRange: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      }
     });
   } catch (error) {
-    console.error(`Error analyzing ${req.params.aspect} performance:`, error);
-    res.status(500).json({ error: `Failed to analyze ${req.params.aspect} performance` });
+    console.error(`Error analyzing performance aspect:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze performance aspect',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
-// Generate a performance report
+// Get comprehensive performance report
 router.get('/report', isAdmin, async (req: Request, res: Response) => {
   try {
+    // Parse date range (defaults to last 30 days)
     const endDate = new Date();
-    const startDate = subDays(endDate, parseInt(req.query.days as string) || 30);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+
+    if (req.query.startDate) {
+      startDate.setTime(Date.parse(req.query.startDate as string));
+    }
     
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
+    }
+    
+    // Get performance data
     const performanceData = await getPerformanceData(startDate, endDate);
+    
+    // Generate report
     const report = await generatePerformanceReport(startDate, endDate, performanceData);
     
     res.status(200).json({
+      success: true,
       report,
-      period: {
-        start: format(startDate, 'yyyy-MM-dd'),
-        end: format(endDate, 'yyyy-MM-dd')
+      dateRange: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       }
     });
   } catch (error) {
     console.error('Error generating performance report:', error);
-    res.status(500).json({ error: 'Failed to generate performance report' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate performance report',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
-// Clear performance analytics cache
+// Clear cache (admin only)
 router.post('/clear-cache', isAdmin, (req: Request, res: Response) => {
   try {
     clearPerformanceCache();
-    res.status(200).json({ success: true, message: 'Performance analytics cache cleared' });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Performance cache cleared'
+    });
   } catch (error) {
     console.error('Error clearing performance cache:', error);
-    res.status(500).json({ error: 'Failed to clear performance cache' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear performance cache',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
-// Get real-time performance metrics
+// Get aggregate performance metrics
 router.get('/metrics', isAdmin, async (req: Request, res: Response) => {
   try {
-    const metrics = await db.select().from(performance_metrics).orderBy(desc(performance_metrics.timestamp)).limit(1);
-    
-    if (metrics.length === 0) {
-      return res.status(404).json({ error: 'No performance metrics found' });
+    // Parse date range (defaults to last 7 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    if (req.query.startDate) {
+      startDate.setTime(Date.parse(req.query.startDate as string));
     }
     
-    res.status(200).json(metrics[0]);
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
+    }
+    
+    // Get performance data
+    const performanceData = await getPerformanceData(startDate, endDate);
+    
+    // Calculate metrics
+    const metrics = calculatePerformanceMetrics(performanceData);
+    
+    // Store the metrics in database for historical tracking
+    await db.insert(performance_metrics).values({
+      timestamp: new Date(),
+      avgPageLoadTime: metrics.avgPageLoadTime,
+      avgApiResponseTime: metrics.avgApiResponseTime,
+      totalErrorCount: metrics.totalErrorCount,
+      avgMemoryUsage: metrics.avgMemoryUsage,
+      avgCpuUsage: metrics.avgCpuUsage,
+      memoryTrend: JSON.stringify(metrics.memoryTrend),
+      cpuTrend: JSON.stringify(metrics.cpuTrend),
+      slowestEndpoints: JSON.stringify(metrics.slowestEndpoints),
+      slowestPages: JSON.stringify(metrics.slowestPages),
+      commonErrors: JSON.stringify(metrics.commonErrors)
+    });
+    
+    res.status(200).json({
+      success: true,
+      metrics,
+      dateRange: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      }
+    });
   } catch (error) {
-    console.error('Error fetching performance metrics:', error);
-    res.status(500).json({ error: 'Failed to fetch performance metrics' });
+    console.error('Error retrieving performance metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve performance metrics',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
-
-// Helper function to get performance data
-async function getPerformanceData(startDate: Date, endDate: Date) {
-  // Fetch page load times
-  const pageLoadLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        eq(performance_logs.metricType, 'page_load'),
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate)
-      )
-    );
-  
-  // Fetch API response times
-  const apiResponseLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        eq(performance_logs.metricType, 'api_response'),
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate)
-      )
-    );
-  
-  // Fetch resource usage
-  const resourceLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        eq(performance_logs.metricType, 'resource'),
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate)
-      )
-    )
-    .orderBy(performance_logs.timestamp);
-  
-  // Fetch error logs
-  const errorLogs = await db.select()
-    .from(performance_logs)
-    .where(
-      and(
-        eq(performance_logs.metricType, 'error'),
-        gte(performance_logs.timestamp, startDate),
-        lte(performance_logs.timestamp, endDate)
-      )
-    );
-  
-  // Process page load times
-  const pageLoadTimes: Record<string, number[]> = {};
-  pageLoadLogs.forEach(log => {
-    if (log.pageUrl && log.loadTime) {
-      if (!pageLoadTimes[log.pageUrl]) {
-        pageLoadTimes[log.pageUrl] = [];
-      }
-      pageLoadTimes[log.pageUrl].push(log.loadTime);
-    }
-  });
-  
-  // Process API response times
-  const apiResponseTimes: Record<string, number[]> = {};
-  apiResponseLogs.forEach(log => {
-    if (log.apiEndpoint && log.responseTime) {
-      if (!apiResponseTimes[log.apiEndpoint]) {
-        apiResponseTimes[log.apiEndpoint] = [];
-      }
-      apiResponseTimes[log.apiEndpoint].push(log.responseTime);
-    }
-  });
-  
-  // Process resource usage
-  const memoryUsage: number[] = [];
-  const cpuUsage: number[] = [];
-  const timestamps: string[] = [];
-  
-  resourceLogs.forEach(log => {
-    if (log.memoryUsage) memoryUsage.push(log.memoryUsage);
-    if (log.cpuUsage) cpuUsage.push(log.cpuUsage);
-    if (log.timestamp) timestamps.push(format(log.timestamp, 'yyyy-MM-dd HH:mm:ss'));
-  });
-  
-  // Process errors
-  const errorTypes: Record<string, number> = {};
-  errorLogs.forEach(log => {
-    if (log.errorType) {
-      errorTypes[log.errorType] = (errorTypes[log.errorType] || 0) + 1;
-    }
-  });
-  
-  // Calculate slowest endpoints
-  const slowestEndpoints = Object.entries(apiResponseTimes)
-    .map(([path, times]) => ({
-      path,
-      avgTime: times.reduce((sum, time) => sum + time, 0) / times.length
-    }))
-    .sort((a, b) => b.avgTime - a.avgTime);
-  
-  // Calculate slowest pages
-  const slowestPages = Object.entries(pageLoadTimes)
-    .map(([path, times]) => ({
-      path,
-      avgTime: times.reduce((sum, time) => sum + time, 0) / times.length
-    }))
-    .sort((a, b) => b.avgTime - a.avgTime);
-  
-  return {
-    pageLoadTimes,
-    apiResponseTimes,
-    resourceUsage: {
-      memory: memoryUsage,
-      cpu: cpuUsage,
-      timestamps
-    },
-    errors: {
-      count: errorLogs.length,
-      types: errorTypes
-    },
-    slowestEndpoints,
-    slowestPages
-  };
-}
-
-// Helper function to calculate averages from object of arrays
-function calculateAverages(data: Record<string, number[]>): Record<string, number> {
-  const result: Record<string, number> = {};
-  
-  Object.entries(data).forEach(([key, values]) => {
-    result[key] = calculateAverage(values);
-  });
-  
-  return result;
-}
-
-// Helper function to calculate average
-function calculateAverage(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
 
 export default router;
