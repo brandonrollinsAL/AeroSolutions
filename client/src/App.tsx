@@ -727,20 +727,7 @@ export default function App() {
           )}
         </Route>
         {/* Explicit route for Particle Background with specific component rendering */}
-        {/* Router Debug Page - for diagnosing routing issues */}
-        <Route path="/router-debug">
-          {() => (
-            <>
-              <Helmet>
-                <title>Router Diagnostics | Elevion</title>
-                <meta name="robots" content="noindex, nofollow" />
-                <html lang={i18n.language.split('-')[0]} />
-                <meta httpEquiv="Content-Language" content={i18n.language} />
-              </Helmet>
-              <RouterDebugPage />
-            </>
-          )}
-        </Route>
+        {/* Removed router debug page to fix compilation error */}
         
         {/* Particle Background Demo page */}
         <Route path="/particle-background">

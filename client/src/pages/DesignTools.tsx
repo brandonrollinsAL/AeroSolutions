@@ -8,9 +8,12 @@ import WebsiteImageSuggestions from '@/components/WebsiteImageSuggestions';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft, X, Sparkles } from 'lucide-react';
 import ParticleBackground from '@/components/ParticleBackground';
 import ParticleConfigPanel from '@/components/ParticleConfigPanel';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * DesignTools Page
@@ -34,6 +37,10 @@ export default function DesignTools() {
     pulseEffect: true,
   });
   
+  // State for showing full-screen particle editor
+  const [showFullEditor, setShowFullEditor] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  
   // Load saved config from localStorage if available
   useEffect(() => {
     const savedConfig = localStorage.getItem('particleConfig');
@@ -46,6 +53,37 @@ export default function DesignTools() {
     }
   }, []);
   
+  // Save config to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('particleConfig', JSON.stringify(particleConfig));
+  }, [particleConfig]);
+  
+  // Generate JSX code based on current config
+  const generateJSX = () => {
+    return `<ParticleBackground
+  particleCount={${particleConfig.particleCount}}
+  colorPalette={[${particleConfig.colorPalette.map(c => `'${c}'`).join(', ')}]}
+  minSize={${particleConfig.minSize}}
+  maxSize={${particleConfig.maxSize}}
+  minSpeed={${particleConfig.minSpeed}}
+  maxSpeed={${particleConfig.maxSpeed}}
+  interactive={${particleConfig.interactive}}
+  connectionLines={${particleConfig.connectionLines}}
+  connectionDistance={${particleConfig.connectionDistance}}
+  blurEffect={${particleConfig.blurEffect}}
+  pulseEffect={${particleConfig.pulseEffect}}
+/>`;
+  };
+
+  // Copy code to clipboard
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generateJSX());
+    toast({
+      title: "Code copied to clipboard",
+      description: "You can now paste it into your project",
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8 relative">
       <Helmet>
@@ -55,6 +93,85 @@ export default function DesignTools() {
           content="Access Elevion's suite of AI-powered design tools for website color schemes, layouts, branding suggestions, and more." 
         />
       </Helmet>
+      
+      {/* Full Screen Particle Editor Overlay */}
+      {showFullEditor && (
+        <div className="fixed inset-0 bg-slate-900 z-50 overflow-auto">
+          <div className="absolute inset-0">
+            <ParticleBackground {...particleConfig} />
+          </div>
+          
+          <div className="relative z-10 p-4 flex flex-col min-h-screen">
+            <div className="flex justify-between items-start mb-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-slate-900/70 text-white hover:bg-slate-800/70"
+                onClick={() => setShowFullEditor(false)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Design Tools
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-slate-900/70 text-white hover:bg-slate-800/70"
+                  onClick={() => setShowCode(!showCode)}
+                >
+                  {showCode ? <X className="h-4 w-4 mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  {showCode ? "Hide Code" : "Show Code"}
+                </Button>
+                
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-electric-cyan hover:bg-electric-cyan/80 text-slate-900"
+                  onClick={copyToClipboard}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Copy Code
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex-1 flex flex-col md:flex-row gap-4">
+              {/* Control Panel */}
+              <div className="bg-slate-900/70 backdrop-blur-sm p-4 rounded-lg border border-slate-700 shadow-lg md:w-80 md:self-center">
+                <h2 className="text-white text-xl font-bold mb-4">Particle Settings</h2>
+                <ParticleConfigPanel config={particleConfig} onChange={setParticleConfig} />
+              </div>
+              
+              {/* Code Preview */}
+              {showCode && (
+                <div className="bg-slate-900/70 backdrop-blur-sm p-4 rounded-lg border border-slate-700 shadow-lg flex-1">
+                  <h2 className="text-white text-xl font-bold mb-4">Code Preview</h2>
+                  <div className="bg-slate-800 rounded-md overflow-hidden">
+                    <SyntaxHighlighter language="jsx" style={tomorrow} showLineNumbers>
+                      {generateJSX()}
+                    </SyntaxHighlighter>
+                  </div>
+                  <div className="mt-4 text-slate-300 text-sm">
+                    <p>Copy this component code to include the particle background in your React project.</p>
+                    <p className="mt-2">Make sure to install the required dependencies and import the ParticleBackground component.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-auto pt-4">
+              <div className="bg-slate-900/70 backdrop-blur-sm p-4 rounded-lg border border-slate-700 text-white">
+                <h3 className="font-medium mb-2">Interactive Particle Background</h3>
+                <p className="text-sm text-slate-300">
+                  This dynamic background can be customized for your website. Adjust the settings to match your brand's colors and style,
+                  then copy the code to implement it in your project.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -66,12 +183,10 @@ export default function DesignTools() {
         <Button 
           variant="outline" 
           className="flex items-center gap-2"
-          asChild
+          onClick={() => setShowFullEditor(true)}
         >
-          <Link href="/particle-background">
-            <ArrowRight className="h-4 w-4" />
-            Try Particle Background Tool
-          </Link>
+          <ArrowRight className="h-4 w-4" />
+          Try Particle Background Tool
         </Button>
       </div>
 
@@ -165,12 +280,10 @@ export default function DesignTools() {
             <Button 
               variant="default" 
               size="sm"
-              asChild
+              onClick={() => setShowFullEditor(true)}
             >
-              <Link href="/particle-background">
-                Open Full Editor
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              Open Full Editor
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
