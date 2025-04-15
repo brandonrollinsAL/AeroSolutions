@@ -35,7 +35,7 @@ export default function Ownership() {
   ];
 
   return (
-    <section className="py-20 bg-luxury text-white">
+    <section className="py-20 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           className="max-w-3xl mx-auto text-center mb-16"
@@ -45,9 +45,9 @@ export default function Ownership() {
           variants={fadeIn}
           custom={0}
         >
-          <h2 className="text-3xl font-bold font-montserrat mb-6">Full Ownership Guarantee</h2>
-          <p className="text-xl text-gray-200">
-            We believe your software should truly be yours. When you work with Aero Solutions, 
+          <h2 className="text-3xl font-bold font-montserrat mb-6 text-[#FF7043]">Full Ownership Guarantee</h2>
+          <p className="text-xl text-gray-100">
+            We believe your software should truly be yours. When you work with Elevion, 
             you own 100% of the code and all aspects of your platform upon project completion.
           </p>
         </motion.div>
@@ -56,45 +56,45 @@ export default function Ownership() {
           {benefits.map((benefit, index) => (
             <motion.div 
               key={index}
-              className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10"
+              className="bg-slate-800/80 backdrop-blur-sm rounded-xl p-6 border border-[#00D1D1]/20"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.1 }}
               variants={fadeIn}
               custom={index + 1}
             >
-              <div className="text-highlight text-3xl mb-4">{benefit.icon}</div>
-              <h3 className="text-xl font-bold font-montserrat mb-3">{benefit.title}</h3>
-              <p className="text-gray-300">{benefit.description}</p>
+              <div className="text-[#00D1D1] text-3xl mb-4">{benefit.icon}</div>
+              <h3 className="text-xl font-bold font-montserrat mb-3 text-white">{benefit.title}</h3>
+              <p className="text-gray-200">{benefit.description}</p>
             </motion.div>
           ))}
         </div>
         
         <motion.div 
-          className="max-w-3xl mx-auto mt-16 bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/10"
+          className="max-w-3xl mx-auto mt-16 bg-slate-800/80 backdrop-blur-sm rounded-xl p-8 border border-[#00D1D1]/20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
           variants={fadeIn}
           custom={5}
         >
-          <h3 className="text-xl font-bold font-montserrat mb-4">Our Ownership Promise</h3>
+          <h3 className="text-xl font-bold font-montserrat mb-4 text-[#FF7043]">Our Ownership Promise</h3>
           <ul className="space-y-3">
             <li className="flex items-start">
-              <FaCheck className="text-highlight mt-1 mr-3 flex-shrink-0" />
-              <p>No recurring licensing fees or hidden charges for using your own software</p>
+              <FaCheck className="text-[#00D1D1] mt-1 mr-3 flex-shrink-0" />
+              <p className="text-gray-200">No recurring licensing fees or hidden charges for using your own software</p>
             </li>
             <li className="flex items-start">
-              <FaCheck className="text-highlight mt-1 mr-3 flex-shrink-0" />
-              <p>Freedom to modify, enhance, or resell your platform with no restrictions</p>
+              <FaCheck className="text-[#00D1D1] mt-1 mr-3 flex-shrink-0" />
+              <p className="text-gray-200">Freedom to modify, enhance, or resell your platform with no restrictions</p>
             </li>
             <li className="flex items-start">
-              <FaCheck className="text-highlight mt-1 mr-3 flex-shrink-0" />
-              <p>Complete transfer of all repositories, assets, and documentation</p>
+              <FaCheck className="text-[#00D1D1] mt-1 mr-3 flex-shrink-0" />
+              <p className="text-gray-200">Complete transfer of all repositories, assets, and documentation</p>
             </li>
             <li className="flex items-start">
-              <FaCheck className="text-highlight mt-1 mr-3 flex-shrink-0" />
-              <p>Optional ongoing support available, but never mandatory</p>
+              <FaCheck className="text-[#00D1D1] mt-1 mr-3 flex-shrink-0" />
+              <p className="text-gray-200">Optional ongoing support available, but never mandatory</p>
             </li>
           </ul>
         </motion.div>
