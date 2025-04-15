@@ -2,7 +2,7 @@ import express, { type Express, type Response, type NextFunction } from "express
 import { Request as ExpressRequest } from "express-serve-static-core";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema } from "@shared/schema";
+import { insertContactSchema, insertClientInputSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateCopilotResponse } from "./utils/grokai";
 import NodeCache from 'node-cache';
@@ -545,6 +545,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Failed to process contact submission",
+        error: errorMessage
+      });
+    }
+  });
+
+  // Client input submission endpoint
+  app.post("/api/client-input", [
+    // Express-validator validations
+    body('businessName')
+      .notEmpty().withMessage('Business name is required')
+      .isLength({ min: 2, max: 100 }).withMessage('Business name must be between 2 and 100 characters')
+      .trim(),
+    body('industry')
+      .notEmpty().withMessage('Industry is required')
+      .isLength({ min: 2, max: 50 }).withMessage('Industry must be between 2 and 50 characters')
+      .trim(),
+    body('designPreferences')
+      .notEmpty().withMessage('Design preferences are required')
+      .isObject().withMessage('Design preferences must be an object'),
+    body('designPreferences.colorScheme')
+      .notEmpty().withMessage('Color scheme preference is required')
+      .isString().withMessage('Color scheme preference must be a string'),
+    body('designPreferences.style')
+      .notEmpty().withMessage('Design style preference is required')
+      .isString().withMessage('Design style preference must be a string'),
+    body('projectDescription')
+      .notEmpty().withMessage('Project description is required')
+      .isLength({ min: 10, max: 2000 }).withMessage('Project description must be between 10 and 2000 characters')
+      .trim(),
+    body('contactEmail')
+      .notEmpty().withMessage('Contact email is required')
+      .isEmail().withMessage('Must be a valid email address')
+      .normalizeEmail(),
+    body('budget')
+      .optional()
+      .isString().withMessage('Budget must be a string'),
+    body('timeline')
+      .optional()
+      .isString().withMessage('Timeline must be a string')
+  ], async (req: Request, res: Response) => {
+    try {
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid client input data",
+          errors: errors.array()
+        });
+      }
+      
+      // Parse and validate the client input data using Zod schema
+      try {
+        const clientInputData = insertClientInputSchema.parse(req.body);
+        
+        // Associate with user if authenticated
+        const userId = req.isAuthenticated() ? req.user.id : null;
+        
+        // Store client input submission
+        const clientInput = await storage.createClientInput({
+          ...clientInputData,
+          userId,
+          status: 'new',
+          assignedTo: null
+        });
+        
+        // Log successful submission
+        console.log(`Client input submission received for ${clientInputData.businessName} (${clientInputData.contactEmail})`);
+        
+        // In a production app, notify administrators via email, Slack, etc.
+        
+        // Send successful response with submission data
+        res.status(201).json({
+          success: true,
+          message: "Project details received. We'll be in touch soon!",
+          data: {
+            id: clientInput.id,
+            businessName: clientInput.businessName,
+            industry: clientInput.industry,
+            status: clientInput.status,
+            createdAt: clientInput.createdAt
+          },
+          timestamp: new Date().toISOString()
+        });
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid client input data",
+            errors: validationError.errors.map(err => ({
+              path: err.path.join('.'),
+              message: err.message
+            }))
+          });
+        }
+        throw validationError; // Re-throw if it's not a ZodError
+      }
+    } catch (error) {
+      console.error("Client input submission error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to process client input submission",
         error: errorMessage
       });
     }

@@ -1,6 +1,7 @@
 import { 
   users, type User, type InsertUser,
   contactSubmissions, type Contact, type InsertContact,
+  clientInputs, type ClientInput, type InsertClientInput,
   clientPreviews, type ClientPreview, type InsertClientPreview,
   subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan,
   userSubscriptions, type UserSubscription, type InsertUserSubscription,
@@ -47,6 +48,12 @@ export interface IStorage {
   // Contact methods
   createContactSubmission(contact: InsertContact): Promise<Contact>;
   getContactSubmissions(): Promise<Contact[]>;
+  
+  // Client input methods
+  createClientInput(clientInput: InsertClientInput): Promise<ClientInput>;
+  getClientInputs(status?: string): Promise<ClientInput[]>;
+  getClientInput(id: number): Promise<ClientInput | undefined>;
+  updateClientInputStatus(id: number, status: string): Promise<ClientInput>;
   
   // Client Preview methods
   createClientPreview(preview: InsertClientPreview): Promise<ClientPreview>;
@@ -292,6 +299,35 @@ export class DatabaseStorage implements IStorage {
   
   async getContactSubmissions(): Promise<Contact[]> {
     return await db.select().from(contactSubmissions);
+  }
+  
+  // Client input methods
+  async createClientInput(clientInput: InsertClientInput): Promise<ClientInput> {
+    const [newClientInput] = await db.insert(clientInputs).values(clientInput).returning();
+    return newClientInput;
+  }
+  
+  async getClientInputs(status?: string): Promise<ClientInput[]> {
+    if (status) {
+      return await db.select().from(clientInputs).where(eq(clientInputs.status, status));
+    }
+    return await db.select().from(clientInputs);
+  }
+  
+  async getClientInput(id: number): Promise<ClientInput | undefined> {
+    const [clientInput] = await db.select().from(clientInputs).where(eq(clientInputs.id, id));
+    return clientInput;
+  }
+  
+  async updateClientInputStatus(id: number, status: string): Promise<ClientInput> {
+    const [updatedClientInput] = await db.update(clientInputs)
+      .set({ 
+        status, 
+        updatedAt: new Date() 
+      })
+      .where(eq(clientInputs.id, id))
+      .returning();
+    return updatedClientInput;
   }
   
   // Client Preview methods
