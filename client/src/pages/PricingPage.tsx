@@ -221,7 +221,7 @@ export default function PricingPage() {
                 {t('pricing_faq_q3', 'Can I upgrade my plan later?')}
               </h4>
               <p className="text-slate-600">
-                {t('pricing_faq_a3', "Absolutely! You can upgrade your plan at any time. We'll prorate the difference and apply it to your new plan.")}
+                {t('pricing_faq_a3', 'Absolutely! You can upgrade your plan at any time. We will prorate the difference and apply it to your new plan.')}
               </p>
             </div>
             
