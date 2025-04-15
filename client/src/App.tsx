@@ -741,6 +741,22 @@ export default function App() {
             </>
           )}
         </Route>
+        
+        {/* Catch-all route for 404 pages */}
+        <Route>
+          {() => (
+            <>
+              <Helmet>
+                <title>Page Not Found | Elevion</title>
+                <meta name="description" content="Sorry, the page you are looking for doesn't exist. Return to our homepage to explore our web development services." />
+                <meta name="robots" content="noindex, follow" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <NotFound />
+            </>
+          )}
+        </Route>
       </Switch>
       
       {/* Privacy consent banner */}
