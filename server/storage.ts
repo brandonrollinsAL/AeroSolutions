@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser,
   contactSubmissions, type Contact, type InsertContact,
   clientInputs, type ClientInput, type InsertClientInput,
+  projects, type Project, type InsertProject, 
   clientPreviews, type ClientPreview, type InsertClientPreview,
   subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan,
   userSubscriptions, type UserSubscription, type InsertUserSubscription,

@@ -99,12 +99,35 @@ export const insertContactSchema = createInsertSchema(contactSubmissions).pick({
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contactSubmissions.$inferSelect;
 
+// Projects schema to store generated mockups
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  clientInputId: integer("client_input_id").notNull().references(() => clientInputs.id),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  mockupHtml: text("mockup_html").notNull(),
+  mockupCss: text("mockup_css").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  status: text("status").default("draft").notNull(), // draft, published, archived
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
+
 // Client Preview schema
 export const clientPreviews = pgTable("client_previews", {
   id: serial("id").primaryKey(),
   code: text("code").notNull().unique(),
   clientName: text("client_name").notNull(),
-  projectId: integer("project_id").notNull(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
   expiresAt: timestamp("expires_at").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
 });

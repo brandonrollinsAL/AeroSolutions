@@ -1,375 +1,143 @@
-import { generateJson, generateText } from './xaiClient';
-import { db } from '../db';
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  mockupRequests, 
-  generatedMockups, 
-  InsertGeneratedMockup 
-} from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { generateJson } from './xaiClient';
+import type { ClientInput } from '@shared/schema';
 
-// Define the available templates
-export const MOCKUP_TEMPLATES = {
-  BUSINESS_LANDING: 'business-landing',
-  ECOMMERCE: 'ecommerce-store',
-  PORTFOLIO: 'portfolio',
-  BLOG: 'blog-standard',
-  BLOG_STANDARD: 'blog-standard', // Alias for BLOG for consistency
-  SERVICE_SHOWCASE: 'service-showcase',
-  RESTAURANT: 'restaurant-menu',
-  PROFESSIONAL: 'professional-services',
-  EVENT: 'event-landing',
-  APP_PROMO: 'app-promo',
-  STARTUP: 'startup-homepage'
-};
-
-// Template to industry mapping for better recommendations
-const INDUSTRY_TEMPLATE_MAPPING = {
-  'technology': [MOCKUP_TEMPLATES.BUSINESS_LANDING, MOCKUP_TEMPLATES.APP_PROMO, MOCKUP_TEMPLATES.STARTUP],
-  'retail': [MOCKUP_TEMPLATES.ECOMMERCE, MOCKUP_TEMPLATES.BUSINESS_LANDING],
-  'food': [MOCKUP_TEMPLATES.RESTAURANT, MOCKUP_TEMPLATES.BUSINESS_LANDING],
-  'creative': [MOCKUP_TEMPLATES.PORTFOLIO, MOCKUP_TEMPLATES.BLOG_STANDARD],
-  'professional': [MOCKUP_TEMPLATES.PROFESSIONAL, MOCKUP_TEMPLATES.SERVICE_SHOWCASE],
-  'events': [MOCKUP_TEMPLATES.EVENT, MOCKUP_TEMPLATES.BUSINESS_LANDING],
-  'healthcare': [MOCKUP_TEMPLATES.PROFESSIONAL, MOCKUP_TEMPLATES.SERVICE_SHOWCASE],
-  'education': [MOCKUP_TEMPLATES.SERVICE_SHOWCASE, MOCKUP_TEMPLATES.BLOG_STANDARD],
-  'hospitality': [MOCKUP_TEMPLATES.RESTAURANT, MOCKUP_TEMPLATES.EVENT],
-  'construction': [MOCKUP_TEMPLATES.PROFESSIONAL, MOCKUP_TEMPLATES.SERVICE_SHOWCASE],
-  'finance': [MOCKUP_TEMPLATES.PROFESSIONAL, MOCKUP_TEMPLATES.BUSINESS_LANDING],
-  'beauty': [MOCKUP_TEMPLATES.SERVICE_SHOWCASE, MOCKUP_TEMPLATES.PORTFOLIO],
-  'fitness': [MOCKUP_TEMPLATES.SERVICE_SHOWCASE, MOCKUP_TEMPLATES.EVENT],
-  'real-estate': [MOCKUP_TEMPLATES.PROFESSIONAL, MOCKUP_TEMPLATES.PORTFOLIO],
-  // Add more as needed
-};
-
-// Component mappings for different sections of a page
-const TEMPLATE_COMPONENTS = {
-  'hero': ['HeroBasic', 'HeroCentered', 'HeroWithImage', 'HeroWithVideo', 'HeroWithForm'],
-  'features': ['FeaturesGrid', 'FeaturesCards', 'FeaturesWithIcons', 'FeaturesWithImages'],
-  'testimonials': ['TestimonialsCards', 'TestimonialsCarousel', 'TestimonialsQuotes'],
-  'pricing': ['PricingCards', 'PricingSimple', 'PricingTiers'],
-  'cta': ['CtaBasic', 'CtaWithImage', 'CtaWithForm'],
-  'contact': ['ContactForm', 'ContactInfo', 'ContactMap'],
-  'navigation': ['NavbarSimple', 'NavbarWithDropdown', 'NavbarCentered'],
-  'footer': ['FooterBasic', 'FooterMultiColumn', 'FooterWithNewsletter'],
-};
+// Interface for the mockup generation result
+interface MockupGenerationResult {
+  html: string;
+  css: string;
+  description: string;
+  name: string;
+}
 
 /**
- * Analyzes a mockup request and generates a suitable mockup suggestion
+ * Generate a website mockup based on client input specifications
+ * This function uses the Grok AI model to create HTML and CSS for a website mockup
+ * 
+ * @param clientInput The client input data containing business information and preferences
+ * @returns An object containing the generated HTML, CSS, and metadata
  */
-export async function analyzeMockupRequest(requestId: number) {
+export async function generateWebsiteMockup(clientInput: ClientInput): Promise<MockupGenerationResult> {
   try {
-    // Retrieve the mockup request from the database
-    const [request] = await db
-      .select()
-      .from(mockupRequests)
-      .where(eq(mockupRequests.id, requestId));
+    console.log('Generating website mockup for:', clientInput.businessName);
+    
+    // Construct a detailed prompt based on the client's input data
+    const prompt = `
+Generate a modern, responsive website mockup for a business with the following details:
 
-    if (!request) {
-      throw new Error('Mockup request not found');
+BUSINESS INFORMATION:
+- Name: ${clientInput.businessName}
+- Industry: ${clientInput.industry}
+- Project Description: ${clientInput.projectDescription}
+
+DESIGN PREFERENCES:
+- Color Scheme: ${clientInput.designPreferences.colorScheme}
+- Style: ${clientInput.designPreferences.style}
+${clientInput.budget ? `- Budget Range: ${clientInput.budget}` : ''}
+${clientInput.timeline ? `- Timeline: ${clientInput.timeline}` : ''}
+
+REQUIREMENTS:
+1. Create a complete, responsive website mockup appropriate for the type of business
+2. Focus on a clean, professional design that highlights the business's services/products
+3. Include appropriate sections based on the industry (landing, about, services, contact, etc.)
+4. Use Shadcn UI and Tailwind CSS classes for styling, with focus on responsive design
+5. Implement modern design principles with appropriate typography and spacing
+6. Ensure the mockup is simple enough to be loaded directly in a preview window
+7. Use only HTML elements that work well with React, avoiding deprecated features
+
+The design should be production-ready quality and follow the customer's specifications exactly.
+`;
+
+    // System prompt to guide the AI to output structured data
+    const systemPrompt = `You are an expert web designer and developer who specializes in creating 
+    beautiful, responsive website mockups using modern HTML and CSS (Tailwind CSS). 
+    Your task is to generate a complete, production-ready website mockup based on the client's requirements.
+    Always follow the provided design preferences and ensure your output is well-organized.
+    
+    Return your response in the following JSON format:
+    {
+      "name": "Descriptive name for the project",
+      "description": "Brief description of the mockup design concept",
+      "html": "Complete HTML code for the mockup",
+      "css": "Any additional CSS styles needed beyond Tailwind"
     }
+    
+    Make sure the HTML includes all necessary Tailwind CSS classes and is properly structured.
+    The CSS should only include styles that can't be achieved with Tailwind.`;
 
-    // Analyze the request using XAI to determine the most suitable template
-    const analysisPrompt = `
-      Analyze the following business website mockup request and recommend the best template and components:
-      
-      Business Type: ${request.businessType}
-      Business Goals: ${request.businessGoals || 'Not specified'}
-      Industry Category: ${request.industryCategory || 'Not specified'}
-      Target Audience: ${request.targetAudience || 'Not specified'}
-      Design Preferences: ${request.designPreferences || 'Not specified'}
-      
-      Based on this information, analyze what kind of website would best serve this business
-      and recommend:
-      1. The most suitable template from this list: ${Object.values(MOCKUP_TEMPLATES).join(', ')}
-      2. A color scheme (provide hex colors for primary, secondary, accent, background, and text)
-      3. Font recommendations (heading and body)
-      4. Key components to include on the homepage
-      5. Structure and layout recommendations
-      6. Content suggestions for main sections
-      
-      Return your analysis as JSON with the following structure:
-      {
-        "recommendedTemplate": string, // one of the template names from the list
-        "industryRelevanceScore": number, // 1-10 score of how well this matches the industry
-        "conversionOptimizationScore": number, // 1-10 score of potential conversion effectiveness
-        "colorScheme": {
-          "primary": string, // hex color
-          "secondary": string, // hex color
-          "accent": string, // hex color
-          "background": string, // hex color
-          "text": string // hex color
-        },
-        "typography": {
-          "headingFont": string,
-          "bodyFont": string
-        },
-        "components": {
-          "hero": string, // specific component recommendation
-          "features": string,
-          "testimonials": string,
-          "pricing": string,
-          "cta": string,
-          "contact": string,
-          "navigation": string,
-          "footer": string
-        },
-        "contentSuggestions": {
-          "heroHeadline": string,
-          "heroSubheadline": string,
-          "featuresSection": string[],
-          "testimonialsSection": string[],
-          "ctaText": string
-        },
-        "layoutStructure": string[],
-        "analysisNotes": string
+    // Use the Grok-3 model for better quality
+    const mockupData = await generateJson<MockupGenerationResult>(prompt, {
+      model: 'grok-3',
+      systemPrompt,
+      temperature: 0.6,
+      maxTokens: 4000,
+      fallbackResponse: {
+        name: `${clientInput.businessName} Website`,
+        description: `A professional website mockup for ${clientInput.businessName} in the ${clientInput.industry} industry.`,
+        html: `<div class="min-h-screen bg-gray-50">
+          <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <h1 class="text-3xl font-bold text-gray-900">${clientInput.businessName}</h1>
+            </div>
+          </header>
+          <main>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <div class="text-center">
+                <h2 class="text-base font-semibold text-indigo-600 tracking-wide uppercase">Welcome</h2>
+                <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+                  Website mockup being generated
+                </p>
+                <p class="max-w-xl mt-5 mx-auto text-xl text-gray-500">
+                  We're creating a custom website design based on your preferences. This placeholder will be replaced with your actual mockup.
+                </p>
+              </div>
+            </div>
+          </main>
+          <footer class="bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <p class="text-center text-gray-500">© ${new Date().getFullYear()} ${clientInput.businessName}. All rights reserved.</p>
+            </div>
+          </footer>
+        </div>`,
+        css: `/* Additional styles will be generated */`
       }
-    `;
+    });
 
-    const systemPrompt = `
-      You are an expert web designer and business consultant specializing in creating effective,
-      conversion-optimized websites that match business goals and industry standards.
-      Your recommendations should be data-driven, focused on user experience, and aligned with
-      modern web design principles.
-    `;
-
-    // Call the XAI API to analyze the request
-    const analysis = await generateJson(analysisPrompt, systemPrompt);
-
-    // Generate a mockup based on the analysis
-    return await generateMockup(requestId, analysis);
+    console.log('Successfully generated mockup for:', clientInput.businessName);
+    
+    return mockupData;
   } catch (error) {
-    console.error('Error analyzing mockup request:', error);
-    throw error;
-  }
-}
-
-/**
- * Generates a mockup based on the XAI analysis
- */
-async function generateMockup(requestId: number, analysis: any): Promise<number> {
-  try {
-    // Generate a unique access token for secure sharing
-    const accessToken = uuidv4();
-
-    // Prepare mockup data
-    const mockupData = {
-      template: analysis.recommendedTemplate,
-      colorScheme: analysis.colorScheme,
-      typography: analysis.typography,
-      components: analysis.components,
-      contentSuggestions: analysis.contentSuggestions,
-      layoutStructure: analysis.layoutStructure
+    console.error('Error generating website mockup:', error);
+    
+    // Provide a basic fallback in case of errors
+    return {
+      name: `${clientInput.businessName} Website`,
+      description: `A professional website for ${clientInput.businessName} in the ${clientInput.industry} industry.`,
+      html: `<div class="min-h-screen bg-gray-50">
+        <header class="bg-white shadow-sm">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 class="text-3xl font-bold text-gray-900">${clientInput.businessName}</h1>
+          </div>
+        </header>
+        <main>
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+              <h2 class="text-base font-semibold text-indigo-600 tracking-wide uppercase">Error</h2>
+              <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+                Unable to generate mockup
+              </p>
+              <p class="max-w-xl mt-5 mx-auto text-xl text-gray-500">
+                We encountered an error while generating your website mockup. Please try again later or contact our support team.
+              </p>
+            </div>
+          </div>
+        </main>
+        <footer class="bg-white">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <p class="text-center text-gray-500">© ${new Date().getFullYear()} ${clientInput.businessName}. All rights reserved.</p>
+          </div>
+        </footer>
+      </div>`,
+      css: `/* No additional styles */`
     };
-
-    // Generate a thumbnail representation (simplified mock for now)
-    const thumbnailUrl = await generateThumbnail(mockupData);
-
-    // Generate a full preview URL 
-    const fullPreviewUrl = await generateFullPreview(mockupData);
-
-    // Generate HTML content based on the template
-    const htmlContent = await generateHtmlContent(mockupData);
-
-    // Create CSS content based on the color scheme and typography
-    const cssContent = generateCssContent(mockupData);
-
-    // Insert the generated mockup into the database
-    const mockupInsert: InsertGeneratedMockup = {
-      requestId,
-      templateName: analysis.recommendedTemplate,
-      mockupData,
-      thumbnailUrl,
-      fullPreviewUrl,
-      htmlContent,
-      cssContent,
-      aiAnalysisNotes: analysis.analysisNotes,
-      industryRelevanceScore: analysis.industryRelevanceScore,
-      conversionOptimizationScore: analysis.conversionOptimizationScore,
-      accessToken,
-      status: 'active'
-    };
-
-    const [generatedMockup] = await db
-      .insert(generatedMockups)
-      .values(mockupInsert)
-      .returning({ id: generatedMockups.id });
-
-    // Update the mockup request status to completed
-    await db
-      .update(mockupRequests)
-      .set({ 
-        status: 'completed',
-        completionTime: Date.now() - new Date(mockupRequests.createdAt.name).getTime()
-      })
-      .where(eq(mockupRequests.id, requestId));
-
-    return generatedMockup.id;
-  } catch (error) {
-    console.error('Error generating mockup:', error);
-    throw error;
-  }
-}
-
-/**
- * Generates a thumbnail image representation of the mockup
- */
-async function generateThumbnail(mockupData: any): Promise<string> {
-  // In a real implementation, this would generate an actual image
-  // For now, we'll return a placeholder URL
-  // TODO: Implement actual thumbnail generation using SVG or canvas
-  return `/mockups/thumbnails/placeholder-${mockupData.template}.png`;
-}
-
-/**
- * Generates a full preview image of the mockup
- */
-async function generateFullPreview(mockupData: any): Promise<string> {
-  // In a real implementation, this would generate an actual image
-  // For now, we'll return a placeholder URL
-  // TODO: Implement actual preview generation
-  return `/mockups/previews/placeholder-${mockupData.template}.png`;
-}
-
-/**
- * Generates HTML content based on the template and components
- */
-async function generateHtmlContent(mockupData: any): Promise<string> {
-  // Construct a prompt to generate the HTML structure
-  const htmlPrompt = `
-    Generate a clean, responsive HTML structure for a website with the following components:
-    
-    Template: ${mockupData.template}
-    Layout Structure: ${JSON.stringify(mockupData.layoutStructure)}
-    Components:
-    ${Object.entries(mockupData.components).map(([section, component]) => 
-      `- ${section}: ${component}`
-    ).join('\n')}
-    
-    Content Suggestions:
-    - Hero Headline: ${mockupData.contentSuggestions.heroHeadline}
-    - Hero Subheadline: ${mockupData.contentSuggestions.heroSubheadline}
-    - CTA Text: ${mockupData.contentSuggestions.ctaText}
-    
-    Please create the HTML structure using semantic HTML5 tags, proper accessibility attributes,
-    and organized in a way that would work with modern CSS frameworks. Include appropriate
-    container divs, sections, and component placeholders.
-    
-    Return only the HTML code without explanations.
-  `;
-
-  // Call XAI to generate HTML
-  return await generateText(htmlPrompt, {
-    model: 'grok-3-mini',
-    maxTokens: 4000,
-    temperature: 0.7
-  });
-}
-
-/**
- * Generates CSS content based on the color scheme and typography
- */
-function generateCssContent(mockupData: any): string {
-  // Generate CSS variables and basic styling
-  return `
-:root {
-  --primary: ${mockupData.colorScheme.primary};
-  --secondary: ${mockupData.colorScheme.secondary};
-  --accent: ${mockupData.colorScheme.accent};
-  --background: ${mockupData.colorScheme.background};
-  --text: ${mockupData.colorScheme.text};
-  
-  --heading-font: ${mockupData.typography.headingFont}, system-ui, sans-serif;
-  --body-font: ${mockupData.typography.bodyFont}, system-ui, sans-serif;
-}
-
-body {
-  font-family: var(--body-font);
-  color: var(--text);
-  background-color: var(--background);
-  line-height: 1.6;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--heading-font);
-  font-weight: 700;
-  line-height: 1.2;
-  margin-top: 0;
-  color: var(--primary);
-}
-
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-primary:hover {
-  background-color: var(--secondary);
-}
-
-/* Additional styles would be generated based on the template */
-  `;
-}
-
-/**
- * Gets all mockups for a specific request
- */
-export async function getMockupsForRequest(requestId: number) {
-  try {
-    return await db
-      .select()
-      .from(generatedMockups)
-      .where(eq(generatedMockups.requestId, requestId));
-  } catch (error) {
-    console.error('Error getting mockups for request:', error);
-    throw error;
-  }
-}
-
-/**
- * Gets a specific mockup by ID
- */
-export async function getMockupById(mockupId: number) {
-  try {
-    const [mockup] = await db
-      .select()
-      .from(generatedMockups)
-      .where(eq(generatedMockups.id, mockupId));
-    return mockup;
-  } catch (error) {
-    console.error('Error getting mockup by ID:', error);
-    throw error;
-  }
-}
-
-/**
- * Gets a mockup by access token (for sharing)
- */
-export async function getMockupByAccessToken(accessToken: string) {
-  try {
-    const [mockup] = await db
-      .select()
-      .from(generatedMockups)
-      .where(eq(generatedMockups.accessToken, accessToken));
-    return mockup;
-  } catch (error) {
-    console.error('Error getting mockup by access token:', error);
-    throw error;
   }
 }
