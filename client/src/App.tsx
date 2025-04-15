@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Switch, Route, useLocation } from "wouter";
 import { Helmet } from "react-helmet";
@@ -6,6 +6,12 @@ import { useTranslation } from 'react-i18next';
 import ContentProtection from "@/components/ContentProtection";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ABTestClient from "@/components/ABTestClient";
+
+// Popup Components
+import ClientInputPopup from "@/components/popups/ClientInputPopup";
+import PreviewPopup from "@/components/popups/PreviewPopup";
+import DialogPopup from "@/components/popups/DialogPopup";
+import LightboxPopup from "@/components/popups/LightboxPopup";
 
 import HomePage from "@/pages/HomePage";
 import NotFound from "@/pages/not-found";
@@ -745,6 +751,75 @@ export default function App() {
                 </Helmet>
                 {/* Force component to re-render with a key */}
                 <ParticleBackgroundDemo key="particle-background-demo" />
+              </>
+            );
+          }}
+        </Route>
+        
+        {/* Popup routes - Added for better modal/popup handling */}
+        <Route path="/popup/client-input">
+          {() => {
+            console.log("Rendering ClientInputPopup route");
+            return (
+              <>
+                <Helmet>
+                  <title>Client Input | Elevion</title>
+                  <meta name="robots" content="noindex, nofollow" />
+                  <html lang={i18n.language.split('-')[0]} />
+                  <meta httpEquiv="Content-Language" content={i18n.language} />
+                </Helmet>
+                <ClientInputPopup />
+              </>
+            );
+          }}
+        </Route>
+        
+        <Route path="/popup/preview">
+          {() => {
+            console.log("Rendering PreviewPopup route");
+            return (
+              <>
+                <Helmet>
+                  <title>Preview | Elevion</title>
+                  <meta name="robots" content="noindex, nofollow" />
+                  <html lang={i18n.language.split('-')[0]} />
+                  <meta httpEquiv="Content-Language" content={i18n.language} />
+                </Helmet>
+                <PreviewPopup />
+              </>
+            );
+          }}
+        </Route>
+        
+        <Route path="/dialog">
+          {() => {
+            console.log("Rendering DialogPopup route");
+            return (
+              <>
+                <Helmet>
+                  <title>Dialog | Elevion</title>
+                  <meta name="robots" content="noindex, nofollow" />
+                  <html lang={i18n.language.split('-')[0]} />
+                  <meta httpEquiv="Content-Language" content={i18n.language} />
+                </Helmet>
+                <DialogPopup />
+              </>
+            );
+          }}
+        </Route>
+        
+        <Route path="/lightbox">
+          {() => {
+            console.log("Rendering LightboxPopup route");
+            return (
+              <>
+                <Helmet>
+                  <title>Image Lightbox | Elevion</title>
+                  <meta name="robots" content="noindex, nofollow" />
+                  <html lang={i18n.language.split('-')[0]} />
+                  <meta httpEquiv="Content-Language" content={i18n.language} />
+                </Helmet>
+                <LightboxPopup />
               </>
             );
           }}
