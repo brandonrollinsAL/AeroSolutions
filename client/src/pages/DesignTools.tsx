@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WebsiteColorSuggestions from '@/components/WebsiteColorSuggestions';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { ArrowRight } from 'lucide-react';
 import ParticleBackground from '@/components/ParticleBackground';
+import ParticleConfigPanel from '@/components/ParticleConfigPanel';
 
 /**
  * DesignTools Page
@@ -18,8 +20,34 @@ import ParticleBackground from '@/components/ParticleBackground';
  * interactive particle backgrounds, and more
  */
 export default function DesignTools() {
+  const [particleConfig, setParticleConfig] = useState({
+    particleCount: 60,
+    colorPalette: ['#00D1D1', '#3B5B9D', '#EDEFF2', '#FF7043'],
+    minSize: 2,
+    maxSize: 5,
+    minSpeed: 0.2,
+    maxSpeed: 0.8,
+    interactive: true,
+    connectionLines: true,
+    connectionDistance: 150,
+    blurEffect: true,
+    pulseEffect: true,
+  });
+  
+  // Load saved config from localStorage if available
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('particleConfig');
+    if (savedConfig) {
+      try {
+        setParticleConfig(JSON.parse(savedConfig));
+      } catch (e) {
+        console.error('Error parsing saved config:', e);
+      }
+    }
+  }, []);
+  
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-8 space-y-8 relative">
       <Helmet>
         <title>AI-Powered Design Tools | Elevion</title>
         <meta 
@@ -35,6 +63,16 @@ export default function DesignTools() {
             Leverage AI to get professional design recommendations tailored to your business
           </p>
         </div>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          asChild
+        >
+          <Link href="/particle-background">
+            <ArrowRight className="h-4 w-4" />
+            Try Particle Background Tool
+          </Link>
+        </Button>
       </div>
 
       <Separator className="my-6" />
@@ -106,6 +144,39 @@ export default function DesignTools() {
           for comprehensive brand identity creation and implementation.
         </p>
       </div>
+      
+      <Separator className="my-8" />
+      
+      <div className="rounded-xl border overflow-hidden relative mb-12">
+        <div className="p-6 bg-gradient-to-br from-slate-800 via-slate-900 to-black h-[400px] relative">
+          <ParticleBackground {...particleConfig} />
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="text-center text-white backdrop-blur-sm bg-slate-900/30 p-6 rounded-xl border border-electric-cyan/20 max-w-md">
+              <h2 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-electric-cyan to-white font-poppins">Interactive Particle Backgrounds</h2>
+              <p className="text-gray-300">
+                Create stunning animated backgrounds for your website with our customizable particle system.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-muted p-4 border-t">
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">Particle Background Generator</h3>
+            <Button 
+              variant="default" 
+              size="sm"
+              asChild
+            >
+              <Link href="/particle-background">
+                Open Full Editor
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      <ParticleConfigPanel config={particleConfig} onChange={setParticleConfig} />
     </div>
   );
 }
