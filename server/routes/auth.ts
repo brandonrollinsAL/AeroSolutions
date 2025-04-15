@@ -179,7 +179,18 @@ router.post('/login', [
     const { username, password } = req.body;
 
     // Import the login logger here to avoid circular dependencies
-    const { logLoginAttempt } = await import('../utils/loginLogger');
+    const { logLoginAttempt, isIPLockedOut } = await import('../utils/loginLogger');
+    
+    // Check if the IP is locked out due to too many failed attempts
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isIPLockedOut(ip)) {
+      logLoginAttempt(req, username, false, 'IP temporarily locked out');
+      
+      return res.status(429).json({
+        success: false,
+        message: "Too many failed login attempts. Please try again later."
+      });
+    }
 
     // Find user
     const user = await storage.getUserByUsername(username);

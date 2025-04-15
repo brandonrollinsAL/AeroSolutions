@@ -6,33 +6,49 @@ import bcrypt from 'bcrypt';
 // Secret key for JWT signing - in production, use environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'elevion-secret-key';
 
-// Generate JWT token with only necessary user information
+/**
+ * Generate JWT token with only necessary user information
+ * 
+ * @param user User object to generate token for
+ * @param expiresIn Token expiration time
+ * @returns Generated JWT token string
+ */
 export const generateToken = (user: any, expiresIn = '24h'): string => {
   // Extract only the necessary fields to avoid storing sensitive information in the token
   const tokenPayload = {
     userId: user.id,
     username: user.username,
-    role: user.role,
+    role: user.role || 'user',
     email: user.email
   };
   
-  // Convert expiresIn to a SignOptions object
-  const options = { expiresIn };
-  
   try {
-    // Using proper JWT signing with explicit typing
-    return jwt.sign(tokenPayload, String(JWT_SECRET), options);
+    // Using fixed expiresIn format
+    return jwt.sign(
+      tokenPayload,
+      String(JWT_SECRET),
+      { 
+        expiresIn: typeof expiresIn === 'string' ? expiresIn : '24h',
+        algorithm: 'HS256'
+      }
+    );
   } catch (error) {
     console.error('Error generating JWT token:', error);
     throw new Error('Failed to generate authentication token');
   }
 };
 
-// Verify JWT token
+/**
+ * Verify JWT token
+ * 
+ * @param token JWT token to verify
+ * @returns Decoded token payload or null if invalid
+ */
 export const verifyToken = (token: string): any => {
   try {
-    return jwt.verify(token, String(JWT_SECRET));
+    return jwt.verify(token, String(JWT_SECRET), { algorithms: ['HS256'] });
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 };
@@ -68,7 +84,13 @@ export const isAdmin = (req: Request): boolean => {
   return !!(req.user && req.user.role === 'admin');
 };
 
-// Authentication middleware using JWT
+/**
+ * Authentication middleware using JWT
+ * 
+ * @param req The Express request object
+ * @param res The Express response object
+ * @param next The Express next function
+ */
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get the token from the Authorization header
@@ -85,13 +107,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     
     // Verify the token
     try {
-      const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret);
+      const decoded = jwt.verify(token, String(JWT_SECRET), { algorithms: ['HS256'] });
       
       // Add the decoded user to the request
       (req as any).user = decoded;
       
       next();
     } catch (error) {
+      console.error('Token verification failed:', error);
       return res.status(401).json({ 
         success: false,
         message: 'Invalid or expired token'
