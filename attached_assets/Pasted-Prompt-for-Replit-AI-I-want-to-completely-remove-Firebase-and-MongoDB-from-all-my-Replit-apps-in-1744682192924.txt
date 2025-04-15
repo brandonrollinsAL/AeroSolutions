@@ -1,0 +1,25 @@
+Prompt for Replit AI:
+
+"I want to completely remove Firebase and MongoDB from all my Replit apps, including their APIs, database connections, dependencies, and any related configurations. Please perform the following actions for every app in my Replit workspace:
+
+Identify and Remove Firebase:
+Locate and delete any Firebase-related code, including imports, initializations, and API calls (e.g., Firebase Authentication, Firestore, Realtime Database, Storage, or other Firebase services).
+Remove Firebase SDKs and dependencies from configuration files (e.g., package.json for Node.js apps, <script> tags in HTML, or equivalent files for other languages).
+Delete Firebase configuration objects (e.g., firebaseConfig with API keys, project IDs, etc.).
+Remove any environment variables related to Firebase (e.g., API keys, service account credentials).
+Update the app logic to eliminate dependencies on Firebase services, ensuring functionality is either preserved by replacing with alternative solutions (e.g., local storage or another database if needed) or safely removed if not critical.
+Identify and Remove MongoDB:
+Locate and delete any MongoDB-related code, including imports (e.g., mongoose, mongodb), connection strings, and database operations (e.g., queries, CRUD operations).
+Remove MongoDB dependencies from configuration files (e.g., package.json or equivalent).
+Delete MongoDB connection strings and credentials from environment variables (e.g., .env files or Replit Secrets).
+Update the app logic to eliminate dependencies on MongoDB, ensuring functionality is either preserved by replacing with alternative solutions or safely removed if not critical.
+Clean Up and Verify:
+Remove any leftover Firebase or MongoDB packages from the project (e.g., run npm uninstall firebase mongoose mongodb for Node.js projects or equivalent for other environments).
+Check for and remove any Firebase or MongoDB-related files (e.g., service account JSON files, MongoDB schema files).
+Ensure all environment variables or Secrets related to Firebase and MongoDB are deleted.
+Test each app to confirm that it runs without errors after removing Firebase and MongoDB. If an app requires a database or authentication, suggest a lightweight alternative (e.g., Replit Database, SQLite, or local JSON storage) and implement it only if I approve.
+Provide a summary of changes made for each app, including files modified, dependencies removed, and any replacements added.
+Preserve Functionality:
+If Firebase or MongoDB was used for critical features (e.g., user authentication, data storage), flag these cases and pause to ask me how I want to proceed (e.g., replace with another service, remove the feature, or use a local solution).
+Ensure no app is left in a broken state. If an app cannot function without a database or authentication, propose a minimal solution and wait for my confirmation before implementing.
+Please process all my Replit apps systematically, one by one, and confirm with me before making irreversible changes (e.g., deleting critical data or features). Provide a detailed report after completion, listing all apps modified, actions taken, and any issues encountered. If any app uses a language or framework that makes this process complex, explain the steps clearly and ask for clarification if needed."
