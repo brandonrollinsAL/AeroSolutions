@@ -1,60 +1,88 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
-interface ErrorBoundaryProps {
+interface Props {
   children: ReactNode;
   fallback?: ReactNode;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = {
       hasError: false,
-      error: null
+      error: null,
+      errorInfo: null
     };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): State {
+    // Update state so the next render will show the fallback UI
     return {
       hasError: true,
-      error
+      error,
+      errorInfo: null
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    // You can also log the error to an error reporting service
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
+    this.setState({
+      error,
+      errorInfo
+    });
   }
+
+  handleRetry = (): void => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
+    });
+  };
 
   render(): ReactNode {
     if (this.state.hasError) {
+      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      
+
       return (
-        <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-light-gray text-slate-800 font-inter shadow-md">
-          <AlertTriangle className="h-12 w-12 text-sunset-orange mb-4" />
-          <h2 className="text-xl font-medium mb-2">Something went wrong</h2>
-          <p className="text-center mb-4">Unable to load component, please try again</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-electric-cyan hover:bg-slate-blue text-white rounded-md transition-colors duration-200"
-          >
-            Reload Page
-          </button>
-          {process.env.NODE_ENV !== 'production' && this.state.error && (
-            <div className="mt-4 p-4 bg-red-50 rounded-md border border-red-200 w-full">
-              <p className="font-mono text-sm text-red-700 whitespace-pre-wrap">
-                {this.state.error.toString()}
+        <div className="p-6 rounded-lg border border-red-200 bg-light-gray">
+          <div className="flex items-start gap-4">
+            <AlertCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-lg font-medium text-red-600 mb-2">Something went wrong</h3>
+              <p className="text-slate-600 mb-4">
+                We encountered an error while rendering this component.
               </p>
+              {this.state.error && (
+                <div className="mb-4 p-3 bg-red-50 rounded border border-red-100 text-sm text-red-700 font-mono overflow-auto max-h-40">
+                  {this.state.error.toString()}
+                </div>
+              )}
+              <div className="flex gap-3 mt-4">
+                <Button onClick={this.handleRetry} className="bg-slate-blue hover:bg-slate-blue/90">
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload Page
+                </Button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       );
     }

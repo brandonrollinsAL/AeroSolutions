@@ -79,6 +79,8 @@ const DialogPopupContent: React.FC = () => {
     );
   }
   
+  type DialogType = 'info' | 'warning' | 'error' | 'success';
+  
   const dialogTypeStyles = {
     info: {
       icon: null,
@@ -102,8 +104,8 @@ const DialogPopupContent: React.FC = () => {
     },
   };
   
-  const type = data?.type || 'info';
-  const styles = dialogTypeStyles[type] || dialogTypeStyles.info;
+  const dialogType = (data?.type || 'info') as DialogType;
+  const styles = dialogTypeStyles[dialogType];
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

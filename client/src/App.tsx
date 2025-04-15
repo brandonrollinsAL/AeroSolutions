@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 import { useTranslation } from 'react-i18next';
 import ContentProtection from "@/components/ContentProtection";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { PopupProvider } from "@/contexts/PopupContext";
 import ABTestClient from "@/components/ABTestClient";
 
 // Popup Components
@@ -117,11 +118,12 @@ export default function App() {
 
   return (
     <NotificationProvider>
-      {/* A/B Testing Client - applied to all routes */}
-      <ABTestClient />
-      
-      {/* Global App Metadata - applied to all routes */}
-      <Helmet>
+      <PopupProvider>
+        {/* A/B Testing Client - applied to all routes */}
+        <ABTestClient />
+        
+        {/* Global App Metadata - applied to all routes */}
+        <Helmet>
         {/* Languages support */}
         <html lang="en" />
         <meta httpEquiv="Content-Language" content="en" />
@@ -807,7 +809,7 @@ export default function App() {
           }}
         </Route>
         
-        <Route path="/dialog">
+        <Route path="/popup/dialog">
           {() => {
             console.log("Rendering DialogPopup route");
             return (
@@ -824,7 +826,7 @@ export default function App() {
           }}
         </Route>
         
-        <Route path="/lightbox">
+        <Route path="/popup/lightbox">
           {() => {
             console.log("Rendering LightboxPopup route");
             return (
@@ -871,6 +873,7 @@ export default function App() {
       {/* Global content protection */}
       <ContentProtection />
       <Toaster />
+      </PopupProvider>
     </NotificationProvider>
   );
 }
