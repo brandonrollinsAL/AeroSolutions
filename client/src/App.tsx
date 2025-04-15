@@ -726,7 +726,13 @@ export default function App() {
             </>
           )}
         </Route>
-        <Route path="/particle-background" component={ParticleBackgroundDemo} />
+        <Route path="/particle-background">
+          {() => (
+            <>
+              <ParticleBackgroundDemo />
+            </>
+          )}
+        </Route>
         
         {/* Catch-all route for 404 pages */}
         <Route>

@@ -155,8 +155,11 @@ const Footer: React.FC = () => {
           <div className="mt-4 md:mt-0">
             <span className="mr-4">FAQ</span>
             <span className="mr-4">Support</span>
-            <Link href="/history" className="text-gray-400 hover:text-[#FF7043] transition-colors">
+            <Link href="/history" className="text-gray-400 hover:text-[#FF7043] transition-colors mr-4">
               {t('our_history')}
+            </Link>
+            <Link href="/particle-background" className="text-gray-400 hover:text-[#FF7043] transition-colors">
+              Particle Generator
             </Link>
           </div>
         </div>
