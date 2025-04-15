@@ -6,6 +6,8 @@ import { ArrowLeft, Code, Copy, Download } from 'lucide-react';
 import { Link } from 'wouter';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Helmet } from 'react-helmet';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 const ParticleBackgroundDemo = () => {
+  const { i18n } = useTranslation();
   const defaultConfig = {
     particleCount: 60,
     colorPalette: ['#00D1D1', '#3B5B9D', '#EDEFF2', '#FF7043'],
@@ -92,6 +95,14 @@ const ParticleBackgroundDemo = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
+      <Helmet>
+        <title>Dynamic Particle Background Generator | Elevion</title>
+        <meta name="description" content="Create and customize beautiful interactive particle backgrounds for your web projects with our dynamic generator tool." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://elevion.dev/particle-background" />
+        <html lang={i18n.language.split('-')[0]} />
+        <meta httpEquiv="Content-Language" content={i18n.language} />
+      </Helmet>
       {/* Demo background */}
       <div className="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-black -z-10"></div>
       <ParticleBackground {...config} />
