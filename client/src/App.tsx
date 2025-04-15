@@ -726,20 +726,41 @@ export default function App() {
             </>
           )}
         </Route>
-        <Route path="/particle-background">
+        {/* Explicit route for Particle Background with specific component rendering */}
+        {/* Router Debug Page - for diagnosing routing issues */}
+        <Route path="/router-debug">
           {() => (
             <>
               <Helmet>
-                <title>Dynamic Particle Background Generator | Elevion</title>
-                <meta name="description" content="Create and customize beautiful interactive particle backgrounds for your web projects with our dynamic generator tool." />
-                <meta name="robots" content="index, follow" />
-                <link rel="canonical" href="https://elevion.dev/particle-background" />
+                <title>Router Diagnostics | Elevion</title>
+                <meta name="robots" content="noindex, nofollow" />
                 <html lang={i18n.language.split('-')[0]} />
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
-              <ParticleBackgroundDemo />
+              <RouterDebugPage />
             </>
           )}
+        </Route>
+        
+        {/* Particle Background Demo page */}
+        <Route path="/particle-background">
+          {() => {
+            console.log("Rendering ParticleBackgroundDemo route");
+            return (
+              <>
+                <Helmet>
+                  <title>Dynamic Particle Background Generator | Elevion</title>
+                  <meta name="description" content="Create and customize beautiful interactive particle backgrounds for your web projects with our dynamic generator tool." />
+                  <meta name="robots" content="index, follow" />
+                  <link rel="canonical" href="https://elevion.dev/particle-background" />
+                  <html lang={i18n.language.split('-')[0]} />
+                  <meta httpEquiv="Content-Language" content={i18n.language} />
+                </Helmet>
+                {/* Force component to re-render with a key */}
+                <ParticleBackgroundDemo key="particle-background-demo" />
+              </>
+            );
+          }}
         </Route>
         
         {/* Catch-all route for 404 pages */}
