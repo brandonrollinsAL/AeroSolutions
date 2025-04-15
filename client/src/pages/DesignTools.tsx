@@ -5,13 +5,17 @@ import WebsiteLayoutSuggestions from '@/components/WebsiteLayoutSuggestions';
 import WebsiteCtaSuggestions from '@/components/WebsiteCtaSuggestions';
 import WebsiteImageSuggestions from '@/components/WebsiteImageSuggestions';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
+import { ArrowRight } from 'lucide-react';
+import ParticleBackground from '@/components/ParticleBackground';
 
 /**
  * DesignTools Page
  *
  * A collection of AI-powered tools for website design and branding
- * Currently includes website color suggestions and layout recommendations
- * with more tools to be added
+ * Currently includes website color suggestions, layout recommendations,
+ * interactive particle backgrounds, and more
  */
 export default function DesignTools() {
   return (
