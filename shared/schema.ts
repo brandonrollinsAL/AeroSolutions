@@ -47,6 +47,39 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Contact submission schema
+// Client input form schema for project requests
+export const clientInputs = pgTable("client_inputs", {
+  id: serial("id").primaryKey(),
+  businessName: text("business_name").notNull(),
+  industry: text("industry").notNull(),
+  designPreferences: json("design_preferences").notNull().$type<{
+    colorScheme: string;
+    style: string;
+  }>(),
+  projectDescription: text("project_description").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  budget: text("budget"),
+  timeline: text("timeline"),
+  status: text("status").default("new").notNull(), // new, in-progress, completed, cancelled
+  assignedTo: integer("assigned_to").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertClientInputSchema = createInsertSchema(clientInputs).omit({
+  id: true,
+  status: true,
+  assignedTo: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertClientInput = z.infer<typeof insertClientInputSchema>;
+export type ClientInput = typeof clientInputs.$inferSelect;
+
+// Contact submission schema
 export const contactSubmissions = pgTable("contact_submissions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
