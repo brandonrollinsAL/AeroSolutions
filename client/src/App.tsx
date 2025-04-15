@@ -56,6 +56,7 @@ import BugMonitoringPage from "@/pages/BugMonitoringPage";
 import BrandConsistencyPage from "@/pages/BrandConsistencyPage";
 import TestElevateBot from "@/pages/TestElevateBot";
 import ParticleBackgroundDemo from "@/pages/ParticleBackgroundDemo";
+import PricingPage from "@/pages/PricingPage";
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -242,6 +243,21 @@ export default function App() {
                 <meta httpEquiv="Content-Language" content={i18n.language} />
               </Helmet>
               <HistoryPage />
+            </>
+          )}
+        </Route>
+        <Route path="/pricing">
+          {() => (
+            <>
+              <Helmet>
+                <title>{t('pricing_title', 'Pricing & Plans')} | Elevion</title>
+                <meta name="description" content={t('pricing_meta_desc', 'Explore Elevion\'s flexible pricing plans for web development. Transparent pricing, no hidden fees, and plans for every business size.')} />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/pricing" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <PricingPage />
             </>
           )}
         </Route>
