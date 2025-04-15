@@ -326,7 +326,7 @@ export default function ElevateBot({
       {!hideFloatingButton && (
         <button
           onClick={toggleChatbot}
-          className="fixed bottom-6 right-6 bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center"
+          className="fixed bottom-6 left-6 bg-[#3B5B9D] hover:bg-[#2A4A8C] text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center"
           aria-label="Chat with ElevateBot"
         >
           {isOpen ? (
@@ -346,7 +346,7 @@ export default function ElevateBot({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-20 right-6 w-80 sm:w-96 bg-white rounded-xl shadow-xl overflow-hidden z-30 flex flex-col"
+            className="fixed bottom-20 left-6 w-80 sm:w-96 bg-white rounded-xl shadow-xl overflow-hidden z-30 flex flex-col"
             style={{ maxHeight: "500px" }}
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

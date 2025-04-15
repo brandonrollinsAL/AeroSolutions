@@ -113,6 +113,14 @@ const Footer: React.FC = () => {
                   Client Demo
                 </button>
               </li>
+              <li>
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('openTechAssistant'))}
+                  className="text-gray-300 hover:text-[#FF7043] transition-colors"
+                >
+                  Tech Assistant
+                </button>
+              </li>
             </ul>
           </div>
 
