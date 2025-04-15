@@ -6,15 +6,32 @@ import bcrypt from 'bcrypt';
 // Secret key for JWT signing - in production, use environment variable
 const JWT_SECRET = process.env.JWT_SECRET || 'elevion-secret-key';
 
-// Generate JWT token
-export const generateToken = (payload: any, expiresIn = '24h'): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+// Generate JWT token with only necessary user information
+export const generateToken = (user: any, expiresIn = '24h'): string => {
+  // Extract only the necessary fields to avoid storing sensitive information in the token
+  const tokenPayload = {
+    userId: user.id,
+    username: user.username,
+    role: user.role,
+    email: user.email
+  };
+  
+  // Convert expiresIn to a SignOptions object
+  const options = { expiresIn };
+  
+  try {
+    // Using proper JWT signing with explicit typing
+    return jwt.sign(tokenPayload, String(JWT_SECRET), options);
+  } catch (error) {
+    console.error('Error generating JWT token:', error);
+    throw new Error('Failed to generate authentication token');
+  }
 };
 
 // Verify JWT token
 export const verifyToken = (token: string): any => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, String(JWT_SECRET));
   } catch (error) {
     return null;
   }
@@ -68,7 +85,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     
     // Verify the token
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret);
       
       // Add the decoded user to the request
       (req as any).user = decoded;
