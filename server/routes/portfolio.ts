@@ -7,13 +7,16 @@ import { z } from 'zod';
 // Extend Express Request to include authentication
 interface AuthRequest extends Request {
   isAuthenticated(): boolean;
-  user?: any;
+  user: {
+    id: number;
+    isAdmin: boolean;
+  };
 }
 
 export const portfolioRouter = Router();
 
 // Get all portfolio items
-portfolioRouter.get('/', async (req, res) => {
+portfolioRouter.get('/', async (req: Request, res: Response) => {
   try {
     const items = await storage.getAllPortfolioItems();
     res.json(items);
@@ -24,7 +27,7 @@ portfolioRouter.get('/', async (req, res) => {
 });
 
 // Get featured portfolio items (optionally limited)
-portfolioRouter.get('/featured', async (req, res) => {
+portfolioRouter.get('/featured', async (req: Request, res: Response) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
     const items = await storage.getFeaturedPortfolioItems(limit);
@@ -36,7 +39,7 @@ portfolioRouter.get('/featured', async (req, res) => {
 });
 
 // Get a specific portfolio item by ID
-portfolioRouter.get('/:id', async (req, res) => {
+portfolioRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     const item = await storage.getPortfolioItemById(id);
@@ -53,7 +56,7 @@ portfolioRouter.get('/:id', async (req, res) => {
 });
 
 // Get portfolio items by industry
-portfolioRouter.get('/industry/:industry', async (req, res) => {
+portfolioRouter.get('/industry/:industry', async (req: Request, res: Response) => {
   try {
     const industry = req.params.industry;
     const items = await storage.getPortfolioItemsByIndustry(industry);
@@ -89,7 +92,7 @@ portfolioRouter.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // Update an existing portfolio item (admin only)
-portfolioRouter.put('/:id', async (req, res) => {
+portfolioRouter.put('/:id', async (req: AuthRequest, res: Response) => {
   try {
     // Check if user is authenticated and is an admin
     if (!req.isAuthenticated() || !req.user.isAdmin) {
@@ -121,7 +124,7 @@ portfolioRouter.put('/:id', async (req, res) => {
 });
 
 // Delete a portfolio item (admin only)
-portfolioRouter.delete('/:id', async (req, res) => {
+portfolioRouter.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     // Check if user is authenticated and is an admin
     if (!req.isAuthenticated() || !req.user.isAdmin) {

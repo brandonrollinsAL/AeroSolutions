@@ -205,7 +205,7 @@ const PortfolioPage: React.FC = () => {
                           variant="ghost" 
                           size="sm" 
                           className="hover-sunset-orange"
-                          onClick={() => window.open(item.websiteUrl, '_blank')}
+                          onClick={() => window.open(item.websiteUrl || '', '_blank')}
                         >
                           <ExternalLink className="h-4 w-4 mr-1" />
                           Visit Site
