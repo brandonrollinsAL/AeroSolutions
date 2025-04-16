@@ -94,6 +94,7 @@
 }
 
 @layer utilities {
+  /* Animation utilities */
   .slide-up {
     @apply opacity-0 translate-y-12;
     animation: slideUp 0.6s ease-out forwards;
@@ -124,5 +125,57 @@
       opacity: 1;
       transform: translateX(0);
     }
+  }
+  
+  /* Brand color gradient utilities */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-slate-blue to-electric-cyan;
+  }
+  
+  .bg-gradient-secondary {
+    @apply bg-gradient-to-r from-electric-cyan to-sunset-orange;
+  }
+  
+  .bg-gradient-accent {
+    @apply bg-gradient-to-r from-slate-blue to-sunset-orange;
+  }
+  
+  /* Text gradient utilities */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-slate-blue to-electric-cyan bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-secondary {
+    @apply bg-gradient-to-r from-electric-cyan to-sunset-orange bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-slate-blue to-sunset-orange bg-clip-text text-transparent;
+  }
+  
+  /* Hover color transitions */
+  .hover-slate-blue {
+    @apply transition-colors duration-300 hover:text-slate-blue;
+  }
+  
+  .hover-electric-cyan {
+    @apply transition-colors duration-300 hover:text-electric-cyan;
+  }
+  
+  .hover-sunset-orange {
+    @apply transition-colors duration-300 hover:text-sunset-orange;
+  }
+  
+  /* Button color variants */
+  .btn-slate-blue {
+    @apply bg-slate-blue text-white hover:bg-opacity-90 transition-colors;
+  }
+  
+  .btn-electric-cyan {
+    @apply bg-electric-cyan text-black hover:bg-opacity-90 transition-colors;
+  }
+  
+  .btn-sunset-orange {
+    @apply bg-sunset-orange text-white hover:bg-opacity-90 transition-colors;
   }
 }

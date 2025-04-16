@@ -81,8 +81,8 @@ const PortfolioPage: React.FC = () => {
       </Helmet>
       
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto mb-12 text-center">
-          <h1 className="text-4xl font-bold font-poppins mb-4 bg-gradient-to-r from-slate-blue to-electric-cyan bg-clip-text text-transparent">
+        <div className="max-w-4xl mx-auto mb-12 text-center p-8 rounded-lg bg-gradient-primary bg-opacity-10">
+          <h1 className="text-4xl font-bold font-poppins mb-4 text-gradient-primary">
             Our Portfolio
           </h1>
           <p className="text-lg text-muted-foreground mb-8">
@@ -137,7 +137,7 @@ const PortfolioPage: React.FC = () => {
                   {item.tags.map((tag, index) => (
                     <span 
                       key={index}
-                      className="px-2 py-1 bg-light-gray text-slate-blue text-xs font-medium rounded-full"
+                      className="px-2 py-1 bg-light-gray text-slate-blue text-xs font-medium rounded-full hover-electric-cyan cursor-pointer transition-all"
                     >
                       {tag}
                     </span>
@@ -146,10 +146,10 @@ const PortfolioPage: React.FC = () => {
               </CardContent>
               
               <CardFooter className="flex justify-between border-t pt-4">
-                <Button variant="ghost" size="sm" className="text-slate-blue hover:text-electric-cyan">
+                <Button variant="ghost" size="sm" className="hover-electric-cyan">
                   View Details
                 </Button>
-                <Button variant="ghost" size="sm" className="hover:text-sunset-orange">
+                <Button variant="ghost" size="sm" className="hover-sunset-orange">
                   <ExternalLink className="h-4 w-4 mr-1" />
                   Visit Site
                 </Button>
@@ -158,13 +158,13 @@ const PortfolioPage: React.FC = () => {
           ))}
         </div>
         
-        <div className="mt-16 text-center">
+        <div className="mt-16 text-center p-8 rounded-lg bg-gradient-accent bg-opacity-5">
           <h2 className="text-2xl font-bold font-poppins mb-4">Ready to create your own success story?</h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Let us help you build a modern, high-performance website or application 
             tailored to your specific business needs.
           </p>
-          <Button size="lg" className="bg-sunset-orange hover:bg-orange-600 text-white">
+          <Button size="lg" className="btn-sunset-orange">
             Start Your Project
           </Button>
         </div>
