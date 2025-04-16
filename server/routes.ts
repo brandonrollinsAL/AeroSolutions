@@ -21,6 +21,7 @@ import uxRouter from './routes/ux';
 import intelligenceRouter from './routes/intelligence';
 import { registerAnalyticsRoutes } from './routes/analytics';
 import { registerFeedRoutes } from './routes/feed';
+import { registerCrossPlatformAnalyticsRoutes } from './routes/crossPlatformAnalytics';
 import aiContentRouter from './routes/ai-content';
 import recommendationsRouter from './routes/recommendations';
 import intelligentSearchRouter from './routes/intelligent-search';
@@ -167,6 +168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerAnalyticsRoutes(app);
   // Register feed routes with AI ranking
   registerFeedRoutes(app);
+  // Register cross-platform analytics routes
+  registerCrossPlatformAnalyticsRoutes(app);
   app.use('/api/ai-content', aiContentRouter);
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/intelligent-search', intelligentSearchRouter);
