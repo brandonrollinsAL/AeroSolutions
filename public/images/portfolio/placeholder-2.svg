@@ -1,0 +1,10 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#edeff2" />
+  <rect x="0" y="0" width="800" height="600" fill="none" stroke="#3B5B9D" stroke-width="12" />
+  <text x="400" y="300" font-family="Poppins, Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle" fill="#3B5B9D">
+    Elevion Portfolio
+  </text>
+  <text x="400" y="360" font-family="Lato, Arial, sans-serif" font-size="24" text-anchor="middle" fill="#FF7043">
+    SaaS Platform Design
+  </text>
+</svg>

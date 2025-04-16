@@ -250,6 +250,21 @@ export default function App() {
             </>
           )}
         </Route>
+        <Route path="/portfolio">
+          {() => (
+            <>
+              <Helmet>
+                <title>Portfolio | Elevion Web Development</title>
+                <meta name="description" content="Explore our portfolio of web development projects showcasing our expertise in creating modern, responsive websites and applications." />
+                <meta name="robots" content="index, follow" />
+                <link rel="canonical" href="https://elevion.dev/portfolio" />
+                <html lang={i18n.language.split('-')[0]} />
+                <meta httpEquiv="Content-Language" content={i18n.language} />
+              </Helmet>
+              <PortfolioPage />
+            </>
+          )}
+        </Route>
         <Route path="/pricing">
           {() => (
             <>
