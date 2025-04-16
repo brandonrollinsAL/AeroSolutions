@@ -27,6 +27,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
+import { portfolioMethods } from "./methods/portfolioMethods";
 
 // Extend the interface with needed CRUD methods
 export interface IStorage {
@@ -40,10 +41,19 @@ export interface IStorage {
   validateUserCredentials(username: string, password: string): Promise<User | undefined>;
   updateUserVerification(userId: number, verified: boolean): Promise<User>;
   
-  // User onboarding methods
-  createUserOnboarding(onboarding: InsertUserOnboarding): Promise<UserOnboarding>;
-  getUserOnboarding(userId: number): Promise<UserOnboarding | undefined>;
-  updateUserOnboarding(userId: number, data: Partial<InsertUserOnboarding>): Promise<UserOnboarding>;
+  // Portfolio methods
+  getAllPortfolioItems(): Promise<PortfolioItem[]>;
+  getFeaturedPortfolioItems(limit?: number): Promise<PortfolioItem[]>;
+  getPortfolioItemById(id: number): Promise<PortfolioItem | undefined>;
+  getPortfolioItemsByIndustry(industryType: string): Promise<PortfolioItem[]>;
+  createPortfolioItem(data: InsertPortfolioItem): Promise<PortfolioItem>;
+  updatePortfolioItem(id: number, data: Partial<PortfolioItem>): Promise<PortfolioItem>;
+  deletePortfolioItem(id: number): Promise<boolean>;
+  
+  // User onboarding methods (kept for backward compatibility)
+  createUserOnboarding(onboarding: any): Promise<any>;
+  getUserOnboarding(userId: number): Promise<any | undefined>;
+  updateUserOnboarding(userId: number, data: Partial<any>): Promise<any>;
   getOnboardingCompletionRate(): Promise<{ completed: number, total: number, rate: number }>;
   generatePersonalizedOnboarding(userId: number, businessType: string): Promise<string>;
   
@@ -191,6 +201,15 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Portfolio methods - implemented using the portfolioMethods utility
+  getAllPortfolioItems = portfolioMethods.getAllPortfolioItems;
+  getFeaturedPortfolioItems = portfolioMethods.getFeaturedPortfolioItems;
+  getPortfolioItemById = portfolioMethods.getPortfolioItemById;
+  getPortfolioItemsByIndustry = portfolioMethods.getPortfolioItemsByIndustry;
+  createPortfolioItem = portfolioMethods.createPortfolioItem;
+  updatePortfolioItem = portfolioMethods.updatePortfolioItem;
+  deletePortfolioItem = portfolioMethods.deletePortfolioItem;
+
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

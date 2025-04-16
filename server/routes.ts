@@ -48,7 +48,7 @@ import socialMediaRouter from './routes/socialMedia';
 import marketingCampaignsRouter from './routes/marketingCampaigns';
 import seoRouter from './routes/seo';
 import priceOptimizationRouter from './routes/priceOptimization';
-import portfolioRouter from './routes/portfolio';
+import { portfolioRouter } from './routes/portfolio';
 import bugMonitoringRouter from './routes/bugMonitoring';
 import brandConsistencyRouter from './routes/brandConsistency';
 import platformCompatibilityRouter from './routes/platformCompatibility';
@@ -196,6 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/sentiment', sentimentRouter);
   app.use('/api/abtesting', abTestingRouter);
   app.use('/api/targeted-ads', targetedAdsRouter);
+  app.use('/api/portfolio', portfolioRouter);
   
   // Test xAI API endpoint - public endpoint, no auth required
   app.get('/api/test-xai', async (req: Request, res: Response) => {
