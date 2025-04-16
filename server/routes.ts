@@ -59,7 +59,7 @@ import { loggerMiddleware, registerGlobalErrorHandlers } from './middlewares/log
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
-import { schedulerService } from './utils/schedulerService';
+import { scheduler } from './utils/schedulerService';
 import { priceOptimizationService } from './utils/priceOptimizationService';
 
 // Extended request interface with authentication
@@ -1081,11 +1081,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize achievement tracking system with XAI
   // Track user achievements and send personalized milestone messages
   try {
-    console.log('Initializing user achievement tracking system...');
-    schedulerService.startScheduledTasks();
-    console.log('Achievement tracking system initialized successfully');
+    console.log('Initializing user achievement tracking system and scheduler...');
+    scheduler.initialize(); // Use the scheduler from utils/schedulerService
+    console.log('Achievement tracking system and scheduler initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize achievement tracking system:', error);
+    console.error('Failed to initialize achievement tracking system and scheduler:', error);
   }
   
   // Initialize subscription price optimization with XAI
