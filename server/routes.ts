@@ -48,6 +48,7 @@ import socialMediaRouter from './routes/socialMedia';
 import marketingCampaignsRouter from './routes/marketingCampaigns';
 import seoRouter from './routes/seo';
 import priceOptimizationRouter from './routes/priceOptimization';
+import portfolioRouter from './routes/portfolio';
 import bugMonitoringRouter from './routes/bugMonitoring';
 import brandConsistencyRouter from './routes/brandConsistency';
 import platformCompatibilityRouter from './routes/platformCompatibility';

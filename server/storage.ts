@@ -22,7 +22,8 @@ import {
   logs, bug_reports, platform_compatibility_issues,
   type Log, type InsertLog, 
   type BugReport, type InsertBugReport,
-  type PlatformCompatibilityIssue, type InsertPlatformCompatibilityIssue
+  type PlatformCompatibilityIssue, type InsertPlatformCompatibilityIssue,
+  portfolioItems, type PortfolioItem, type InsertPortfolioItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, lt, sql, desc, asc, ilike, or } from "drizzle-orm";
@@ -178,6 +179,15 @@ export interface IStorage {
   incrementIssueOccurrence(id: number): Promise<void>;
   getPlatformIssuesByPlatform(platform: string): Promise<PlatformCompatibilityIssue[]>;
   analyzeCompatibilityIssues(): Promise<{ summary: any, issues: PlatformCompatibilityIssue[] }>;
+  
+  // Portfolio methods
+  getAllPortfolioItems(): Promise<PortfolioItem[]>;
+  getFeaturedPortfolioItems(limit?: number): Promise<PortfolioItem[]>;
+  getPortfolioItemById(id: number): Promise<PortfolioItem | undefined>;
+  getPortfolioItemsByIndustry(industry: string): Promise<PortfolioItem[]>;
+  createPortfolioItem(item: InsertPortfolioItem): Promise<PortfolioItem>;
+  updatePortfolioItem(id: number, data: Partial<PortfolioItem>): Promise<PortfolioItem>;
+  deletePortfolioItem(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
