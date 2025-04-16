@@ -56,6 +56,12 @@ export interface IStorage {
   getClientInput(id: number): Promise<ClientInput | undefined>;
   updateClientInputStatus(id: number, status: string): Promise<ClientInput>;
   
+  // Project methods
+  createProject(project: InsertProject): Promise<Project>;
+  getProject(id: number): Promise<Project | undefined>;
+  getProjectByClientInputId(clientInputId: number): Promise<Project | undefined>;
+  updateProject(id: number, data: Partial<Project>): Promise<Project>;
+  
   // Client Preview methods
   createClientPreview(preview: InsertClientPreview): Promise<ClientPreview>;
   getClientPreviewByCode(code: string): Promise<ClientPreview | undefined>;
@@ -329,6 +335,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clientInputs.id, id))
       .returning();
     return updatedClientInput;
+  }
+  
+  // Project methods
+  async createProject(project: InsertProject): Promise<Project> {
+    const [newProject] = await db.insert(projects).values(project).returning();
+    return newProject;
+  }
+  
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
+  }
+  
+  async getProjectByClientInputId(clientInputId: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.clientInputId, clientInputId));
+    return project;
+  }
+  
+  async updateProject(id: number, data: Partial<Project>): Promise<Project> {
+    const [updatedProject] = await db.update(projects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return updatedProject;
   }
   
   // Client Preview methods
