@@ -233,18 +233,15 @@ async function testEndpoints() {
   return results;
 }
 
-// Run the tests if this script is executed directly
-if (require.main === module) {
-  runTests()
-    .then(() => {
-      console.log('Comprehensive tests completed');
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('Test execution failed:', error);
-      process.exit(1);
-    });
-}
+// Run main function when this module is the entry point
+runTests()
+  .then(() => {
+    console.log('Comprehensive tests completed');
+  })
+  .catch(error => {
+    console.error('Test execution failed:', error);
+    process.exit(1);
+  });
 
 // Export for use in other scripts
 export default runTests;

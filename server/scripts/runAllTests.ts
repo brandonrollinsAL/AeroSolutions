@@ -308,18 +308,15 @@ These issues require immediate attention as they affect core functionality of th
   }
 }
 
-// Run the tests if this script is executed directly
-if (require.main === module) {
-  runAllTests()
-    .then(() => {
-      console.log('All tests completed successfully');
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('Test execution failed:', error);
-      process.exit(1);
-    });
-}
+// Run main function when this module is the entry point
+runAllTests()
+  .then(() => {
+    console.log('All tests completed successfully');
+  })
+  .catch(error => {
+    console.error('Test execution failed:', error);
+    process.exit(1);
+  });
 
 // Export for use in other scripts
 export default runAllTests;
