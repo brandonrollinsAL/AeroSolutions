@@ -102,15 +102,33 @@ const ClientInputPopupContent: React.FC = () => {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast({
         title: "Form Submitted Successfully",
-        description: "We've received your project details and will get back to you soon.",
+        description: "We've received your details and are generating your website mockup!",
         variant: "default",
       });
       setFormSubmitted(true);
+      
       // Invalidate any related queries
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      
+      // After a short delay, close this popup and open the preview
+      setTimeout(() => {
+        closePopup();
+        
+        // If the response includes a project ID (mockup was generated successfully)
+        if (response?.data?.projectId) {
+          // Navigate to preview page with project ID
+          navigate(`/preview/${response.data.projectId}`);
+        } else if (response?.data?.id) {
+          // If no project but we have client input ID, use that
+          navigate(`/preview?clientInputId=${response.data.id}`);
+        } else {
+          // If we have no IDs to work with, just go to the homepage
+          navigate('/');
+        }
+      }, 2000);
     },
     onError: (error: Error) => {
       toast({
@@ -170,8 +188,8 @@ const ClientInputPopupContent: React.FC = () => {
             </h2>
             
             <p className="text-slate-600 mb-6">
-              We've received your project details and will create a custom design based on your requirements.
-              Our team will reach out to you shortly to discuss next steps.
+              We've received your project details and are generating a website mockup based on your requirements.
+              You'll be redirected to preview your mockup in a moment.
             </p>
             
             <Button 
