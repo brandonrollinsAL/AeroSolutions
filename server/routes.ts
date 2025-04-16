@@ -616,19 +616,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // In a production app, notify administrators via email, Slack, etc.
         
-        // Send successful response with submission data
-        res.status(201).json({
-          success: true,
-          message: "Project details received. We'll be in touch soon!",
-          data: {
-            id: clientInput.id,
-            businessName: clientInput.businessName,
-            industry: clientInput.industry,
-            status: clientInput.status,
-            createdAt: clientInput.createdAt
-          },
-          timestamp: new Date().toISOString()
-        });
+        // Generate website mockup using the client input data
+        try {
+          // Import the mockup generator utility
+          const { generateWebsiteMockup } = await import('./utils/mockupGenerator');
+          console.log(`Generating mockup for ${clientInputData.businessName}...`);
+          
+          // Generate the mockup
+          const mockupData = await generateWebsiteMockup(clientInput);
+          
+          // Store the generated mockup as a project
+          const project = await storage.createProject({
+            clientInputId: clientInput.id,
+            name: `${clientInputData.businessName} Website`,
+            description: mockupData.description || `Website mockup for ${clientInputData.businessName}`,
+            htmlContent: mockupData.html,
+            cssContent: mockupData.css,
+            jsContent: mockupData.js || '',
+            status: 'draft',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          // Update client input status to processed
+          await storage.updateClientInputStatus(clientInput.id, 'processed');
+          
+          console.log(`Mockup generated and stored for ${clientInputData.businessName}`);
+          
+          // Send successful response with submission data and project info
+          res.status(201).json({
+            success: true,
+            message: "Project details received and mockup generated!",
+            data: {
+              id: clientInput.id,
+              businessName: clientInput.businessName,
+              industry: clientInput.industry,
+              status: 'processed',
+              projectId: project.id,
+              createdAt: clientInput.createdAt
+            },
+            timestamp: new Date().toISOString()
+          });
+        } catch (mockupError) {
+          console.error("Error generating mockup:", mockupError);
+          
+          // Still return success for the client input submission
+          res.status(201).json({
+            success: true,
+            message: "Project details received. We'll be in touch soon!",
+            data: {
+              id: clientInput.id,
+              businessName: clientInput.businessName,
+              industry: clientInput.industry,
+              status: clientInput.status,
+              createdAt: clientInput.createdAt,
+              mockupStatus: 'failed'
+            },
+            timestamp: new Date().toISOString()
+          });
+        }
       } catch (validationError) {
         if (validationError instanceof z.ZodError) {
           return res.status(400).json({
@@ -649,6 +695,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Failed to process client input submission",
+        error: errorMessage
+      });
+    }
+  });
+
+  // API endpoint to get a project by ID
+  app.get("/api/projects/:id", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      
+      if (isNaN(projectId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid project ID"
+        });
+      }
+      
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          message: "Project not found"
+        });
+      }
+      
+      // Return the project data
+      res.status(200).json({
+        success: true,
+        data: project
+      });
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch project",
+        error: errorMessage
+      });
+    }
+  });
+  
+  // API endpoint to get a project by client input ID
+  app.get("/api/client-inputs/:id/project", async (req: Request, res: Response) => {
+    try {
+      const clientInputId = parseInt(req.params.id);
+      
+      if (isNaN(clientInputId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid client input ID"
+        });
+      }
+      
+      // First check if the client input exists
+      const clientInput = await storage.getClientInput(clientInputId);
+      
+      if (!clientInput) {
+        return res.status(404).json({
+          success: false,
+          message: "Client input not found"
+        });
+      }
+      
+      // Find the project associated with this client input
+      const project = await storage.getProjectByClientInputId(clientInputId);
+      
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          message: "No project found for this client input"
+        });
+      }
+      
+      // Return the project data
+      res.status(200).json({
+        success: true,
+        data: project
+      });
+    } catch (error) {
+      console.error("Error fetching project by client input ID:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch project",
         error: errorMessage
       });
     }
