@@ -43,6 +43,105 @@ const CONFIG = {
   }
 };
 
+/**
+ * Preprocesses JSON to fix common issues in XAI API responses
+ * 
+ * @param jsonStr The JSON string to preprocess
+ * @returns A cleaner JSON string that should parse correctly
+ */
+function preprocessJson(jsonStr: string): string {
+  // Handle empty responses
+  if (!jsonStr || jsonStr.trim() === '') {
+    return '{}';
+  }
+  
+  try {
+    // Try to parse it as-is first
+    JSON.parse(jsonStr);
+    return jsonStr;
+  } catch (e) {
+    // If error continues, apply fixes
+    
+    // Step 1: Try to find where the JSON object actually starts (sometimes there's preamble text)
+    const possibleJsonStart = jsonStr.indexOf('{');
+    const possibleJsonEnd = jsonStr.lastIndexOf('}');
+    
+    if (possibleJsonStart >= 0 && possibleJsonEnd > possibleJsonStart) {
+      jsonStr = jsonStr.substring(possibleJsonStart, possibleJsonEnd + 1);
+    }
+    
+    // Step 2: Fix unterminated strings (a common issue)
+    let fixedJson = '';
+    let inString = false;
+    let inEscape = false;
+    let openBraces = 0;
+    let openBrackets = 0;
+    
+    for (let i = 0; i < jsonStr.length; i++) {
+      const char = jsonStr[i];
+      
+      // Handle string state
+      if (char === '"' && !inEscape) {
+        inString = !inString;
+      }
+      
+      // Handle escape characters
+      if (char === '\\' && !inEscape) {
+        inEscape = true;
+      } else {
+        inEscape = false;
+      }
+      
+      // Count open/close braces and brackets
+      if (!inString) {
+        if (char === '{') openBraces++;
+        if (char === '}') openBraces--;
+        if (char === '[') openBrackets++;
+        if (char === ']') openBrackets--;
+      }
+      
+      fixedJson += char;
+    }
+    
+    // If string was not properly terminated, add closing quote
+    if (inString) {
+      fixedJson += '"';
+    }
+    
+    // Balance braces and brackets
+    while (openBraces > 0) {
+      fixedJson += '}';
+      openBraces--;
+    }
+    
+    while (openBrackets > 0) {
+      fixedJson += ']';
+      openBrackets--;
+    }
+    
+    // Step 3: Fix property names that aren't in quotes
+    // This regex matches property names that aren't in quotes
+    const unquotedPropRegex = /([{,]\s*)([a-zA-Z0-9_$]+)(\s*:)/g;
+    fixedJson = fixedJson.replace(unquotedPropRegex, '$1"$2"$3');
+    
+    // Step 4: Fix trailing commas in objects and arrays
+    fixedJson = fixedJson.replace(/,\s*([}\]])/g, '$1');
+    
+    // Step 5: Handle control characters that might be in strings
+    fixedJson = fixedJson.replace(/[\u0000-\u001F]+/g, '');
+    
+    try {
+      // Verify if our fixed JSON is valid
+      JSON.parse(fixedJson);
+      return fixedJson;
+    } catch (e) {
+      // If still invalid, return a safe empty object
+      console.error('Failed to fix JSON after processing:', e);
+      return '{}';
+    }
+  }
+}
+
 // API call stats for monitoring
 const apiStats = {
   totalCalls: 0,
@@ -207,12 +306,32 @@ async function generateJson(
       apiStats.successfulCalls++;
       
       try {
-        // Parse and return the JSON
-        return JSON.parse(response.choices[0].message.content || "{}");
+        const content = response.choices[0].message.content || "{}";
+        
+        // Pre-process JSON before parsing to fix common issues
+        const preprocessedJson = preprocessJson(content);
+        
+        // Attempt to parse the preprocessed JSON
+        return JSON.parse(preprocessedJson);
       } catch (parseError) {
         console.error('Elevion AI JSON generation error:', parseError);
         console.log('API Stats - Success:', apiStats.getSuccessRate());
         console.log('Using provided fallback JSON response');
+        
+        // Log the problematic content for debugging (truncated for security)
+        const contentPreview = (response.choices[0].message.content || "").substring(0, 100) + "...";
+        await db.insert(logs).values({
+          type: 'XAI_API',
+          message: `JSON parsing error: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+          details: JSON.stringify({
+            contentPreview,
+            attempt: retries
+          }),
+          source: 'grok-api-client',
+          level: 'error',
+          createdAt: new Date()
+        });
+        
         return JSON.parse(CONFIG.fallbackResponses.json);
       }
       
