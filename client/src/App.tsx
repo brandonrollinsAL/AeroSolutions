@@ -48,6 +48,7 @@ import DesignTools from "@/pages/DesignTools";
 import WebsiteAnalyticsPage from "@/pages/WebsiteAnalyticsPage";
 import MarketplaceAdGeneratorPage from "@/pages/MarketplaceAdGeneratorPage";
 import SocialMediaPage from "@/pages/SocialMediaPage";
+import PortfolioPage from "@/pages/PortfolioPage";
 import MarketingCampaignsPage from "@/pages/MarketingCampaignsPage";
 import UIAnalyticsDashboard from "@/pages/UIAnalyticsDashboard";
 import OptimizedLandingPage from "@/pages/OptimizedLandingPage";

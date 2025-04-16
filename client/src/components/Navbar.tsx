@@ -80,6 +80,7 @@ const Navbar: React.FC = () => {
     { path: '/subscriptions', label: 'Subscriptions' },
     { path: '/premium', label: 'Premium' },
     { path: '/history', label: 'Our History' },
+    { path: '/portfolio', label: 'Portfolio' },
     { path: '/contact', label: 'Contact' },
   ];
   
@@ -261,6 +262,18 @@ const Navbar: React.FC = () => {
                     >
                       <History className="w-4 h-4 mr-1" />
                       {t('nav_history')}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <Link href="/portfolio">
+                    <NavigationMenuLink 
+                      className={`group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-[#FF7043] hover:text-white focus:bg-accent focus:text-accent-foreground focus:outline-none font-poppins ${
+                        location === '/portfolio' ? 'bg-accent text-accent-foreground' : ''
+                      }`}
+                    >
+                      Portfolio
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
