@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // This component doesn't render anything visible
 // It only attaches event listeners and tracks platform compatibility issues
-export function PlatformCompatibilityTracker() {
+function PlatformCompatibilityTracker() {
   const { 
     currentPlatform, 
     trackError, 
@@ -222,3 +222,5 @@ export function PlatformCompatibilityTracker() {
   // This component doesn't render anything
   return null;
 }
+
+export { PlatformCompatibilityTracker };
