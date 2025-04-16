@@ -539,6 +539,34 @@ export type InsertContentComplianceScan = z.infer<typeof insertContentCompliance
 export type ContentComplianceAlert = typeof contentComplianceAlerts.$inferSelect;
 export type InsertContentComplianceAlert = z.infer<typeof insertContentComplianceAlertSchema>;
 
+// Portfolio items schema
+export const portfolioItems = pgTable("portfolio_items", {
+  id: serial("id").primaryKey(),
+  clientName: text("client_name").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  industryType: text("industry_type").notNull(),
+  thumbnailUrl: text("thumbnail_url").notNull(),
+  websiteUrl: text("website_url"),
+  technologies: json("technologies").$type<string[]>().default([]).notNull(),
+  features: json("features").$type<string[]>().default([]).notNull(),
+  testimonial: text("testimonial"),
+  completionDate: date("completion_date"),
+  featured: boolean("featured").default(false).notNull(),
+  order: integer("order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPortfolioItemSchema = createInsertSchema(portfolioItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertPortfolioItem = z.infer<typeof insertPortfolioItemSchema>;
+export type PortfolioItem = typeof portfolioItems.$inferSelect;
+
 // ElevateBot queries for tracking AI interactions
 export const elevatebotQueries = pgTable("elevatebot_queries", {
   id: serial("id").primaryKey(),
