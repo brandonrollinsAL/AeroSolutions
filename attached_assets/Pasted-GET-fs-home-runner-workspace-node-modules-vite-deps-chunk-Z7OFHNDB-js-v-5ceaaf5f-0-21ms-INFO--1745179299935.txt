@@ -1,0 +1,236 @@
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Z7OFHNDB.js?v=5ceaaf5f - 0.21ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Z7OFHNDB.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-X4B4ZON2.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-X4B4ZON2.js?v=5ceaaf5f - 0.27ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-X4B4ZON2.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5WKJH5EP.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5WKJH5EP.js?v=5ceaaf5f - 0.26ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5WKJH5EP.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q3HCKLLK.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q3HCKLLK.js?v=5ceaaf5f - 0.24ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q3HCKLLK.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-K2QSYOVZ.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-K2QSYOVZ.js?v=5ceaaf5f - 0.30ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-K2QSYOVZ.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-T7CON667.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-T7CON667.js?v=5ceaaf5f - 0.23ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-T7CON667.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-FEB7WTCJ.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-FEB7WTCJ.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-FEB7WTCJ.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGTRLIVU.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGTRLIVU.js?v=5ceaaf5f - 0.34ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PGTRLIVU.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PTB6LJVQ.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PTB6LJVQ.js?v=5ceaaf5f - 0.27ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PTB6LJVQ.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GNHQ7YDS.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GNHQ7YDS.js?v=5ceaaf5f - 0.25ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GNHQ7YDS.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EUIMZKNY.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EUIMZKNY.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-EUIMZKNY.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ACIRKTC7.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ACIRKTC7.js?v=5ceaaf5f - 0.28ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ACIRKTC7.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TLBF5QZR.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TLBF5QZR.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TLBF5QZR.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LJUHQ6JW.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LJUHQ6JW.js?v=5ceaaf5f - 0.36ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LJUHQ6JW.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AAPJ72D.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AAPJ72D.js?v=5ceaaf5f - 0.35ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5AAPJ72D.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/components/BrandConsistencyDashboard.tsx
+GET /src/components/BrandConsistencyDashboard.tsx - 0.06ms
+[INFO] [http] Response 304 for GET /src/components/BrandConsistencyDashboard.tsx (0ms)
+[INFO] [http] Request GET /src/components/platform/PlatformCompatibilityProvider.tsx
+GET /src/components/platform/PlatformCompatibilityProvider.tsx - 0.06ms
+[INFO] [http] Response 304 for GET /src/components/platform/PlatformCompatibilityProvider.tsx (0ms)
+[INFO] [http] Request GET /src/components/platform/PlatformCompatibilityDebugger.tsx
+GET /src/components/platform/PlatformCompatibilityDebugger.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/components/platform/PlatformCompatibilityDebugger.tsx (0ms)
+[INFO] [http] Request GET /src/components/ClientPreviewModal.tsx
+GET /src/components/ClientPreviewModal.tsx - 0.03ms
+[INFO] [http] Response 304 for GET /src/components/ClientPreviewModal.tsx (0ms)
+[INFO] [http] Request GET /src/components/SocialShareButtons.tsx
+GET /src/components/SocialShareButtons.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/components/SocialShareButtons.tsx (0ms)
+[INFO] [http] Request GET /src/lib/utils.ts
+GET /src/lib/utils.ts - 0.04ms
+[INFO] [http] Response 304 for GET /src/lib/utils.ts (0ms)
+[INFO] [http] Request GET /src/components/PostSentimentIndicator.tsx
+GET /src/components/PostSentimentIndicator.tsx - 0.04ms
+[INFO] [http] Response 304 for GET /src/components/PostSentimentIndicator.tsx (0ms)
+[INFO] [http] Request GET /src/components/ElevionLogo.tsx
+GET /src/components/ElevionLogo.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/components/ElevionLogo.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKAYKK4Q.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKAYKK4Q.js?v=5ceaaf5f - 0.38ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKAYKK4Q.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QQKTS4DY.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QQKTS4DY.js?v=5ceaaf5f - 0.54ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QQKTS4DY.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NFWWJWPC.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NFWWJWPC.js?v=5ceaaf5f - 0.38ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NFWWJWPC.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-S7EWQZ7Q.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-S7EWQZ7Q.js?v=5ceaaf5f - 0.35ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-S7EWQZ7Q.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OKX5DAGM.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OKX5DAGM.js?v=5ceaaf5f - 0.43ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OKX5DAGM.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-HVCSTO5E.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-HVCSTO5E.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-HVCSTO5E.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OD433RWB.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OD433RWB.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OD433RWB.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=5ceaaf5f - 0.48ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JJS7DLG7.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JJS7DLG7.js?v=5ceaaf5f - 0.23ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JJS7DLG7.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MBBQPERT.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MBBQPERT.js?v=5ceaaf5f - 0.24ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MBBQPERT.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OBDEA2XN.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OBDEA2XN.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OBDEA2XN.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=5ceaaf5f - 0.24ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XB7Q3TNR.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XB7Q3TNR.js?v=5ceaaf5f - 0.24ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XB7Q3TNR.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /src/components/Navbar.tsx
+GET /src/components/Navbar.tsx - 0.07ms
+[INFO] [http] Response 304 for GET /src/components/Navbar.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6O2ONJSY.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6O2ONJSY.js?v=5ceaaf5f - 0.37ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6O2ONJSY.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SGSAFNPX.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SGSAFNPX.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SGSAFNPX.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6G2CDYH.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6G2CDYH.js?v=5ceaaf5f - 0.37ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6G2CDYH.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=5ceaaf5f - 0.40ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LAJLD5QE.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LAJLD5QE.js?v=5ceaaf5f - 0.36ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LAJLD5QE.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/hooks/useAdmin.tsx
+GET /src/hooks/useAdmin.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/hooks/useAdmin.tsx (0ms)
+[INFO] [http] Request GET /src/components/ui/scroll-area.tsx
+GET /src/components/ui/scroll-area.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/components/ui/scroll-area.tsx (0ms)
+[INFO] [http] Request GET /src/components/ui/sheet.tsx
+GET /src/components/ui/sheet.tsx - 0.05ms
+[INFO] [http] Response 304 for GET /src/components/ui/sheet.tsx (0ms)
+[INFO] [http] Request GET /src/components/ui/tooltip.tsx
+GET /src/components/ui/tooltip.tsx - 0.04ms
+[INFO] [http] Response 304 for GET /src/components/ui/tooltip.tsx (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2AK35XFD.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2AK35XFD.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2AK35XFD.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/components/ui/slider.tsx
+GET /src/components/ui/slider.tsx - 0.06ms
+[INFO] [http] Response 304 for GET /src/components/ui/slider.tsx (0ms)
+[INFO] [http] Request GET /src/styles/react-color-palette.css
+GET /src/styles/react-color-palette.css - 0.34ms
+[INFO] [http] Response 304 for GET /src/styles/react-color-palette.css (0ms)
+[INFO] [http] Request GET /src/components/ui/switch.tsx
+GET /src/components/ui/switch.tsx - 0.04ms
+[INFO] [http] Response 304 for GET /src/components/ui/switch.tsx (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/components/LandingPageOptimizer.tsx
+GET /src/components/LandingPageOptimizer.tsx - 0.64ms
+[INFO] [http] Response 200 for GET /src/components/LandingPageOptimizer.tsx (1ms)
+[INFO] [http] Request GET /src/components/ui/popover.tsx
+GET /src/components/ui/popover.tsx - 0.35ms
+[INFO] [http] Response 200 for GET /src/components/ui/popover.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6PJ6ZD5Z.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6PJ6ZD5Z.js?v=5ceaaf5f - 0.47ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6PJ6ZD5Z.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/components/ui/calendar.tsx
+GET /src/components/ui/calendar.tsx - 0.30ms
+[INFO] [http] Response 200 for GET /src/components/ui/calendar.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=5ceaaf5f - 0.26ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-progress.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-progress.js?v=5ceaaf5f - 0.19ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-progress.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /src/components/ui/hover-card.tsx
+GET /src/components/ui/hover-card.tsx - 0.39ms
+[INFO] [http] Response 200 for GET /src/components/ui/hover-card.tsx (0ms)
+[INFO] [http] Request GET /src/components/ui/alert-dialog.tsx
+GET /src/components/ui/alert-dialog.tsx - 0.32ms
+[INFO] [http] Response 200 for GET /src/components/ui/alert-dialog.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=5ceaaf5f - 0.28ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=5ceaaf5f - 0.32ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=5ceaaf5f - 0.24ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /src/hooks/usePlatform.tsx
+GET /src/hooks/usePlatform.tsx - 0.34ms
+[INFO] [http] Response 200 for GET /src/hooks/usePlatform.tsx (1ms)
+[INFO] [http] Request GET /src/components/LanguageSwitcher.tsx
+GET /src/components/LanguageSwitcher.tsx - 0.46ms
+[INFO] [http] Response 200 for GET /src/components/LanguageSwitcher.tsx (0ms)
+[INFO] [http] Request GET /src/components/NotificationPopover.tsx
+GET /src/components/NotificationPopover.tsx - 0.36ms
+[INFO] [http] Response 200 for GET /src/components/NotificationPopover.tsx (0ms)
+[INFO] [http] Request GET /src/components/ui/navigation-menu.tsx
+GET /src/components/ui/navigation-menu.tsx - 0.38ms
+[INFO] [http] Response 200 for GET /src/components/ui/navigation-menu.tsx (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=5ceaaf5f - 0.34ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=5ceaaf5f - 0.37ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5ceaaf5f - 0.42ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=5ceaaf5f - 0.33ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-day-picker.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-day-picker.js?v=5ceaaf5f - 0.91ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/react-day-picker.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=5ceaaf5f - 0.40ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-hover-card.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-hover-card.js?v=5ceaaf5f - 0.35ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-hover-card.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=5ceaaf5f - 0.37ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=5ceaaf5f (0ms)
+[INFO] [http] Request GET /src/utils/platformUtils.ts
+GET /src/utils/platformUtils.ts - 0.43ms
+[INFO] [http] Response 200 for GET /src/utils/platformUtils.ts (0ms)
+[INFO] [http] Request GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=5ceaaf5f
+GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=5ceaaf5f - 0.44ms
+[INFO] [http] Response 200 for GET /@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-navigation-menu.js?v=5ceaaf5f (1ms)
+[INFO] [http] Request GET /api/ab-tests/active
+[INFO] [http] Request GET /api/portfolio
+GET /api/ab-tests/active - 7.76ms
+[INFO] [http] Response 200 for GET /api/ab-tests/active (8ms)
+7:59:02 PM [express] GET /api/ab-tests/active 200 in 11ms
+[INFO] [http] Response 200 for GET /api/portfolio (732ms)
