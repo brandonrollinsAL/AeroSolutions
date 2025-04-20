@@ -23,10 +23,13 @@ const PortfolioPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   
   // Fetch all portfolio items from API
-  const { data: portfolioItems = [], isLoading, error } = useQuery<PortfolioItem[]>({
+  const { data, isLoading, error } = useQuery<PortfolioItem[]>({
     queryKey: ['/api/portfolio'],
     refetchOnWindowFocus: false
   });
+  
+  // Make sure we have valid array data
+  const portfolioItems = Array.isArray(data) ? data : [];
   
   // Filter items based on active filter and search query
   const filteredItems = portfolioItems.filter(item => {
@@ -39,20 +42,20 @@ const PortfolioPage: React.FC = () => {
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.technologies && item.technologies.some(tech => 
+      (Array.isArray(item.technologies) && item.technologies.some(tech => 
         tech.toLowerCase().includes(searchQuery.toLowerCase())
       ));
     
     return matchesIndustry && matchesSearch;
   });
 
-  // Define industry filters
+  // Define industry filters - update based on our actual database entries
   const industryFilters = [
     { id: 'all', label: 'All Projects', icon: <Layout className="mr-2 h-4 w-4" /> },
-    { id: 'ecommerce', label: 'E-commerce', icon: <Code className="mr-2 h-4 w-4" /> },
-    { id: 'web-design', label: 'Web Design', icon: <PenTool className="mr-2 h-4 w-4" /> },
-    { id: 'applications', label: 'Applications', icon: <Database className="mr-2 h-4 w-4" /> },
-    { id: 'optimization', label: 'Optimization', icon: <Zap className="mr-2 h-4 w-4" /> }
+    { id: 'Food & Beverage', label: 'Food & Beverage', icon: <Code className="mr-2 h-4 w-4" /> },
+    { id: 'Health & Fitness', label: 'Health & Fitness', icon: <PenTool className="mr-2 h-4 w-4" /> },
+    { id: 'Technology', label: 'Technology', icon: <Database className="mr-2 h-4 w-4" /> },
+    { id: 'E-commerce', label: 'E-commerce', icon: <Zap className="mr-2 h-4 w-4" /> }
   ];
 
   return (
