@@ -23,13 +23,10 @@ const PortfolioPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   
   // Fetch all portfolio items from API
-  const { data, isLoading, error } = useQuery<PortfolioItem[]>({
+  const { data: portfolioItems = [], isLoading, error } = useQuery<PortfolioItem[]>({
     queryKey: ['/api/portfolio'],
     refetchOnWindowFocus: false
   });
-  
-  // Ensure we have an array of portfolio items
-  const portfolioItems = Array.isArray(data) ? data : [];
   
   // Filter items based on active filter and search query
   const filteredItems = portfolioItems.filter(item => {

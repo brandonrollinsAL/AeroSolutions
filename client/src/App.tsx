@@ -7,7 +7,6 @@ import ContentProtection from "@/components/ContentProtection";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { PopupProvider } from "@/contexts/PopupContext";
 import ABTestClient from "@/components/ABTestClient";
-import { PlatformCompatibilityTracker } from "@/components/PlatformCompatibilityTracker";
 
 // Popup Components
 import ClientInputPopup from "@/components/popups/ClientInputPopup";
@@ -921,7 +920,6 @@ export default function App() {
       
       {/* Global content protection */}
       <ContentProtection />
-      <PlatformCompatibilityTracker />
       <Toaster />
       </PopupProvider>
     </NotificationProvider>

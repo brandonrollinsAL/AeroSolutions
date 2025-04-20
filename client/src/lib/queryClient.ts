@@ -66,7 +66,7 @@ export async function apiRequest(
   
   // Create AbortController for timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout) as unknown as number;
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
     // Prepare request headers
@@ -126,12 +126,12 @@ export const getQueryFn: <T>(options: {
     cacheTime = 300   // 5 minutes default cache time
   }) =>
   async ({ queryKey, signal }) => {
-    // Create AbortController for timeout that works with the signal from React Query
-    const controller = signal ? null : new AbortController();
-    const timeoutId = controller ? setTimeout(() => controller.abort(), timeout) : null;
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    // Merge our abort signal with the one from React Query if provided
-    const abortSignal = signal || (controller ? controller.signal : undefined);
+    // Use the controller signal and handle the provided signal in the catch block
+    const abortSignal = controller.signal;
     
     try {
       // Security headers to prevent CSRF attacks
@@ -175,9 +175,7 @@ export const getQueryFn: <T>(options: {
       // Handle retry logic - delegate to React Query's retry mechanism
       throw error;
     } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      clearTimeout(timeoutId);
     }
   };
 

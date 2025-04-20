@@ -21,7 +21,6 @@ import uxRouter from './routes/ux';
 import intelligenceRouter from './routes/intelligence';
 import { registerAnalyticsRoutes } from './routes/analytics';
 import { registerFeedRoutes } from './routes/feed';
-import { registerCrossPlatformAnalyticsRoutes } from './routes/crossPlatformAnalytics';
 import aiContentRouter from './routes/ai-content';
 import recommendationsRouter from './routes/recommendations';
 import intelligentSearchRouter from './routes/intelligent-search';
@@ -59,7 +58,7 @@ import { loggerMiddleware, registerGlobalErrorHandlers } from './middlewares/log
 import { complianceMonitoringProcess } from './background/complianceMonitor';
 import { twitterPoster } from './utils/twitterPoster';
 import { retentionService } from './utils/retentionService';
-import { scheduler } from './utils/schedulerService';
+import { schedulerService } from './utils/schedulerService';
 import { priceOptimizationService } from './utils/priceOptimizationService';
 
 // Extended request interface with authentication
@@ -168,8 +167,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerAnalyticsRoutes(app);
   // Register feed routes with AI ranking
   registerFeedRoutes(app);
-  // Register cross-platform analytics routes
-  registerCrossPlatformAnalyticsRoutes(app);
   app.use('/api/ai-content', aiContentRouter);
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/intelligent-search', intelligentSearchRouter);
@@ -1081,11 +1078,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize achievement tracking system with XAI
   // Track user achievements and send personalized milestone messages
   try {
-    console.log('Initializing user achievement tracking system and scheduler...');
-    scheduler.initialize(); // Use the scheduler from utils/schedulerService
-    console.log('Achievement tracking system and scheduler initialized successfully');
+    console.log('Initializing user achievement tracking system...');
+    schedulerService.startScheduledTasks();
+    console.log('Achievement tracking system initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize achievement tracking system and scheduler:', error);
+    console.error('Failed to initialize achievement tracking system:', error);
   }
   
   // Initialize subscription price optimization with XAI
